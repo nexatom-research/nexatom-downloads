@@ -1,17 +1,15 @@
 {
-  "appId": "Nexatom_UTT_810",
-  "productId": "nexatom-time-tagger-utt810",
-  "model": "UTT810",
-  "channel": "stable",
-  "version": "1.0.1",
-  "fileName": "Nexatom_UTT810_Setup_1.0.1.exe",
-  "sizeBytes": 85683429,
-  "sha256": "cd52db5c34deb72a86f9d3bb0d7213601c145f02658e913221c48a64aa384d9d",
-  "installerUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/download/time-tagger-UTT810-v1.0.1/Nexatom_UTT810_Setup_1.0.1.exe",
-  "mandatory": false,
-  "releaseNotes": [
-    "Added field upgrade workflow.",
-    "Updated native NexatomTT library.",
-    "Updated UTT810 installer metadata for app updates."
-  ]
+    "appId":  "Nexatom_UTT_810",
+    "productId":  "nexatom-time-tagger-utt810",
+    "model":  "UTT810",
+    "channel":  "stable",
+    "version":  "1.0.1",
+    "fileName":  "Nexatom_UTT810_Setup_1.0.1.exe",
+    "sizeBytes":  85774801,
+    "sha256":  "4c33a0e0489313a366fd3f70b535f05a5506f4df79c543fb209ea99b6d7c498f",
+    "installerUrl":  "https://github.com/nexatom-research/nexatom-downloads/releases/download/time-tagger-UTT810-v1.0.1/Nexatom_UTT810_Setup_1.0.1.exe",
+    "mandatory":  false,
+    "releaseNotes":  [
+                         "Added updater MVP and field upgrade workflow. Updated native NexatomTT library. Updated UTT810 installer metadata for app updates."
+                     ]
 }
