@@ -1,6 +1,17 @@
 {
-  "version": "1.0.0",
-  "name": "UTT810",
-  "description": "Latest release of UTT810",
-  "timestamp": "2026-05-28T06:39:02Z"
+  "appId": "Nexatom_UTT_810",
+  "productId": "nexatom-time-tagger-utt810",
+  "model": "UTT810",
+  "channel": "stable",
+  "version": "1.0.1",
+  "fileName": "Nexatom_UTT810_Setup_1.0.1.exe",
+  "sizeBytes": 240313203,
+  "sha256": "0acd03ef06d1a6d38862fcf13b45f0e3062c0aa83ad33beebb35b8ed1cbb868a",
+  "installerUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/download/time-tagger-UTT810-v1.0.1/Nexatom_UTT810_Setup_1.0.1.exe",
+  "mandatory": false,
+  "releaseNotes": [
+    "Added field upgrade workflow.",
+    "Updated native NexatomTT library.",
+    "Updated UTT810 installer metadata for app updates."
+  ]
 }
