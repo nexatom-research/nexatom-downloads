@@ -3,13 +3,13 @@
     "productId":  "nexatom-time-tagger-utt810",
     "model":  "UTT810",
     "channel":  "stable",
-    "version":  "1.0.1",
-    "fileName":  "Nexatom_UTT810_Setup_1.0.1.exe",
-    "sizeBytes":  85780093,
-    "sha256":  "cee5a78865e0b0923649c4f922327ab54de059721135fefa8bda499ed6510e3a",
-    "installerUrl":  "https://github.com/nexatom-research/nexatom-downloads/releases/download/time-tagger-UTT810-v1.0.1/Nexatom_UTT810_Setup_1.0.1.exe",
+    "version":  "1.0.2",
+    "fileName":  "Nexatom_UTT810_Setup_1.0.2.exe",
+    "sizeBytes":  89105099,
+    "sha256":  "fa00a4b2a2814b0479027e3659a19cba28214cd1e4768956890c2958d06e02e5",
+    "installerUrl":  "https://github.com/nexatom-research/nexatom-downloads/releases/download/time-tagger-UTT810-v1.0.2/Nexatom_UTT810_Setup_1.0.2.exe",
     "mandatory":  false,
     "releaseNotes":  [
-                         "Updated updater install flow: the app exits after launching the installer, and the installer has explicit running-app protection."
+                         "Updated Nexatom UTT810 Time Tagger."
                      ]
 }
