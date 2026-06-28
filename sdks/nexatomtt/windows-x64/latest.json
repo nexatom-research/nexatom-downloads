@@ -1,0 +1,22 @@
+﻿{
+    "schemaVersion":  1,
+    "artifactName":  "nexatomtt-sdk",
+    "sdkVersion":  "0.1.0-preview.4",
+    "channel":  "preview",
+    "platform":  "windows-x64",
+    "distribution":  "public-preview",
+    "nativeApiVersion":  "1",
+    "nativeGitCommit":  "365691201e99b5935da7fd7cabb637e6568c55a7",
+    "fileName":  "nexatomtt-sdk-v0.1.0-preview.4-windows-x64.zip",
+    "sizeBytes":  4152915,
+    "sha256":  "3c4c4670fa90522dd16c01a66774bacd7268ff24963a9ba89c336d04ec354ac7",
+    "releaseTag":  "nexatomtt-sdk-v0.1.0-preview.4",
+    "releaseUrl":  "https://github.com/nexatom-research/nexatom-downloads/releases/tag/nexatomtt-sdk-v0.1.0-preview.4",
+    "downloadUrl":  "https://github.com/nexatom-research/nexatom-downloads/releases/download/nexatomtt-sdk-v0.1.0-preview.4/nexatomtt-sdk-v0.1.0-preview.4-windows-x64.zip",
+    "packageManifestPath":  "manifest.json",
+    "releaseNotes":  [
+                         "Initial public preview SDK for NexatomTT on Windows x64.",
+                         "Includes C API header, native runtime libraries, Python package, Python examples, and public preview documentation.",
+                         "Python examples can boot an existing valid runtime slot from bootloader mode. Firmware image loading is limited to the advanced field-update example and requires explicit confirmation flags."
+                     ]
+}
