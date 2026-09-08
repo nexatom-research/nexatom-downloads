@@ -4,7 +4,7 @@ This section presents three end-to-end workflows that exercise the SDK from DLL 
 
 > **Prerequisite.** All workflows require a connected UTT810 with the [FTDI D3XX driver installed](1_1_installation.md#ftdi-d3xx-driver-installation) and a valid runtime firmware image already loaded in at least one flash slot. The `open_runtime_device()` context manager handles boot automatically.
 
-### Device lifecycle
+### [Device lifecycle](1_2_quick_start.md#device-lifecycle)
 
 All interaction with the UTT810 follows an eight-phase sequence. The phases must be executed in order.
 
@@ -113,7 +113,7 @@ All example scripts in this chapter use `open_runtime_device()` for device initi
 
 ---
 
-### Realtime CPS and telemetry streaming
+### [Realtime CPS and telemetry streaming](1_2_quick_start.md#realtime-cps-and-telemetry-streaming)
 
 **Script:** `python/examples/ftdi_realtime_smoke.py`
 
@@ -174,7 +174,7 @@ The script exits with code `0` on success. Exit code `2` indicates that CPS or t
 
 ---
 
-### Raw time-tag capture and CSV export
+### [Raw time-tag capture and CSV export](1_2_quick_start.md#raw-time-tag-capture-and-csv-export)
 
 **Script:** `python/examples/file_save_and_offline_decode.py`
 
@@ -249,7 +249,7 @@ Each row in the output CSV represents one decoded `nexatom_time_tag_t`:
 
 ---
 
-### Live TIHI and MFCO plotting
+### [Live TIHI and MFCO plotting](1_2_quick_start.md#live-tihi-and-mfco-plotting)
 
 **Script:** `python/examples/tihi_mfco_matplotlib.py`
 

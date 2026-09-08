@@ -14,12 +14,16 @@ The NexatomTT SDK provides host-side control of the UTT810 time tagger over USB 
 
 * **[Getting Started](docs/01_getting_started/index.md)**
     * [Installation Guide](docs/01_getting_started/1_1_installation.md)
-      - [System requirements](docs/01_getting_started/1_1_installation.md#system-requirements)
-      - [FTDI D3XX driver installation](docs/01_getting_started/1_1_installation.md#ftdi-d3xx-driver-installation)
-      - [SDK package contents](docs/01_getting_started/1_1_installation.md#sdk-package-contents)
-      - [Verifying the installation](docs/01_getting_started/1_1_installation.md#verifying-the-installation)
-      - [SDK home discovery](docs/01_getting_started/1_1_installation.md#sdk-home-discovery)
+        - [System requirements](docs/01_getting_started/1_1_installation.md#system-requirements)
+        - [FTDI D3XX driver installation](docs/01_getting_started/1_1_installation.md#ftdi-d3xx-driver-installation)
+        - [SDK package contents](docs/01_getting_started/1_1_installation.md#sdk-package-contents)
+        - [Verifying the installation](docs/01_getting_started/1_1_installation.md#verifying-the-installation)
+        - [SDK home discovery](docs/01_getting_started/1_1_installation.md#sdk-home-discovery)
     * [Quick Start Workflow](docs/01_getting_started/1_2_quick_start.md)
+        - [Device lifecycle](docs/01_getting_started/1_2_quick_start.md#device-lifecycle)
+        - [Realtime CPS and telemetry streaming](docs/01_getting_started/1_2_quick_start.md#realtime-cps-and-telemetry-streaming)
+        - [Raw time-tag capture and CSV export](docs/01_getting_started/1_2_quick_start.md#raw-time-tag-capture-and-csv-export)
+        - [Live TIHI and MFCO plotting](docs/01_getting_started/1_2_quick_start.md#live-tihi-and-mfco-plotting)
     * Programming Languages (Drafting...)
     * Firmware Management (Drafting...)
 
