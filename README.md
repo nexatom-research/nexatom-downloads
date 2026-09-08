@@ -1,31 +1,37 @@
-# Nexatom Downloads
+# Nexatom Downloads & SDK Documentation
 
-Welcome to the Nexatom Downloads repository. This repository hosts Nexatom binaries and related resources.
+Welcome to the official repository for [Nexatom Research & Instruments](https://www.nexatom.in). This repository hosts the public releases, SDK binaries, and documentation for our precision scientific instruments, including the **UTT810 Universal Time Tagger**.
 
 ## About Nexatom
 
-Nexatom is a powerful tool for [add your description here].
+Nexatom mobilizes research knowledge into practical systems for precision light, timing, and scientific measurement. We develop indigenous high-technology solutions for precision lasers, time tagging, and custom scientific instrumentation used by research groups and industry teams.
 
-## Getting Started
+## The NexatomTT SDK (UTT810)
 
-To get started with Nexatom, download the latest binaries from this repository.
+The NexatomTT SDK provides host-side control of the UTT810 time tagger over USB 3.0. It features a native C-library and a Python wrapper for seamless integration into custom data pipelines, automated experiments, and live analysis (such as TIHI and MFCO plotting).
+
+## [Documentation](https://nexatom-research.github.io/nexatom-downloads)
+
+* **[Chapter 1: Getting Started](docs/01_getting_started/index.md)**
+    * [1.1 Installation Guide](docs/01_getting_started/1_1_installation.md)
+    * [1.2 Quick Start Workflow](docs/01_getting_started/1_2_quick_start.md)
+    * *1.3 Programming Languages (Drafting...)*
+    * *1.4 Firmware Management (Drafting...)*
 
 ## Downloads
 
 You can find the latest releases and binaries in the [Releases](https://github.com/nexatom-research/nexatom-downloads/releases) section.
 
-## Documentation
-
-For detailed documentation and usage instructions, please visit our [documentation site](https://nexatom-research.github.io/nexatom-downloads).
-
 ## Support
 
-If you encounter any issues or have questions, please open an [Issue](https://github.com/nexatom-research/nexatom-downloads/issues) on GitHub.
+If you encounter a bug, need to report an issue with the SDK, or have questions about integrating the API, please open an **[Issue](https://github.com/nexatom-research/nexatom-downloads/issues)** on this repository.
+
+For custom instrumentation discussions or hardware support, please [contact us directly](https://www.nexatom.in/).
 
 ## License
 
-[Add your license information here]
+This SDK and its documentation are provided under the Nexatom End-User License Agreement. See the `LICENSE.txt` file included in your release download for full terms. Third-party components (such as FTDI and MinGW runtimes) remain under their respective licenses.
 
 ---
 
-**Last Updated:** May 28, 2026
+**Last Updated:** Sep 8, 2026
