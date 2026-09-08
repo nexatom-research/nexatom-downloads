@@ -24,7 +24,10 @@ The NexatomTT SDK provides host-side control of the UTT810 time tagger over USB 
         - [Realtime CPS and telemetry streaming](docs/01_getting_started/1_2_quick_start.md#realtime-cps-and-telemetry-streaming)
         - [Raw time-tag capture and CSV export](docs/01_getting_started/1_2_quick_start.md#raw-time-tag-capture-and-csv-export)
         - [Live TIHI and MFCO plotting](docs/01_getting_started/1_2_quick_start.md#live-tihi-and-mfco-plotting)
-    * Programming Languages (Drafting...)
+    * [Programming Languages](docs/01_getting_started/1_3_programming.md)
+        - [C / C++ integration](docs/01_getting_started/1_3_programming.md#c-cpp-integration)
+        - [Python integration](docs/01_getting_started/1_3_programming.md#python-integration)
+        - [FFI / Foreign language bindings](docs/01_getting_started/1_3_programming.md#ffi-foreign-language-bindings)
     * Firmware Management (Drafting...)
 
 ## Downloads
