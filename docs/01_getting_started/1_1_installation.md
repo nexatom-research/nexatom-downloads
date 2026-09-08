@@ -15,7 +15,7 @@ No compiler, build system, or `pip install` step is required. The Python wrapper
 
 ---
 
-### FTDI D3XX driver installation
+### [FTDI D3XX driver installation](1_1_installation.md#ftdi-d3xx-driver-installation)
 
 The UTT810 communicates with the host PC through an FTDI FT60x USB 3.0 controller. The host-side FTDI D3XX driver must be installed before the SDK can access the device.
 
