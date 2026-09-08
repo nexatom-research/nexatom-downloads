@@ -12,11 +12,16 @@ The NexatomTT SDK provides host-side control of the UTT810 time tagger over USB 
 
 ## [Documentation](https://nexatom-research.github.io/nexatom-downloads)
 
-* **[Chapter 1: Getting Started](docs/01_getting_started/index.md)**
-    * [1.1 Installation Guide](docs/01_getting_started/1_1_installation.md)
-    * [1.2 Quick Start Workflow](docs/01_getting_started/1_2_quick_start.md)
-    * *1.3 Programming Languages (Drafting...)*
-    * *1.4 Firmware Management (Drafting...)*
+* **[Getting Started](docs/01_getting_started/index.md)**
+    * [Installation Guide](docs/01_getting_started/1_1_installation.md)
+      - [System requirements](docs/01_getting_started/1_1_installation.md#system-requirements)
+      - [FTDI D3XX driver installation](docs/01_getting_started/1_1_installation.md#ftdi-d3xx-driver-installation)
+      - [SDK package contents](docs/01_getting_started/1_1_installation.md#sdk-package-contents)
+      - [Verifying the installation](docs/01_getting_started/1_1_installation.md#verifying-the-installation)
+      - [SDK home discovery](docs/01_getting_started/1_1_installation.md#sdk-home-discovery)
+    * [Quick Start Workflow](docs/01_getting_started/1_2_quick_start.md)
+    * Programming Languages (Drafting...)
+    * Firmware Management (Drafting...)
 
 ## Downloads
 

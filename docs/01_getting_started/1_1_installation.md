@@ -1,6 +1,6 @@
 # Installation Guide
 
-### System requirements
+### [System requirements](1_1_installation.md#system-requirements)
 
 | Requirement | Detail |
 |---|---|
@@ -35,7 +35,7 @@ Select the **Windows** driver package for your architecture (x64).
 
 ---
 
-### SDK package contents
+### [SDK package contents](1_1_installation.md#sdk-package-contents)
 
 Extract the SDK archive. The resulting directory contains the following files:
 
@@ -73,7 +73,7 @@ For C/C++ consumers, ensure the SDK root is on the DLL search path (e.g., place 
 
 ---
 
-### Verifying the installation
+### [Verifying the installation](1_1_installation.md#verifying-the-installation)
 
 Two verification steps confirm the SDK is correctly installed: a DLL load smoke test and a version info query. Neither requires connected hardware.
 
@@ -131,7 +131,7 @@ nexatom_error_code_t rc = nexatom_tt_get_library_info(info, sizeof(info));
 
 ---
 
-### SDK home discovery
+### [SDK home discovery](1_1_installation.md#sdk-home-discovery)
 
 The Python wrapper must locate the directory containing `nexatomTT.dll` at initialization time. This directory is called the **SDK home**. The `NexatomLibrary` constructor resolves it through the following precedence chain:
 
