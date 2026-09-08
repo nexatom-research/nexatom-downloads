@@ -2,7 +2,7 @@
 
 The UTT810 stores runtime firmware in flash memory slots managed by an on-device bootloader. The SDK provides a complete field-update workflow for loading firmware images, managing slots, and booting runtime firmware.
 
-### [Firmware image format]()
+### [Firmware image format](1_4_firmware.md#firmware-image-format)
 
 Firmware images use a strict filename convention:
 
@@ -28,7 +28,7 @@ name, version = path.stem.rsplit("_", 1)
 
 Firmware images that do not match this convention are rejected with `ValueError` before any flash write is attempted.
 
-### [Firmware manifest]()
+### [Firmware manifest](1_4_firmware.md#firmware-manifest)
 
 The SDK ships firmware images with a JSON manifest at `firmware/firmware_manifest.json`:
 
@@ -61,7 +61,7 @@ The SDK ships firmware images with a JSON manifest at `firmware/firmware_manifes
 
 Use the `sha256` field to verify image integrity before loading. The SDK does not perform automatic hash verification — the caller is responsible for validating the checksum if required.
 
-### [Field update workflow]()
+### [Field update workflow](1_4_firmware.md#field-update-workflow)
 
 A field update follows a multi-phase state machine managed by the native library. The `nexatom_tt_load_field_update_image()` function drives all phases synchronously and reports progress via an optional callback.
 
@@ -138,7 +138,7 @@ typedef void (*nexatom_field_update_progress_callback_t)(
 | `slot_state` | `uint32` | Current slot state |
 | `slot_is_default` | `uint32` | Whether target slot is default |
 
-### [Loading a firmware image]()
+### [Loading a firmware image](1_4_firmware.md#loading-a-firmware-image)
 
 #### CLI reference (`field_update_e2e.py`)
 
@@ -240,7 +240,7 @@ nexatom_error_code_t rc = nexatom_tt_load_field_update_image(
 
 > **Note.** `nexatom_tt_load_field_update_image()` is **synchronous**. It blocks until the entire load/program/verify sequence completes or fails. The progress callback executes on the calling thread. Ensure the calling thread is not a UI or event loop thread.
 
-### [Slot management]()
+### [Slot management](1_4_firmware.md#slot-management)
 
 The UTT810 bootloader manages a table of firmware flash slots. Each slot can hold one firmware image.
 
@@ -346,7 +346,7 @@ from nexatomtt import select_runtime_slot
 slot_index = select_runtime_slot(status, slots, preferred_slot=None)
 ```
 
-### [Safety precautions]()
+### [Safety precautions](1_4_firmware.md#safety-precautions)
 
 > **CAUTION.** Firmware programming writes directly to on-device flash memory. Improper operation can render the device unbootable.
 

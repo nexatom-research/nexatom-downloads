@@ -29,6 +29,12 @@ The NexatomTT SDK provides host-side control of the UTT810 time tagger over USB 
         - [Python integration](docs/01_getting_started/1_3_programming.md#python-integration)
         - [FFI / Foreign language bindings](docs/01_getting_started/1_3_programming.md#ffi-foreign-language-bindings)
     * [Firmware Management](docs/01_getting_started/1_4_firmware.md)
+        - [Firmware image format](docs/01_getting_started/1_4_firmware.md#firmware-image-format)
+        - [Firmware manifest](docs/01_getting_started/1_4_firmware.md#firmware-manifest)
+        - [Field update workflow](docs/01_getting_started/1_4_firmware.md#field-update-workflow)
+        - [Loading a firmware image](docs/01_getting_started/1_4_firmware.md#loading-a-firmware-image)
+        - [Slot management](docs/01_getting_started/1_4_firmware.md#slot-management)
+        - [Safety precautions](docs/01_getting_started/1_4_firmware.md#safety-precautions)
 
 ## Downloads
 
