@@ -35,6 +35,23 @@ The NexatomTT SDK provides host-side control of the UTT810 time tagger over USB 
         - [Loading a firmware image](docs/01_getting_started/1_4_firmware.md#loading-a-firmware-image)
         - [Slot management](docs/01_getting_started/1_4_firmware.md#slot-management)
         - [Safety precautions](docs/01_getting_started/1_4_firmware.md#safety-precautions)
+* **[Hardware](docs/02_hardware/index.md)**
+    * [Operating Conditions](docs/02_hardware/2_1_operating_conditions.md)
+        - [USB 3.0 data connection](docs/02_hardware/2_1_operating_conditions.md#usb-data-connection)
+        - [Device discovery and enumeration](docs/02_hardware/2_1_operating_conditions.md#device-discovery-and-enumeration)
+        - [Connection management and state machine](docs/02_hardware/2_1_operating_conditions.md#connection-management-and-state-machine)
+        - [Hardware protocol modes](docs/02_hardware/2_1_operating_conditions.md#hardware-protocol-modes)
+    * [Input Channels](docs/02_hardware/2_2_input_channels.md)
+    * [Data Connection](docs/02_hardware/2_3_data_connection.md)
+    * [Calibration](docs/02_hardware/2_4_calibration.md)
+    * [LEDs](docs/02_hardware/2_5_leds.md)
+    * [Test Signal](docs/02_hardware/2_6_test_signal.md)
+    * [Synthetic Input Delay](docs/02_hardware/2_7_synthetic_input_delay.md)
+    * [System Control](docs/02_hardware/2_8_system_control.md)
+    * [Counts per Second (CPS)](docs/02_hardware/2_9_cps_configuration.md)
+    * [Telemetry](docs/02_hardware/2_10_telemetry.md)
+    * [Bootloader Handoff](docs/02_hardware/211-bootloader-handoff)
+    * [External Clock Input](docs/02_hardware/2_12_external_clock_input.md)
 
 ## Downloads
 
