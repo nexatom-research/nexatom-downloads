@@ -64,11 +64,13 @@ The NexatomTT SDK provides host-side control of the UTT810 time tagger over USB 
         - [*Configuring test pulse parameters*](docs/02_hardware/2_6_test_signal.md#configuring-test-pulse-parameters)
     * [Synthetic Input Delay](docs/02_hardware/2_7_synthetic_input_delay.md)
         - [*Per-channel input delay configuration*](docs/02_hardware/2_7_synthetic_input_delay.md#per-channel-input-delay-configuration)
-    * [System Control](docs/02_hardware/2_8_system_control.md)
-    * [Counts per Second (CPS)](docs/02_hardware/2_9_cps_configuration.md)
-    * [Telemetry](docs/02_hardware/2_10_telemetry.md)
-    * [Bootloader Handoff](docs/02_hardware/211-bootloader-handoff)
-    * [External Clock Input](docs/02_hardware/2_12_external_clock_input.md)
+    * [External Clock Input](docs/02_hardware/2_8_external_clock.md)
+        - [*Requesting external sync-clock operation*](docs/02_hardware/2_8_external_clock.md#requesting-external-sync-clock-operation)
+        - [*Sync-clock status monitoring via telemetry*](docs/02_hardware/2_8_external_clock.md#sync-clock-status-monitoring-via-telemetry)
+    * [System Control](docs/02_hardware/2_9_system_control.md)
+    * [Counts per Second (CPS)](docs/02_hardware/2_10_cps_configuration.md)
+    * [Telemetry](docs/02_hardware/2_11_telemetry.md)
+    * [Runtime / Bootloader Handoff](docs/02_hardware/2_12_runtime_handoff)
 
 ## Downloads
 
