@@ -63,6 +63,7 @@ The NexatomTT SDK provides host-side control of the UTT810 time tagger over USB 
         - [*Enabling the internal test pulse generator*](docs/02_hardware/2_6_test_signal.md#enabling-the-internal-test-pulse-generator)
         - [*Configuring test pulse parameters*](docs/02_hardware/2_6_test_signal.md#configuring-test-pulse-parameters)
     * [Synthetic Input Delay](docs/02_hardware/2_7_synthetic_input_delay.md)
+        - [*Per-channel input delay configuration*](docs/02_hardware/2_7_synthetic_input_delay.md#per-channel-input-delay-configuration)
     * [System Control](docs/02_hardware/2_8_system_control.md)
     * [Counts per Second (CPS)](docs/02_hardware/2_9_cps_configuration.md)
     * [Telemetry](docs/02_hardware/2_10_telemetry.md)
