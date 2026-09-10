@@ -52,6 +52,10 @@ The NexatomTT SDK provides host-side control of the UTT810 time tagger over USB 
         - [*Output data type modes*](docs/02_hardware/2_3_data_connection.md#output-data-type-modes)
         - [*Performance monitoring*](docs/02_hardware/2_3_data_connection.md#performance-monitoring)
     * [Calibration](docs/02_hardware/2_4_calibration.md)
+        - [Manual calibration trigger](docs/02_hardware/2_4_calibration.md#manual-calibration-trigger)
+        - [Auto-calibration configuration](docs/02_hardware/2_4_calibration.md#auto-calibration-configuration)
+        - [Calibration status via telemetry](docs/02_hardware/2_4_calibration.md#calibration-status-via-telemetry)
+        - [Calibration data structure](docs/02_hardware/2_4_calibration.md#calibration-data-structure)
     * [LEDs](docs/02_hardware/2_5_leds.md)
     * [Test Signal](docs/02_hardware/2_6_test_signal.md)
     * [Synthetic Input Delay](docs/02_hardware/2_7_synthetic_input_delay.md)
@@ -77,4 +81,4 @@ This SDK and its documentation are provided under the Nexatom End-User License A
 
 ---
 
-**Last Updated:** Sep 8, 2026
+**Last Updated:** Sep 10, 2026
