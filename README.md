@@ -75,7 +75,11 @@ The NexatomTT SDK provides host-side control of the UTT810 time tagger over USB 
         - [*CPS integration window selection*](docs/02_hardware/2_10_cps_configuration.md#cps-integration-window-selection)
         - [*CPS data structure*](docs/02_hardware/2_10_cps_configuration.md#cps-data-structure)
     * [Telemetry](docs/02_hardware/2_11_telemetry.md)
-        - 
+        - [*Telemetry modes*](docs/02_hardware/2_11_telemetry.md#telemetry-modes)
+        - [*Requesting telemetry on-demand*](docs/02_hardware/2_11_telemetry.md#requesting-telemetry-on-demand)
+        - [*Polling latest telemetry*](docs/02_hardware/2_11_telemetry.md#polling-latest-telemetry)
+        - [*Telemetry data fields*](docs/02_hardware/2_11_telemetry.md#telemetry-data-fields)
+        - [*Configuration register dump*](docs/02_hardware/2_11_telemetry.md#configuration-register-dump)
     * [Runtime / Bootloader Handoff](docs/02_hardware/2_12_runtime_handoff)
 
 ## Downloads
