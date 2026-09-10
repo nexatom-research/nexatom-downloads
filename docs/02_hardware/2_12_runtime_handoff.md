@@ -29,6 +29,8 @@ Upon receiving a service entry request, the runtime firmware halts data acquisit
 
 Because the UTT810 may power on in either mode (depending on default slot settings and previous state), host applications must robustly orchestrate the boot sequence to ensure the device is in `RUNTIME` mode before commencing acquisition.
 
+*(Note: While the Python SDK abstracts the boot orchestration, C applications must manually implement the USB polling loop using `nexatom_tt_boot_field_update_slot()`.)*
+
 In the Python SDK, this sequence is abstracted by the `open_runtime_device()` context manager located in the `nexatomtt.runtime_boot` module.
 
 #### Configuration (`RuntimeBootOptions`)
