@@ -108,7 +108,12 @@ The NexatomTT SDK provides host-side control of the UTT810 time tagger over USB 
 * **[Application Programming Interface](docs/05_api_reference/index.md)**
     * *(Drafting...)*
 * **[In-Depth Guides](docs/06_in_depth_guides/index.md)**
-    * *(Drafting...)*
+    * [File Saving and Data Export](docs/06_in_depth_guides/6_1_file_saving_and_data_export.md)
+    * [Offline Time-Tag Binary Decoder](docs/06_in_depth_guides/6_2_offline_time_tag_binary_decoder.md)
+    * [Logging System](docs/06_in_depth_guides/6_3_logging_system.md)
+    * [Curve Fitting and Analysis Pipelines](docs/06_in_depth_guides/6_4_curve_fitting_and_analysis_pipelines.md)
+    * [Callback Thread Safety and Data Lifetime](docs/06_in_depth_guides/6_5_callback_thread_safety_and_data_lifetime.md)
+    * [Bootloader-First Device Startup](docs/06_in_depth_guides/6_6_bootloader_first_device_startup.md)
 * **[C API Complete Function Reference](docs/07_c_api/index.md)**
     * *(Drafting...)*
 * **[Safety, Compliance, and Legal](docs/08_safety_compliance/index.md)**
