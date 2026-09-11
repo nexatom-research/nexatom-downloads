@@ -17,6 +17,26 @@ Data acquisition relies on a pipelined threading architecture to prevent hardwar
 3.  **ProcessingThread:** A routing thread aggregates the decoded data structures into their respective software modules (e.g., TIHI, MFCO, CPS).
 4.  **Callbacks:** Finally, completed data payloads are dispatched asynchronously to the host application via registered callback functions.
 
+```mermaid
+flowchart TD
+    subgraph Hardware ["Hardware Level"]
+        A["UTT810 USB 3.0 Endpoint"]
+    end
+    subgraph SDK ["nexatomTT.dll (Native C++ SDK)"]
+        B["FTDI D3XX Kernel Driver"]
+        C["Decoder Thread"]
+        D["ProcessingThread (Router)"]
+    end
+    subgraph Host ["Host Language (Python / User Space)"]
+        E["Registered Callback Function"]
+    end
+    
+    A -->|Raw Bulk Transfers| B
+    B -->|Circular Buffers| C
+    C -->|Decoded Events| D
+    D -.->|Async Dispatch (Pass-by-Value)| E
+```
+
 ### [Thread safety model](index.md#thread-safety-model)
 
 The native SDK library is inherently thread-safe. All configuration, system control, and lifecycle API functions are internally guarded by mutexes. It is safe to invoke `nexatom_tt_` functions from multiple host threads concurrently.
