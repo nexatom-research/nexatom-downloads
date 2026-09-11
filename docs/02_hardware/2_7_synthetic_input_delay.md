@@ -2,6 +2,13 @@
 
 Small, programmable synthetic delays can be applied to individual input channels. This feature is typically used to compensate for differing external cable lengths or to temporally align the arrival of correlated signals prior to multi-channel coincidence processing.
 
+```mermaid
+flowchart LR
+    A["Discriminator"] --> B["Edge Detector"]
+    B --> C{"Synthetic Delay Block<br/>(0 - 4000 ps)"}
+    C --> D["FPGA Data Shuffler &<br/>Coincidence Engines"]
+```
+
 ### [Per-channel input delay configuration](2_7_synthetic_input_delay.md#per-channel-input-delay-configuration)
 
 The synthetic input delay is applied dynamically within the FPGA logic immediately following the discriminator.
