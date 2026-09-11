@@ -25,8 +25,8 @@ python python\examples\version_info.py
 **Expected Output:**
 
 ```text
-0.1.0-preview.6
-NexatomTT SDK Core v0.1.0-preview.6 (windows-x64)
+1.0.0
+NexatomTT Library v1.0.0 - Built with C++17
 ```
 
 To run the broader smoke test, which includes command-line argument parsing for explicit SDK paths:
@@ -38,6 +38,6 @@ python python\examples\load_smoke.py --home .
 **Expected Output:**
 
 ```text
-Loaded NexatomTT 0.1.0-preview.6
+Loaded NexatomTT 1.0.0
 Python bindings are available for discovery, lifecycle, and realtime callbacks.
 ```
