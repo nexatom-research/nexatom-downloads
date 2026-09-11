@@ -34,7 +34,7 @@ flowchart TD
     A -->|Raw Bulk Transfers| B
     B -->|Circular Buffers| C
     C -->|Decoded Events| D
-    D -.->|Async Dispatch (Pass-by-Value)| E
+    D -.->|Async Dispatch by Value| E
 ```
 
 ### [Thread safety model](index.md#thread-safety-model)
