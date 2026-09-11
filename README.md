@@ -92,6 +92,20 @@ The NexatomTT SDK provides host-side control of the UTT810 time tagger over USB 
     * [Live TIHI and MFCO Plotting](docs/03_tutorials/3_5_live_tihi_and_mfco_plotting.md)
     * [Runtime ↔ Bootloader Handoff Validation](docs/03_tutorials/3_6_runtime_bootloader_handoff_validation.md)
     * [End-to-End Firmware Field Update](docs/03_tutorials/3_7_end_to_end_firmware_field_update.md)
+* **[Software Overview](docs/04_software_overview/index.md)**
+    * [Architecture and Data Flow](docs/04_software_overview/index.md#architecture-and-data-flow)
+        - [*Native library*](docs/04_software_overview/index.md#native-library)
+        - [*Data pipeline*](docs/04_software_overview/index.md#data-pipeline)
+        - [*Thread safety model*](docs/04_software_overview/index.md#thread-safety-model)
+        - [*Memory management*](docs/04_software_overview/index.md#memory-management)
+    * [Precompiled Libraries and Language Bindings](docs/04_software_overview/index.md#precompiled-libraries-and-language-bindings)
+        - [*Native DLL and runtime dependencies*](docs/04_software_overview/index.md#native-dll-and-runtime-dependencies)
+        - [*Python package (`nexatomtt`)*](docs/04_software_overview/index.md#python-package-nexatomtt)
+    * [C API](docs/04_software_overview/index.md#c-api)
+        - [*Header organization*](docs/04_software_overview/index.md#header-organization)
+        - [*Error handling convention*](docs/04_software_overview/index.md#error-handling-convention)
+        - [*Opaque handle pattern*](docs/04_software_overview/index.md#opaque-handle-pattern)
+* **[Application Programming Interface](docs/05_api_reference/index.md)**
 
 ## Downloads
 
