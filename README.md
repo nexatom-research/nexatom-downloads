@@ -106,6 +106,15 @@ The NexatomTT SDK provides host-side control of the UTT810 time tagger over USB 
         - [*Error handling convention*](docs/04_software_overview/index.md#error-handling-convention)
         - [*Opaque handle pattern*](docs/04_software_overview/index.md#opaque-handle-pattern)
 * **[Application Programming Interface](docs/05_api_reference/index.md)**
+    * *(Drafting...)*
+* **[In-Depth Guides](docs/06_in_depth_guides/index.md)**
+    * *(Drafting...)*
+* **[C API Complete Function Reference](docs/07_c_api/index.md)**
+    * *(Drafting...)*
+* **[Safety, Compliance, and Legal](docs/08_safety_compliance/index.md)**
+    * [License](docs/08_safety_compliance/index.md#license)
+    * [Third-Party Notices](docs/08_safety_compliance/index.md#third-party-notices)
+    * [Firmware Safety Notice](docs/08_safety_compliance/index.md#firmware-safety-notice)
 
 ## Downloads
 
