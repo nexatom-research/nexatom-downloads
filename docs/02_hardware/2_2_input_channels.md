@@ -2,6 +2,15 @@
 
 The UTT810 features 8 independent input channels with configurable discriminator logic. All input channel configurations are applied directly to the FPGA hardware registers.
 
+```mermaid
+flowchart LR
+    A["Analog Input<br/>(SMA)"] --> B["Discriminator<br/>(Threshold)"]
+    B --> C["Hysteresis<br/>Filter"]
+    C --> D["Edge Detector<br/>(Rising/Falling)"]
+    D --> E["Channel Routing<br/>Matrix"]
+    E --> F["FPGA TDC"]
+```
+
 > **Python Wrapper Support.** Advanced input configurations (edge type, hysteresis, and routing) are currently only exposed in the native C API. They are not yet wrapped in the `NexatomDevice` Python class.
 
 ### [Channel count and indexing](2_2_input_channels.md#channel-count-and-indexing)
