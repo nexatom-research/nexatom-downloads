@@ -113,7 +113,12 @@ The NexatomTT SDK provides host-side control of the UTT810 time tagger over USB 
         - [*Processed data file saving (`REALTIME_DATA` mode)*](docs/06_in_depth_guides/6_1_file_saving_and_data_export.md#processed-data-file-saving)
         - [*NXTT binary file format*](docs/06_in_depth_guides/6_1_file_saving_and_data_export.md#nxtt-binary-file-format)
     * [Offline Time-Tag Binary Decoder](docs/06_in_depth_guides/6_2_offline_time_tag_binary_decoder.md)
+        - [*Single-file reader*](docs/06_in_depth_guides/6_2_offline_time_tag_binary_decoder.md#single-file-reader)
+        - [*Series reader (multi-file sequences)*](docs/06_in_depth_guides/6_2_offline_time_tag_binary_decoder.md#series-reader-multi-file-sequences)
+        - [*Reading tags and header*](docs/06_in_depth_guides/6_2_offline_time_tag_binary_decoder.md#reading-tags-and-header)
+        - [*CSV export*](docs/06_in_depth_guides/6_2_offline_time_tag_binary_decoder.md#csv-export)
     * [Logging System](docs/06_in_depth_guides/6_3_logging_system.md)
+        - 
     * [Curve Fitting and Analysis Pipelines](docs/06_in_depth_guides/6_4_curve_fitting_and_analysis_pipelines.md)
     * [Callback Thread Safety and Data Lifetime](docs/06_in_depth_guides/6_5_callback_thread_safety_and_data_lifetime.md)
     * [Bootloader-First Device Startup](docs/06_in_depth_guides/6_6_bootloader_first_device_startup.md)
