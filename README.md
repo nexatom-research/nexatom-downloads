@@ -131,6 +131,9 @@ The NexatomTT SDK provides host-side control of the UTT810 time tagger over USB 
         - [*Fluorescence Correlation Spectroscopy (FCS) analysis*](docs/06_in_depth_guides/6_4_curve_fitting_and_analysis_pipelines.md#fluorescene-correlation-spectroscopy-analysis)
         - [*Diffuse Correlation Spectroscopy (DCS) analysis*](docs/06_in_depth_guides/6_4_curve_fitting_and_analysis_pipelines.md#diffuse-correlation-spectroscopy-analysis)
     * [Callback Thread Safety and Data Lifetime](docs/06_in_depth_guides/6_5_callback_thread_safety_and_data_lifetime.md)
+        - [*Pass-by-value callback semantics*](docs/06_in_depth_guides/6_5_callback_thread_safety_and_data_lifetime.md#pass-by-value-callback-semantics)
+        - [*Python callback reference management*](docs/06_in_depth_guides/6_5_callback_thread_safety_and_data_lifetime.md#python-callback-reference-management)
+        - [*Callback registration and clearing*](docs/06_in_depth_guides/6_5_callback_thread_safety_and_data_lifetime.md#callback-registration-and-clearing)
     * [Bootloader-First Device Startup](docs/06_in_depth_guides/6_6_bootloader_first_device_startup.md)
 * **[C API Complete Function Reference](docs/07_c_api/index.md)**
     * *(Drafting...)*
