@@ -135,6 +135,10 @@ The NexatomTT SDK provides host-side control of the UTT810 time tagger over USB 
         - [*Python callback reference management*](docs/06_in_depth_guides/6_5_callback_thread_safety_and_data_lifetime.md#python-callback-reference-management)
         - [*Callback registration and clearing*](docs/06_in_depth_guides/6_5_callback_thread_safety_and_data_lifetime.md#callback-registration-and-clearing)
     * [Bootloader-First Device Startup](docs/06_in_depth_guides/6_6_bootloader_first_device_startup.md)
+        - [`open_runtime_device()` context manager](docs/06_in_depth_guides/6_6_bootloader_first_device_startup.md#context-manager)
+        - [Slot selection strategy](docs/06_in_depth_guides/6_6_bootloader_first_device_startup.md#slot-selection-strategy)
+        - [USB re-enumeration and identity matching](docs/06_in_depth_guides/6_6_bootloader_first_device_startup.md#usb-re-enumeration-and-identity-matching)
+        - [Error recovery and timeout configuration](docs/06_in_depth_guides/6_6_bootloader_first_device_startup.md#error-recovery-and-timeout-configuration)
 * **[C API Complete Function Reference](docs/07_c_api/index.md)**
     * *(Drafting...)*
 * **[Safety, Compliance, and Legal](docs/08_safety_compliance/index.md)**
