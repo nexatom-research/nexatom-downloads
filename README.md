@@ -106,7 +106,14 @@ The NexatomTT SDK provides host-side control of the UTT810 time tagger over USB 
         - [*Error handling convention*](docs/04_software_overview/index.md#error-handling-convention)
         - [*Opaque handle pattern*](docs/04_software_overview/index.md#opaque-handle-pattern)
 * **[Application Programming Interface](docs/05_api_reference/index.md)**
-    * *(Drafting...)*
+    * [The NexatomTT Library](docs/05_api_reference/5_1_nexatomtt_library.md)
+        - [*Constants and limits*](docs/05_api_reference/5_1_nexatomtt_library.md#constants-and-limits)
+        - [*Error codes (`nexatom_error_code_t`)*](docs/05_api_reference/5_1_nexatomtt_library.md#error-codes)
+        - [*Device states (`nexatom_tt_state_t`)*](docs/05_api_reference/5_1_nexatomtt_library.md#device-states)
+        - [*Aggregation modes (`nexatom_aggregation_mode_t`)*](docs/05_api_reference/5_1_nexatomtt_library.md#aggregation-modes)
+        - [*Acquisition done status (`nexatom_acquisition_done_status_t`)*](docs/05_api_reference/5_1_nexatomtt_library.md#acquisition-done-status)
+    * [NexatomTT Classes](docs/05_api_reference/5_2_nexatomtt_classes.md)
+        - []
 * **[In-Depth Guides](docs/06_in_depth_guides/index.md)**
     * [File Saving and Data Export](docs/06_in_depth_guides/6_1_file_saving_and_data_export.md)
         - [*Raw time-tag file saving (`RAW_TAGS` mode)*](docs/06_in_depth_guides/6_1_file_saving_and_data_export.md#raw-time-tag-file-saving)
@@ -142,9 +149,9 @@ The NexatomTT SDK provides host-side control of the UTT810 time tagger over USB 
 * **[C API Complete Function Reference](docs/07_c_api/index.md)**
     * *(Drafting...)*
 * **[Safety, Compliance, and Legal](docs/08_safety_compliance/index.md)**
-    * [License](docs/08_safety_compliance/index.md#license)
-    * [Third-Party Notices](docs/08_safety_compliance/index.md#third-party-notices)
-    * [Firmware Safety Notice](docs/08_safety_compliance/index.md#firmware-safety-notice)
+    * [*License*](docs/08_safety_compliance/index.md#license)
+    * [*Third-Party Notices*](docs/08_safety_compliance/index.md#third-party-notices)
+    * [*Firmware Safety Notice*](docs/08_safety_compliance/index.md#firmware-safety-notice)
 
 ## Downloads
 
