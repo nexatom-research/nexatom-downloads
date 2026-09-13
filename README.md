@@ -113,7 +113,11 @@ The NexatomTT SDK provides host-side control of the UTT810 time tagger over USB 
         - [*Aggregation modes (`nexatom_aggregation_mode_t`)*](docs/05_api_reference/5_1_nexatomtt_library.md#aggregation-modes)
         - [*Acquisition done status (`nexatom_acquisition_done_status_t`)*](docs/05_api_reference/5_1_nexatomtt_library.md#acquisition-done-status)
     * [NexatomTT Classes](docs/05_api_reference/5_2_nexatomtt_classes.md)
-        - []
+        - [*`NexatomLibrary`*](docs/05_api_reference/5_2_nexatomtt_classes.md#nexatomlibrary)
+        - [*`NexatomDevice`*](docs/05_api_reference/5_2_nexatomtt_classes.md#nexatomdevice)
+        - [*`NexatomTimeTagReader`*](docs/05_api_reference/5_2_nexatomtt_classes.md#nexatomtimetagreader)
+        - [*`NexatomError`*](docs/05_api_reference/5_2_nexatomtt_classes.md#nexatomerror)
+        - [*Runtime Boot Classes (`nexatomtt.runtime_boot`)*](docs/05_api_reference/5_2_nexatomtt_classes.md#runtime-boot-classes)
 * **[In-Depth Guides](docs/06_in_depth_guides/index.md)**
     * [File Saving and Data Export](docs/06_in_depth_guides/6_1_file_saving_and_data_export.md)
         - [*Raw time-tag file saving (`RAW_TAGS` mode)*](docs/06_in_depth_guides/6_1_file_saving_and_data_export.md#raw-time-tag-file-saving)
