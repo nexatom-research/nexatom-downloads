@@ -8,10 +8,10 @@ Instead of parsing raw bytes manually, this decoder provides an iterator-like in
 
 | Function | Parameters (In/Out) | Returns | Description |
 | :--- | :--- | :--- | :--- |
-| `nexatom_tt_open_time_tag_file_reader` | `[In] const char* file_path`<br>`[Out] nexatom_tt_time_tag_reader_t** reader` | `nexatom_error_code_t` | Opens a single `.nxtt` file and allocates the iterator handle. |
-| `nexatom_tt_open_time_tag_series_reader`| `[In] const char** file_paths`<br>`[In] size_t count`<br>`[Out] nexatom_tt_time_tag_reader_t** reader` | `nexatom_error_code_t` | Opens a sequence of rotated `.nxtt` files and presents them sequentially as a single contiguous stream. |
+| `nexatom_tt_open_time_tag_file_reader` | `[In] const char* path`<br>`[Out] nexatom_tt_time_tag_reader_t** out_reader` | `nexatom_error_code_t` | Opens a single `.nxtt` file and allocates the iterator handle. |
+| `nexatom_tt_open_time_tag_series_reader`| `[In] const char* directory`<br>`[In] const char* series_key`<br>`[In] uint32_t seq_start`<br>`[In] uint32_t seq_end`<br>`[Out] nexatom_tt_time_tag_reader_t** out_reader` | `nexatom_error_code_t` | Opens a sequence of rotated `.nxtt` files from `directory` matching `series_key` (the base filename pattern). The `seq_start` (1-based) and `seq_end` parameters define the inclusive sequence range to load. Pass `seq_end = 0` to load all remaining contiguous files. |
 | `nexatom_tt_get_time_tag_header` | `[In] nexatom_tt_time_tag_reader_t* reader`<br>`[Out] nexatom_time_tag_file_header_t* header` | `nexatom_error_code_t` | Extracts metadata (like creation date) embedded at the top of the `.nxtt` binary. |
-| `nexatom_tt_read_time_tag_batch` | `[In] nexatom_tt_time_tag_reader_t* reader`<br>`[Out] nexatom_time_tag_t* out_tags`<br>`[In] size_t max_tags`<br>`[Out] size_t* out_count` | `nexatom_error_code_t` | Reads the next sequential block of decoded photon tags into a pre-allocated array. Reaching EOF returns a specific error code. |
+| `nexatom_tt_read_time_tag_batch` | `[In] nexatom_tt_time_tag_reader_t* reader`<br>`[Out] nexatom_time_tag_t* out_tags`<br>`[In] size_t max_tags`<br>`[Out] size_t* out_count` | `nexatom_error_code_t` | Reads the next sequential block of decoded photon tags into a pre-allocated array. Returns a specific error code on EOF. |
 | `nexatom_tt_close_time_tag_reader` | `[In] nexatom_tt_time_tag_reader_t* reader` | `void` | Closes the file handles and frees the iterator memory. Must be called to prevent memory leaks. |
 
 ### Data Structures
@@ -26,13 +26,15 @@ The fundamental 16-byte structure representing a single photon event.
 | `_padding` | `uint8_t[7]` | **Required 7-byte padding** to ensure strict 16-byte alignment across all C++ standard library implementations. |
 
 #### `nexatom_time_tag_file_header_t`
-Parsed from the top 32 bytes of the binary.
+Parsed from the top of the binary file. Note the FFI alignment padding fields.
 
 | Field | Type | Description |
 | :--- | :--- | :--- |
-| `magic` | `char[5]` | Strictly `"NXTT\0"`. |
+| `magic` | `char[5]` | File format identifier: `"NXTT\0"` (null-terminated). |
+| `_padding0` | `uint8_t[3]` | FFI alignment padding after magic. |
 | `created_timestamp_us` | `uint64_t` | POSIX Unix epoch timestamp (in microseconds) of when the file was created. |
 | `output_data_type` | `uint32_t` | Echoes the active mode from `nexatom_output_data_type_t` when the file was recorded. |
+| `_padding1` | `uint8_t[4]` | FFI alignment padding at end of header. |
 
 ### C Example: Decoding a Run Offline
 
@@ -61,6 +63,27 @@ if (nexatom_tt_open_time_tag_file_reader("/data/run_1.nxtt", &reader) == 0) {
     
     // 4. Teardown
     free(batch);
+    nexatom_tt_close_time_tag_reader(reader);
+}
+```
+
+### C Example: Loading a Rotated Series
+
+```c
+nexatom_tt_time_tag_reader_t* reader = NULL;
+
+// Open files matching pattern "my_experiment_TAGS_*.nxtt" in /data/
+// Loads sequence numbers 1 through 10
+nexatom_error_code_t err = nexatom_tt_open_time_tag_series_reader(
+    "/data/",                // directory
+    "my_experiment_TAGS",    // series_key (base filename pattern)
+    1,                       // seq_start (1-based)
+    10,                      // seq_end (0 = all remaining)
+    &reader
+);
+
+if (err == 0) {
+    // Read batches across all 10 files seamlessly...
     nexatom_tt_close_time_tag_reader(reader);
 }
 ```
