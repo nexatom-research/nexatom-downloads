@@ -168,10 +168,10 @@ The NexatomTT SDK provides host-side control of the UTT810 time tagger over USB 
         - [*Python callback reference management*](docs/06_in_depth_guides/6_5_callback_thread_safety_and_data_lifetime.md#python-callback-reference-management)
         - [*Callback registration and clearing*](docs/06_in_depth_guides/6_5_callback_thread_safety_and_data_lifetime.md#callback-registration-and-clearing)
     * [Bootloader-First Device Startup](docs/06_in_depth_guides/6_6_bootloader_first_device_startup.md)
-        - [`open_runtime_device()` context manager](docs/06_in_depth_guides/6_6_bootloader_first_device_startup.md#context-manager)
-        - [Slot selection strategy](docs/06_in_depth_guides/6_6_bootloader_first_device_startup.md#slot-selection-strategy)
-        - [USB re-enumeration and identity matching](docs/06_in_depth_guides/6_6_bootloader_first_device_startup.md#usb-re-enumeration-and-identity-matching)
-        - [Error recovery and timeout configuration](docs/06_in_depth_guides/6_6_bootloader_first_device_startup.md#error-recovery-and-timeout-configuration)
+        - [*`open_runtime_device()` context manager*](docs/06_in_depth_guides/6_6_bootloader_first_device_startup.md#context-manager)
+        - [*Slot selection strategy*](docs/06_in_depth_guides/6_6_bootloader_first_device_startup.md#slot-selection-strategy)
+        - [*USB re-enumeration and identity matching*](docs/06_in_depth_guides/6_6_bootloader_first_device_startup.md#usb-re-enumeration-and-identity-matching)
+        - [*Error recovery and timeout configuration*](docs/06_in_depth_guides/6_6_bootloader_first_device_startup.md#error-recovery-and-timeout-configuration)
 * **[C API Complete Function Reference](docs/07_c_api/index.md)**
     * [Library Version and Error Handling](docs/07_c_api/7_1_library_version.md)
     * [Logging Configuration](docs/07_c_api/7_2_logging_config.md)
@@ -192,9 +192,9 @@ The NexatomTT SDK provides host-side control of the UTT810 time tagger over USB 
     * [File Saving](docs/07_c_api/7_17_file_saving.md)
     * [Time Tag Binary Decoder](docs/07_c_api/7_18_binary_decoder.md)
 * **[Safety, Compliance, and Legal](docs/08_safety_compliance/index.md)**
-    * [*License*](docs/08_safety_compliance/index.md#license)
-    * [*Third-Party Notices*](docs/08_safety_compliance/index.md#third-party-notices)
-    * [*Firmware Safety Notice*](docs/08_safety_compliance/index.md#firmware-safety-notice)
+    * [License](docs/08_safety_compliance/index.md#license)
+    * [Third-Party Notices](docs/08_safety_compliance/index.md#third-party-notices)
+    * [Firmware Safety Notice](docs/08_safety_compliance/index.md#firmware-safety-notice)
 
 ## Downloads
 
