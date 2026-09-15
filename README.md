@@ -80,7 +80,7 @@ The NexatomTT SDK provides host-side control of the UTT810 time tagger over USB 
         - [*Polling latest telemetry*](docs/02_hardware/2_11_telemetry.md#polling-latest-telemetry)
         - [*Telemetry data fields*](docs/02_hardware/2_11_telemetry.md#telemetry-data-fields)
         - [*Configuration register dump*](docs/02_hardware/2_11_telemetry.md#configuration-register-dump)
-    * [Runtime / Bootloader Handoff](docs/02_hardware/2_12_runtime_handoff)
+    * [Runtime / Bootloader Handoff](docs/02_hardware/2_12_runtime_handoff.md)
         - [*Service entry for field upgrades*](docs/02_hardware/2_12_runtime_handoff.md#service-entry-for-field-upgrades)
         - [*Bootloader-first boot orchestration*](docs/02_hardware/2_12_runtime_handoff.md#bootloader-first-boot-orchestration)
         - [*Post-boot USB re-enumeration and device identity*](docs/02_hardware/2_12_runtime_handoff.md#post-boot-usb-re-enumeration-and-device-identity)

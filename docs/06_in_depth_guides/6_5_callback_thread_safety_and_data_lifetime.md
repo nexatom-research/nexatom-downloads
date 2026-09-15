@@ -22,7 +22,7 @@ The `NexatomDevice` wrapper class safely encapsulates this lifecycle:
 
 ### [Callback registration and clearing](6_5_callback_thread_safety_and_data_lifetime.md#callback-registration-and-clearing)
 
-The SDK exposes 9 distinct registration functions to assign function pointers for specific data endpoints:
+The C API exposes 9 distinct registration functions to assign function pointers for specific data endpoints:
 *   `nexatom_tt_set_time_histogram_callback()`
 *   `nexatom_tt_set_multifold_coincidence_callback()`
 *   `nexatom_tt_set_count_rate_callback()`
@@ -32,5 +32,7 @@ The SDK exposes 9 distinct registration functions to assign function pointers fo
 *   `nexatom_tt_set_config_dump_callback()`
 *   `nexatom_tt_set_connection_status_callback()`
 *   `nexatom_tt_set_log_callback()` *(Global scope, not per-device)*
+
+> **Note:** The Python `NexatomDevice` wrapper currently exposes 5 of these 9 callbacks: CPS, Telemetry, TIHI, MFCO, and Connection Status. The remaining 4 (Multi-Tau Correlation, Linear Correlation, Config Dump, and Log) are available exclusively through the C API. See Section 7.8 for the full C callback reference.
 
 To safely detach the host application from the background processing thread—especially prior to destroying a GUI window or shutting down the device—invoke `nexatom_tt_clear_callbacks()`. This synchronously blocks until all active dispatches complete, then zeroes all function pointers, guaranteeing no further code execution in the host environment.

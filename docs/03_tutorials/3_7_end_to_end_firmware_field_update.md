@@ -7,8 +7,10 @@ The most advanced SDK workflow involves writing a new firmware image into a non-
 
 ### Workflow
 
-1.  **Image Validation:** The script verifies that the provided `.bin` file exists and strictly adheres to the UTT810 firmware naming convention (e.g., `nexatomtt_fwp_utt810_*.bin`).
-2.  **Handoff Orchestration:** The script establishes a connection and checks the current protocol mode. If the device is actively acquiring data (`RUNTIME`), it halts the hardware engines and initiates the field-upgrade service entry (as detailed in Section 3.6), polling until `BOOTLOADER` mode is achieved.
+1.  **Image Validation:** The script verifies that the provided `.bin` file exists and adheres to the firmware naming convention. The SDK supports two naming formats:
+    - **Standard format:** `<NAME>_<VERSION>.bin` — where `<NAME>` is exactly 4 ASCII alphanumeric characters and `<VERSION>` is a decimal unsigned integer (e.g., `BOOT_001.bin`). This is the format used by the SDK-shipped firmware manifest.
+    - **Extended format:** `nexatomtt_fwp_<model>_<semver>_<date>.bin` — a longer descriptive format used by the Nexatom CI/CD build pipeline for pre-release and custom builds (e.g., `nexatomtt_fwp_utt810_v1.0.0_20240401.bin`). When this format is detected, the SDK extracts the embedded name and version metadata from the binary header instead of the filename.
+2.  **Handoff Orchestration:** The script establishes a connection and checks the current protocol mode. If the device is actively acquiring data (`RUNTIME`), it halts the hardware engines and initiates the field-upgrade service entry (as detailed in `Runtime ↔ Bootloader Handoff Validation`), polling until `BOOTLOADER` mode is achieved.
 3.  **Slot Safety Validation:** The script refreshes the flash table and inspects the target slot state. By default, it will abort if the user attempts to overwrite a `VALID` slot or the designated default slot without explicit command-line override flags.
 4.  **Image Streaming:** The host calls `device.load_field_update_image()`. During execution, the native thread invokes a registered Python callback passing `NexatomFieldUpdateProgress` structures. This provides granular, realtime visibility into the state machine phases (`ERASE`, `WRITE`, `VERIFY`, and `FINALIZE`).
 5.  **Post-Flash Configuration:** If requested, the script designates the newly flashed slot as the default boot partition using `device.set_field_update_default_slot_with_status()`.
@@ -37,7 +39,7 @@ Runtime firmware detected; requesting field-upgrade service entry.
 Field-update status: slot_count=2 default_slot=0
   slot 0: state=VALID version=1 default=True name=0x00000000
   slot 1: state=EMPTY version=0 default=False name=0x00000000
-Loading nexatomtt_fwp_utt810_v0.1.0-preview.6_20240401.bin into slot 1.
+Loading nexatomtt_fwp_utt810_v1.0.0_20240401.bin into slot 1.
 Phase ERASE: 100.0% (134217728/134217728 bytes)
 Phase WRITE: 100.0% (12845056/12845056 bytes)
 Phase VERIFY: 100.0% (12845056/12845056 bytes)

@@ -54,11 +54,15 @@ This is enabled via `nexatom_tt_enable_processed_file_saving()` using `nexatom_p
 
 The `.nxtt` file format is a proprietary, zero-overhead binary container designed exclusively for raw time tags. It is uncompressed to ensure that write speeds never bottleneck the USB 3.0 stream.
 
-**1. File Header**
+**1. File Header (`nexatom_time_tag_file_header_t` — 20 bytes)**
 Every `.nxtt` file begins with a standardized metadata header:
-*   `Magic bytes`: The ASCII string `"NXTT"` (4 bytes).
-*   `Creation timestamp`: A 64-bit unsigned integer representing microseconds since the UNIX epoch.
-*   `Output data type`: A 32-bit integer verifying the payload origin.
+*   `magic` (`char[5]`): The null-terminated ASCII string `"NXTT\0"` (5 bytes).
+*   `_padding0` (`uint8_t[3]`): FFI alignment padding after the magic field.
+*   `created_timestamp_us` (`uint64_t`): A 64-bit unsigned integer representing microseconds since the UNIX epoch.
+*   `output_data_type` (`uint32_t`): Verifies the payload origin (matches `nexatom_output_data_type_t`).
+*   `_padding1` (`uint8_t[4]`): FFI alignment padding at end of header.
+
+> **Note for manual binary parsers:** The header occupies **20 bytes** on disk (not 16). The magic field is `char[5]` followed by 3 bytes of padding, giving 8 bytes before the timestamp. Account for both padding regions when seeking to the first time tag record.
 
 **2. Data Payload (Record Layout)**
 Immediately following the header, the file contains a packed array of `nexatom_time_tag_t` structs. Each record is exactly **16 bytes** long to guarantee optimal 64-bit CPU cache alignment.
