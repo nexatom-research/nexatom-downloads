@@ -88,7 +88,7 @@ python python\examples\load_smoke.py --home .
 Expected output:
 
 ```
-Loaded NexatomTT 0.1.0-preview.6
+Loaded NexatomTT 1.0.0
 Python bindings are available for discovery, lifecycle, and realtime callbacks.
 ```
 
@@ -112,7 +112,7 @@ This script calls both `nexatom_tt_get_version()` and `nexatom_tt_get_library_in
 from nexatomtt import NexatomLibrary
 
 lib = NexatomLibrary()
-print(lib.version())       # → "0.1.0-preview.6"
+print(lib.version())       # → "1.0.0"
 print(lib.library_info())  # → detailed build metadata string
 ```
 
