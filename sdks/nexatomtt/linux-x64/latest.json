@@ -3,21 +3,21 @@
   "artifactName": "nexatomtt-sdk",
   "sdkVersion": "0.1.0-preview.7",
   "channel": "preview",
-  "platform": "windows-x64",
+  "platform": "linux-x64",
   "distribution": "public-preview",
   "nativeApiVersion": "1",
   "nativeGitCommit": "f02bf1e59030578c398bbcf2ec75611d3dfbaf24",
-  "fileName": "nexatomtt-sdk-v0.1.0-preview.7-windows-x64.zip",
-  "sizeBytes": 4828195,
-  "sha256": "8d3c6d1fb4585590f5b397d481f2d292d031e38b9987eae398fed855b6a714d1",
+  "fileName": "nexatomtt-sdk-v0.1.0-preview.7-linux-x64.tar.gz",
+  "sizeBytes": 6954890,
+  "sha256": "02ad4a14e90bb4312ba62f08e733aeb72ea3b622d73857006137af65a586e4a3",
   "releaseTag": "nexatomtt-sdk-v0.1.0-preview.7",
   "releaseUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/tag/nexatomtt-sdk-v0.1.0-preview.7",
-  "downloadUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/download/nexatomtt-sdk-v0.1.0-preview.7/nexatomtt-sdk-v0.1.0-preview.7-windows-x64.zip",
+  "downloadUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/download/nexatomtt-sdk-v0.1.0-preview.7/nexatomtt-sdk-v0.1.0-preview.7-linux-x64.tar.gz",
   "packageManifestPath": "manifest.json",
   "releaseNotes": [
-    "Public preview SDK for NexatomTT on Windows x64.",
+    "Public preview SDK for NexatomTT on Linux x64, built and tested on Ubuntu 24.04 under WSL2.",
     "Includes standalone C/C++ projects and Python examples for channel setup, processed acquisition, raw time tags, saving and offline analysis.",
     "Native API owns model discovery and automatic runtime entry. ZYNQ_004 internal-pulse checks passed for service return, all six C/C++/Python processed/raw workflows, saved-file decoding, digital delay through 256 ns and close/reopen.",
-    "Single active instrument. Kintex and legacy Zynq hardware qualification for this preview and external analog validation remain pending. Firmware is supplied separately."
+    "Follow the included FTDI USB access instructions. Single active instrument; Kintex and legacy Zynq qualification for this preview and external analog validation remain pending. Firmware is supplied separately."
   ]
 }
