@@ -1,35 +1,94 @@
-# 5.5 Measurement modules
+## Measurement Modules
 
-Prepare supported controls while quiet, then explicitly enable/start the intended engines. Profile validation and native errors remain authoritative for every method below. Retain status/quality metadata when interpreting a callback.
+This section documents the advanced mathematical and analytical configuration endpoints. These methods dictate how the internal C++ solvers evaluate data (e.g., background subtraction, curve fitting, and physical modeling) before dispatching the payload to your Python callbacks.
 
-## Time histogram
+Prepare acquisition controls while output is quiet, check the native profile, then explicitly enable/start the intended engines. Analysis settings do not start hardware acquisition. Native parameter checks remain authoritative; an accepted configuration does not prove that the signal fits the chosen physical model.
 
-`set_time_histogram_channels(start_channel, stop_channel)`, `set_time_histogram_bin_width(bin_width_ps)` and `set_time_histogram_num_bins(num_bins)` configure normal TIHI. Set stop count/duration, aggregation, first-stop/bidirectional behaviour, and callback before `enable_time_histogram(True)` / `start_time_histogram()`. Background and fitting controls include `set_tihi_background_method`, `set_tihi_signal_region`, `set_tihi_background_region`, `enable_tihi_fitting`, fitting parameters and model. See [TIHI C reference](../07_c_api/7_9_tihi.md).
+<a id="time-interval-histogram-config"></a>
 
-Fast TIHI is a separate capability: `start_fast_tihi(configuration)` accepts the versioned V1/V2 configuration, `stop_fast_tihi()` stops it, and its callback carries the versioned histogram. Do not substitute it for normal TIHI based only on a model name.
+### [Time Interval Histogram (TIHI) advanced config](5_5_measurement_modules.md#time-interval-histogram-config)
 
-## Multifold coincidence
+| Method | Parameters | Returns | Description |
+| :--- | :--- | :--- | :--- |
+| `set_tihi_background_method` | `method: int` | `None` | Sets the baseline subtraction mode: `NONE`, `USER_CONSTANT`, or `USER_REGION`. |
+| `set_tihi_user_background_value` | `value: float` | `None` | Defines the static baseline subtracted from all bins if `USER_CONSTANT` is active. |
+| `set_tihi_signal_region` | `start_bin: int`, `end_bin: int` | `None` | Restricts fitting algorithms and SNR calculations to a specific Region of Interest (ROI). |
+| `set_tihi_background_region` | `start_bin: int`, `end_bin: int` | `None` | Selects background bins for `USER_REGION` subtraction. |
+| `set_tihi_fitting_parameters` | `min_counts: int`, `convergence_threshold: float`, `max_iterations: int` | `None` | Sets minimum data and convergence/iteration limits. |
+| `enable_tihi_fitting` | `enable: bool` | `None` | Activates the Levenberg-Marquardt non-linear least squares solver on the active histogram. |
+| `set_tihi_fitting_model` | `model: int` | `None` | Selects `NEXATOM_FIT_AUTO`, `NEXATOM_FIT_EXPONENTIAL`, `NEXATOM_FIT_BI_EXPONENTIAL`, `NEXATOM_FIT_GAUSSIAN`, `NEXATOM_FIT_LORENTZIAN` or `NEXATOM_FIT_STRETCHED_EXP`. |
 
-`set_multifold_coincidence_channels(channels)` accepts an iterable of channel IDs for up to eight MFCO slots. `0xff` disables a slot; omitted slots are padded with `0xff`. It does not accept a single channel bitmask or an array of enable booleans. Current returned pattern bins are analyzed in software; slot/mask metadata is not a guarantee of physical input gating.
+Configure normal TIHI with `set_time_histogram_channels(start_channel, stop_channel)`, `set_time_histogram_bin_width(bin_width_ps)`, `set_time_histogram_num_bins(num_bins)` and stop/aggregation controls. Fast TIHI is a separate capability and versioned configuration (`start_fast_tihi`, `stop_fast_tihi`), not an alternative selected solely from the device name.
 
-Set the window in ps, stop conditions, aggregation, optional pattern filter and background method, then enable/start MFCO. `set_multifold_coincidence_pattern_filter(requirements)` takes exactly eight requirements. Use documented requirement constants. See [pattern helpers](5_6_mfco_pattern_analysis_helpers.md) and [MFCO reference](../07_c_api/7_10_mfco.md).
+<a id="multi-fold-coincidence-config"></a>
 
-## Intensity correlation
+### [Multi-Fold Coincidence (MFCO) advanced config](5_5_measurement_modules.md#multi-fold-coincidence-config)
 
-Use separate `set_intensity_correlation_channel_a(channel)` and `_channel_b(channel)` methods. `set_intensity_correlation_bin_width(bin_width_in_8ns_units)` retains the public 8 ns unit; native translates for the active profile. `set_intensity_correlation_num_bins(num_bins)` configures integration sample depth, not the 80 returned lag points. Configure stop conditions and linear/multi-tau aggregation, enable the desired correlators, then start. Check normalization validity. See [correlation](../07_c_api/7_11_correlation.md).
+| Method | Parameters | Returns | Description |
+| :--- | :--- | :--- | :--- |
+| `set_multifold_coincidence_pattern_filter` | `requirements: iterable[int]` | `None` | Takes exactly eight `NEXATOM_MFCO_REQ_*` entries: `DONT_CARE`, `REQUIRED` or `FORBIDDEN`. This configures host pattern analysis. |
+| `disable_multifold_coincidence_pattern_filter` | *None* | `None` | Resets all channel requirements to `DONT_CARE`. |
+| `set_mfco_background_method` | `method: int` | `None` | Sets the noise subtraction mode: `NONE`, `USER_CONSTANT`, or `USER_SELECTED_PATTERN_BIN`. |
 
-## Scientific analysis
+The acquisition channel setter accepts channel IDs for MFCO slots (`[0, 1]`, for example), with unused slots padded with `0xff`. It does not accept a bitmask or enable booleans. Pattern/mask metadata is not proof that the hardware physically gated every unselected input. Read terminal and quality flags before computing rates from returned bins.
 
-| Analysis | Key Python signatures/units |
-| --- | --- |
-| DLS | `set_dls_fit_range(start_index, end_index)`; `set_dls_experimental_conditions(wavelength_nm, angle_deg, temperature_c, viscosity_mPa_s, refractive_index)`; bounds, cumulant enable and fitting control |
-| FCS | `set_fcs_fit_range(start_index, end_index)`; `set_fcs_confocal_volume(omega_xy_um, omega_z_um)`; `set_fcs_experimental_conditions(temperature_celsius, viscosity_mPa_s, wavelength_nm, calibration_diffusion_um2_s)` |
-| DCS | `set_dcs_fit_range(start_index, end_index)`; `set_dcs_tissue_properties(mu_a, mu_s_prime, source_detector_separation_cm)`; `set_dcs_model_parameters(anisotropy_g, tissue_n, wavelength_nm)` |
+<a id="intensity-correlation"></a>
 
-Each family has `enable_*_analysis` and fitting controls. These are host analysis models, not a guarantee of scientifically valid results from arbitrary signals. See [fitting/result validity](../06_in_depth_guides/6_4_curve_fitting_and_analysis_pipelines.md).
+### [Intensity Correlation (CORL / CORM)](5_5_measurement_modules.md#intensity-correlation)
 
-## DTC
+| Method | Parameters | Returns | Description |
+| :--- | :--- | :--- | :--- |
+| `enable_linear_correlator` | `enable: bool` | `None` | Activates the strictly linear (CORL) correlation engine. |
+| `enable_multi_tau_correlator` | `enable: bool` | `None` | Activates the quasi-logarithmic (CORM) correlation engine. |
+| `set_intensity_correlation_channel_a` | `channel: int` | `None` | Selects the first input; use `_channel_b(channel)` for the second. Equal channel IDs request autocorrelation. |
+| `set_intensity_correlation_bin_width` | `bin_width_in_8ns_units: int` | `None` | Public unit remains 8 ns. For example, 125 selects 1000 ns; native translates for the active hardware profile. |
+| `set_intensity_correlation_num_bins` | `num_bins: int` | `None` | Selects integration sample depth, not the 80 returned lag points. |
 
-For a profile authorizing DTC, use `apply_dtc_output(configuration, timeout_ms=1000)`, inspect the returned apply result, then use `set_dtc_global_enable(enable)` as intended. `get_dtc_status` and `clear_dtc_status` have separate purposes. A rejected apply raises `NexatomDtcApplyRejected` with the returned diagnostic result; do not treat a proposed configuration as applied.
+Set integration stop conditions and linear/multi-tau aggregation before enabling and starting correlators. `normalization_valid` qualifies the returned g² values; a nonempty array is not sufficient.
 
-[Python reference](index.md)
+<a id="dynamic-light-scattering-analysis"></a>
+
+### [Dynamic Light Scattering (DLS) analysis](5_5_measurement_modules.md#dynamic-light-scattering-analysis)
+
+Extracts hydrodynamic nanoparticle sizes from the CORM output via Cumulant Analysis.
+
+| Method | Parameters | Returns | Description |
+| :--- | :--- | :--- | :--- |
+| `enable_dls_analysis` | `enable: bool` | `None` | Activates the DLS fitting algorithms on the correlation data. |
+| `set_dls_experimental_conditions` | `wavelength_nm: float`, `angle_deg: float`, `temperature_c: float`, `viscosity_mPa_s: float`, `refractive_index: float` | `None` | Supplies optical and solvent parameters; temperature input is Celsius. |
+| `set_dls_fit_range` | `start_index: int`, `end_index: int` | `None` | Selects a region by correlation-array indices, not by lag times. |
+| `enable_dls_cumulant_analysis` | `enable: bool` | `None` | Enables cumulant analysis. |
+| `set_dls_fitting_control` | `tolerance: float`, `max_iterations: int`, `initial_beta: float`, `initial_baseline: float` | `None` | Sets solver limits and initial estimates. |
+
+<a id="fluorescence-correlation-spectroscopy"></a>
+
+### [Fluorescence Correlation Spectroscopy (FCS)](5_5_measurement_modules.md#fluorescence-correlation-spectroscopy)
+
+Decomposes confocal molecular diffusion kinetics and concentrations.
+
+| Method | Parameters | Returns | Description |
+| :--- | :--- | :--- | :--- |
+| `enable_fcs_analysis` | `enable: bool` | `None` | Activates the FCS decomposition solver. |
+| `set_fcs_confocal_volume` | `omega_xy_um: float`, `omega_z_um: float` | `None` | Defines the lateral/axial confocal dimensions in micrometres. |
+| `set_fcs_experimental_conditions` | `temperature_celsius: float`, `viscosity_mPa_s: float`, `wavelength_nm: float`, `calibration_diffusion_um2_s: float` | `None` | Supplies solvent, excitation and diffusion-calibration parameters. |
+| `set_fcs_fit_range` | `start_index: int`, `end_index: int` | `None` | Restricts analysis by lag-array indices. |
+| `set_fcs_fitting_control` | `tolerance: float`, `max_iterations: int`, `initial_n: float`, `initial_tau_d: float` | `None` | Sets convergence and initial estimates. |
+
+<a id="diffuse-correlation-spectroscopy"></a>
+
+### [Diffuse Correlation Spectroscopy (DCS)](5_5_measurement_modules.md#diffuse-correlation-spectroscopy)
+
+Models deep-tissue hemodynamics using the semi-infinite photon diffusion equation.
+
+| Method | Parameters | Returns | Description |
+| :--- | :--- | :--- | :--- |
+| `enable_dcs_analysis` | `enable: bool` | `None` | Activates DCS in-vivo blood flow modeling. |
+| `set_dcs_tissue_properties` | `mu_a: float`, `mu_s_prime: float`, `source_detector_separation_cm: float` | `None` | Supplies absorption/reduced scattering coefficients (per cm) and source-detector separation (cm). |
+| `set_dcs_model_parameters` | `anisotropy_g: float`, `tissue_n: float`, `wavelength_nm: float` | `None` | Supplies anisotropy, refractive index and wavelength. |
+| `set_dcs_fit_range` | `start_index: int`, `end_index: int` | `None` | Restricts analysis by lag-array indices. |
+
+DLS/FCS/DCS results are embedded in the CORM callback's `analysis_result`. Only one technique is selected for that exported result; see [fitting/result validity](../06_in_depth_guides/6_4_curve_fitting_and_analysis_pipelines.md). The main fit record supplies validity and goodness-of-fit; nested fields are not independently proof of convergence.
+
+### DTC output controls
+
+For a profile authorizing DTC, call `apply_dtc_output(configuration, timeout_ms=1000)`, inspect the returned hardware apply result, then use `set_dtc_global_enable(enable)` as intended. `get_dtc_status()` inspects current state; `clear_dtc_status()` clears the supported status condition. A rejected apply raises `NexatomDtcApplyRejected` with the diagnostic result. Do not treat a proposed configuration as applied.
