@@ -26,4 +26,4 @@ For exact copyright attribution, maintainer lists, and the full text of these li
 *   **Image Validation:** Only flash firmware images that adhere to the `<NAME>_<VERSION>.bin` convention and have been explicitly provided by Nexatom for your exact hardware model (e.g., UTT810).
 *   **Boot Failures:** A corrupt or incompatible default image can prevent runtime boot. Recovery depends on the service firmware and remaining valid slots; do not assume recovery is guaranteed. Preserve a known-good image where possible.
 
-Preview.7 includes no firmware image. Keep the complete platform package, FTDI/vendor licenses and notices. Linux includes the bundled FTDI userspace library and optional USB permission rule; Windows additionally uses its matching FTDI driver and compiler runtime DLLs.
+Preview.8 includes no firmware image. Keep the complete platform package, FTDI/vendor licenses and notices. Linux includes the bundled FTDI userspace library and optional USB permission rule; Windows additionally uses its matching FTDI driver and compiler runtime DLLs.

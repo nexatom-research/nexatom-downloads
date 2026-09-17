@@ -4,6 +4,8 @@ Supported firmware can calibrate timing circuitry and expose calibration control
 
 The API requests manual calibration or configures supported automatic triggers. Check native capabilities and telemetry field availability before relying on their status.
 
+The `UTT_16_8_V1` application contract does not support the legacy automatic temperature/time controls. Those calls return `NEXATOM_ERROR_NOT_SUPPORTED` for that contract; startup calibration does not imply that user-programmable automatic triggers exist. The example below is for a runtime that supports those controls.
+
 ### Function Reference
 
 | Function | Parameters (In/Out) | Returns | Description |
@@ -11,7 +13,7 @@ The API requests manual calibration or configures supported automatic triggers. 
 | `nexatom_tt_trigger_calibration` | `[In] nexatom_tt_handle device` | `nexatom_error_code_t` | Requests calibration; successful return is not synchronous completion or proof acquisition resumed. |
 | `nexatom_tt_configure_auto_calibration` | `[In] nexatom_tt_handle device`<br>`[In] float temp_celsius`<br>`[In] uint16_t time_minutes` | `nexatom_error_code_t` | Sets the delta thresholds for automatic calibration. e.g., trigger every `2.5` degrees of temperature change, or every `60` minutes. |
 | `nexatom_tt_enable_auto_calibration` | `[In] nexatom_tt_handle device`<br>`[In] bool enable_temp`<br>`[In] bool enable_time` | `nexatom_error_code_t` | Toggles the active status of the automated background triggers independently. |
-| `nexatom_tt_set_calibration_settings` | `[In] nexatom_tt_handle device`<br>`[In] float temp_celsius`<br>`[In] uint16_t time_minutes`<br>`[In] bool enable_temp`<br>`[In] bool enable_time` | `nexatom_error_code_t` | Convenience function that atomically sets both the thresholds and the enable flags in a single C API call. |
+| `nexatom_tt_set_calibration_settings` | `[In] nexatom_tt_handle device`<br>`[In] float temp_celsius`<br>`[In] uint16_t time_minutes`<br>`[In] bool enable_temp`<br>`[In] bool enable_time` | `nexatom_error_code_t` | Convenience function that configures thresholds and enable flags in one API call. It does not promise an atomic hardware transaction or rollback after an error. |
 
 ### C Example: Configuring Long-Term Stability
 
