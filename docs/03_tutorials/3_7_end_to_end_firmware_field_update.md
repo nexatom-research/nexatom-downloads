@@ -19,7 +19,7 @@ The most advanced SDK workflow involves writing a new firmware image into a non-
 To run the field update script, the safety flag `--i-understand-this-writes-firmware` must be explicitly provided.
 
 ```powershell
-python python\examples\field_update_e2e.py `
+python python/examples/field_update_e2e.py `
   --home . `
   --image "firmware/BOOT_001.bin" `
   --slot 1 `

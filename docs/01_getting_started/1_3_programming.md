@@ -2,6 +2,8 @@
 
 The NexatomTT SDK provides C and C++ applications with a stable C ABI and Python applications with a `ctypes` wrapper over the same API. Windows loads `nexatomTT.dll`; Linux loads `libnexatomTT.so`. The package includes commented C, C++ and Python measurement examples. Other languages can bind the C interface using the conventions explained below.
 
+<a id="c-cpp-integration"></a>
+
 ### [C / C++ integration](1_3_programming.md#c-cpp-integration)
 
 #### Header
@@ -347,6 +349,8 @@ The public namespace includes the groups below. Inspect `nexatomtt.__all__` for 
 | Helpers | `find_default_home`, `open_runtime_device`, MFCO pattern helpers and slot selection |
 
 ---
+
+<a id="ffi-foreign-language-bindings"></a>
 
 ### [FFI / Foreign language bindings](1_3_programming.md#ffi-foreign-language-bindings)
 

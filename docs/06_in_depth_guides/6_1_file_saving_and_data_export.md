@@ -1,6 +1,6 @@
 ## File Saving and Data Export
 
-The NexatomTT SDK features a high-performance native file writing engine capable of streaming data directly to disk without routing payloads through the host language's virtual machine (e.g., the Python interpreter). The export pipeline strictly bifurcates based on the hardware output mode configured on the FPGA.
+The native file writer records data without sending each payload through Python or another client language. Choose the event or processed-data saver to match the selected hardware output mode. The diagram shows how native recording and application callbacks relate to those two workflows.
 
 ```mermaid
 flowchart TD
@@ -95,7 +95,7 @@ flowchart LR
 ```
 
 *   **`timestamp_ps`**: Decoded hardware timestamp in picoseconds; not a Unix timestamp or a promise of a new zero origin for every host acquisition.
-*   **`channel`**: The zero-indexed physical channel that detected the edge.
+*   **`channel`**: Decoded event channel identifier. Interpret it using the active image/profile's channel mapping.
 *   **Host padding:** The C/Python `NexatomTimeTag` representation is aligned and has padding. This padding is absent from the nine-byte on-disk tag.
 
 ### Finalizing and reviewing a capture

@@ -143,4 +143,4 @@ device.set_config_dump_callback(on_config_dump)
 device.request_config_dump()
 ```
 
-The full `set_config_dump_view_callback()` view exposes a borrowed pointer to the register pairs. Copy the needed values before returning from that callback; do not retain the pointer for later use. See [Callback Thread Safety and Data Lifetime](../06_in_depth_guides/6_5_callback_thread_safety_and_data_lifetime.md).
+At the C boundary, the full configuration-dump view contains a borrowed pointer to register pairs; copy those records before returning if you need them later. Python's `set_config_dump_view_callback()` wrapper supplies an owned copy of the view and its records, which the callback can retain. See [Callback Thread Safety and Data Lifetime](../06_in_depth_guides/6_5_callback_thread_safety_and_data_lifetime.md) for both cases.

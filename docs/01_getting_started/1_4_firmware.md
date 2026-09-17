@@ -85,6 +85,7 @@ flowchart TD
     G --> H["VERIFYING (7)"]
     H --> I["SETTING_DEFAULT (8)"]
     H --> J["COMPLETED (10)"]
+    H --> K["BOOTING_SLOT (9)"]
     I --> K["BOOTING_SLOT (9)"]
     I --> J
     K --> J
@@ -95,6 +96,8 @@ flowchart TD
     F --> L
     G --> L
     H --> L
+    I --> L
+    K --> L
 ```
 
 #### Phase definitions (`nexatom_field_update_phase_t`)
@@ -150,9 +153,9 @@ typedef void (*nexatom_field_update_progress_callback_t)(
 #### CLI reference (`field_update_e2e.py`)
 
 ```powershell
-python python\examples\field_update_e2e.py `
+python python/examples/field_update_e2e.py `
     --home . `
-    --image .\firmware\BOOT_001.bin `
+    --image firmware/BOOT_001.bin `
     --slot 1 `
     --i-understand-this-writes-firmware `
     --boot-after-load

@@ -54,7 +54,7 @@ Structures utilized for raw event streaming and offline `.nxtt` binary decoding.
 | Field | Type | Description |
 | :--- | :--- | :--- |
 | `timestamp_ps` | `int` (uint64) | Decoded hardware timestamp in picoseconds. It is not Unix wall-clock time; do not assume every host start creates a new zero origin. |
-| `channel` | `int` (uint8) | The physical input channel (0-7) that generated the event. |
+| `channel` | `int` (uint8) | Decoded event channel identifier; interpret it using the active image/profile's mapping. |
 
 #### `NexatomTimeTagFileConfig`
 | Field | Type | Description |

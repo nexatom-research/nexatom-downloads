@@ -7,7 +7,7 @@ This tutorial demonstrates how to configure the Time Interval Histogram (TIHI) a
 
 ### Workflow
 
-1.  **Boot & System Suspend:** The device is booted into runtime mode. As per best practices, the primary data shuffler is suspended (`device.enable_system(False)`) while the hardware acquisition engines are configured.
+1.  **Runtime Entry and CPS Check:** Native runtime entry establishes the session. The plotter registers callbacks, stops/disables histogram engines, enables the output/system and optional test pulses, then waits for CPS on the required channels. It configures the histogram engines while those engines are stopped; the system stays enabled for this proof-of-signal stage.
 2.  **Configure TIHI (Time Interval Histogram):**
     *   **Routing:** `device.set_time_histogram_channels(start, stop)` assigns the physical channels acting as the START and STOP triggers.
     *   **Time Axis:** `device.set_time_histogram_bin_width(ps)` and `device.set_time_histogram_num_bins(count)` define bin width and span. Bin width is a histogram setting, not an analog timing-accuracy specification; validate the bin count against the native profile/capabilities.
@@ -17,7 +17,7 @@ This tutorial demonstrates how to configure the Time Interval Histogram (TIHI) a
     *   **Timing:** `device.set_multifold_coincidence_window(ps)` establishes the maximum allowable temporal drift between events to be considered coincident.
     *   **Patterns:** Current eight-input MFCO returns 256 pattern bins. The plotter's `--mfco-analysis-channels` selects a software analysis filter; it does not suppress other physical events in the FPGA.
     *   **Enable:** `device.enable_multifold_coincidence(True)` powers the submodule logic.
-4.  **Data Path Enable & Start:** The FPGA data shuffler is re-enabled (`device.enable_system(True)`) to allow USB traffic. The host then explicitly triggers the histogram engines to begin accumulating tags via `device.start_time_histogram()` and `device.start_multifold_coincidence()`.
+4.  **Start the Engines:** With the data path already enabled and CPS observed, explicitly start the configured histogram engines with `device.start_time_histogram()` and `device.start_multifold_coincidence()`. Enabling a module and starting its measurement are distinct operations.
 5.  **Live Plotting:** As the hardware triggers its stop/emit conditions, it pushes payload packets over USB. The registered Python callbacks receive `NexatomTihiData` and `NexatomMfcoData` objects in the background. The main Python thread consumes these cached snapshots and continuously renders a live Matplotlib visualization until the duration expires.
 
 ### Execution
@@ -36,7 +36,7 @@ python python/examples/tihi_mfco_matplotlib.py --home . --duration-sec 10 --save
 ```text
 Discovering NexatomTT devices.
 Selected device: name=UTT810, serial=NTT-00000001, connection=FTDI:1.
-Runtime firmware ready; suspending system for configuration.
+Runtime firmware ready; checking required channel rates.
 ...
 Configuring TIHI while acquisition is stopped.
 Configuring MFCO while acquisition is stopped.
