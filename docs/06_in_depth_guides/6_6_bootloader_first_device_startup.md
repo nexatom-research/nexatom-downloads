@@ -61,7 +61,7 @@ Advanced firmware examples can deliberately close and reopen a device to prove t
 
 Cold startup can need more time than attachment to an existing runtime. `RuntimeBootOptions` retains the following settings:
 
-*   **`timeout_ms`**: Budget passed to native startup. A value such as 20000 ms is suitable for allowing cold startup without an arbitrary client sleep.
+*   **`timeout_ms`**: Budget for native protocol/readiness waits. A value such as 20000 ms allows cold startup without an arbitrary client sleep. In-flight I/O and cleanup may finish after that budget; it is not a hard wall-clock limit on every call.
 *   **`mode_timeout_sec`** and **`poll_sec`**: Compatibility settings used only for protocol detection in the explicit preferred-slot workflow, not a normal Python USB discovery loop.
 
 If startup times out, identity is unsupported, or no valid image exists, report the native exception or `RuntimeBootError` with its diagnostic message. Do not replace that failure with fixed-delay retries or manual protocol selection. Preserve cleanup errors as part of the outcome. See the [runtime/service tutorial](../03_tutorials/3_6_runtime_bootloader_handoff_validation.md) for deliberate return-to-service operations; they are separate from normal measurement entry.

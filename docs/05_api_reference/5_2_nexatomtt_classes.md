@@ -28,7 +28,7 @@ The `NexatomDevice` represents one selected instrument. It exposes hardware conf
 | `connect` | `timeout_ms: int = 5000` | `None` | Claims the USB interface and establishes communication with the FPGA. |
 | `connect_runtime` | `timeout_ms: int = 5000` | `None` | Establishes native measurement readiness, booting an existing valid image if required and waiting for profile authority. Use a larger budget, such as 20000 ms, for cold startup. |
 | `disconnect` | *None* | `None` | Safely terminates the active USB session. |
-| `close` | *None* | `None` | Destroys the native device handle. A `with` block calls this on exit; explicit `disconnect()` allows its errors to be checked before destruction. |
+| `close` / `destroy` | *None* | `None` | Destroys the native device handle. A `with` block calls `close()` on exit; explicit `disconnect()` allows its errors to be checked before destruction. |
 | `is_connected` | *None* | `bool` | Returns `True` if the USB session is active. |
 | `state` | *None* | `int` | Returns the current `nexatom_tt_state_t` enum (e.g., `CONNECTED`, `ACQUIRING`, `ERROR`). |
 | `hardware_protocol_mode` | *None* | `int` | Identifies if the device is currently in `RUNTIME` (data acquisition) or `BOOTLOADER` (firmware flashing) mode. |
