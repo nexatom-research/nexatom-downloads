@@ -18,7 +18,7 @@ Start with `python/examples/processed_acquisition.py` for CPS/TIHI/MFCO CSV and 
 
 For C/C++, the extracted `examples/sdk/` directory contains `hardware.c` (target `hardware_c`) and `hardware.cpp` (target `hardware_cpp`), both supporting processed and raw workflows. They share `acquisition.c` and `acquisition.h`; the C++ entry point adds RAII while using the same public C ABI. Follow that directory's README for exact build/run options and platform libraries.
 
-The primary templates follow this sequence. Expanded inline comments in the source accompany the next package update; the published preview.7 archive remains unchanged:
+The primary templates follow this sequence, explained by the expanded inline comments shipped in preview.8. Their API behaviour remains consistent with preview.7:
 
 1. **Select and connect:** retain the enumerated device identity; let native establish runtime/profile readiness.
 2. **Validate a complete plan:** check authorized channels, output/feature support, threshold, delay and profile-derived pulse timing before writing settings.

@@ -1,6 +1,6 @@
 # 1. Getting started
 
-This chapter uses the [preview.7 SDK](../index.md#version-scope-and-migration).
+This chapter uses the [preview.8 SDK](../index.md#version-scope-and-migration).
 
 1. [Install the package and USB driver](1_1_installation.md).
 2. [Run a processed or raw acquisition](1_2_quick_start.md).

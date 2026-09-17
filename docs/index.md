@@ -15,11 +15,11 @@ The SDK provides the same native device API to C, C++ and Python applications on
 
 ## Version scope and migration
 
-This edition describes **0.1.0-preview.7** and updates the preview.6 manual. The migration covers Windows/Linux installation, native runtime startup, device profiles, expanded Python controls, callback ownership and file formats.
+This edition describes **0.1.0-preview.8** and updates the earlier preview.6 manual. The migration covers Windows/Linux installation, native runtime startup, device profiles, expanded Python controls, callback ownership and file formats.
 
 The SDK release version and native `version()` string are separate identifiers. Retain the package's build information with measurement results. The shipped `include/nexatomtt_c_api.h` and Python modules are the exact declarations for that package; the manual explains how to use them.
 
-The API behaviour described here matches published preview.7. Expanded inline teaching comments in the source templates accompany the next package update; this manual does not imply that previously published archives have been replaced or relabelled.
+Preview.8 retains preview.7 API behaviour and ships the expanded inline teaching comments in the C, C++ and Python acquisition templates. References to preview.7 capabilities and qualification remain applicable; previously published archives have not been replaced or relabelled.
 
 For existing applications:
 

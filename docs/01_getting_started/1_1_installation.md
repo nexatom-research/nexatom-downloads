@@ -38,7 +38,7 @@ Keep the complete extracted directory, including:
 | `docs/`, license files and notices | Package-specific reference and terms |
 | `manifest.json` | Package identity |
 
-Preview.7 does not bundle firmware images. Follow the package's own README for platform-specific paths and compiler details.
+The SDK does not bundle firmware images. Follow the package's own README for platform-specific paths and compiler details.
 
 ## Verifying the installation
 
@@ -51,7 +51,7 @@ python python/examples/version_info.py --home .
 python python/examples/processed_acquisition.py --help
 ```
 
-A successful library load does not prove USB permissions, runtime readiness or acquisition. Check those with the [quick start](1_2_quick_start.md). The native version string is separate from the SDK's preview.7 release label.
+A successful library load does not prove USB permissions, runtime readiness or acquisition. Check those with the [quick start](1_2_quick_start.md). The native version string is separate from the SDK's preview.8 release label.
 
 ## SDK home discovery
 

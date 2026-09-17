@@ -1,6 +1,6 @@
 # 5. Python API reference
 
-The packaged `python/nexatomtt` module wraps the public C API and owns its ctypes layouts/callback copies. Use that package with its matching native library. This chapter describes preview.7; see [migration scope](../index.md#version-scope-and-migration).
+The packaged `python/nexatomtt` module wraps the public C API and owns its ctypes layouts/callback copies. Use that package with its matching native library. This chapter describes preview.8, retaining preview.7 API behaviour; see [migration scope](../index.md#version-scope-and-migration).
 
 - [5.1 Library and constants](5_1_nexatomtt_library.md)
 - [5.2 Classes and lifecycle](5_2_nexatomtt_classes.md)
