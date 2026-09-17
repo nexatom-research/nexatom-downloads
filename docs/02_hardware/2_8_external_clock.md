@@ -1,15 +1,46 @@
-# 2.8 External clock input
+## External Clock Input
 
-## Requesting external sync-clock operation
+A supporting device/image can use a fixed 10 MHz external reference to share a frequency reference with laboratory equipment. Check `device.get_capabilities().supports_external_clock` after native runtime entry. A connector, telemetry bit or defined API method does not by itself establish support. Sharing a reference also does not automatically align timestamp epochs between instruments.
 
-Check the active profile/capabilities before `request_sync_clock(enable)` or `nexatom_tt_request_sync_clock`. A successful request is distinct from detecting a reference and locking to it.
+External clock control is available in both C and Python. The native API rejects an unsupported request and requires acquisition to be disabled before changing the reference selection. Follow the supplied instrument's electrical specifications for the reference input; the frequency contract does not specify allowable connector voltages.
 
-Use the reference frequency, voltage, termination and cabling specified for your instrument. This SDK manual does not establish those physical limits or promise synchronisation between two boards merely because both are connected to the same PC.
+### Requesting external sync-clock operation
 
-## Sync-clock status monitoring via telemetry
+Switching the hardware to an external reference is asynchronous. The host issues a request; the hardware must detect/lock to the reference and report whether the external path is active. Do not start a measurement based only on a successful request call.
 
-Use the versioned telemetry view and its field availability indicators. Keep requested, detected/locked and active clock state distinct. A missing field is unknown, not false; a cached sample may be stale. Explicitly request a newer sample when necessary.
+#### C API
 
-Clock lock alone does not measure relative board skew or prove that two acquisitions share a timestamp origin. Such experiments need their own measured acceptance criteria.
+```c
+nexatom_error_code_t nexatom_tt_request_sync_clock(
+    nexatom_tt_handle device,
+    bool enable
+);
+```
 
-[Device operation](index.md) · [Telemetry](2_11_telemetry.md)
+Calling with `enable = true` does not guarantee immediate synchronization. Calling with `enable = false` requests the internal reference again; verify the resulting telemetry before resuming a measurement that depends on the time base.
+
+#### Python
+
+```python
+if not device.get_capabilities().supports_external_clock:
+    raise RuntimeError("This device/image does not support the external reference")
+device.enable_system(False)
+device.request_sync_clock(True)
+# Wait for valid telemetry to report the requested external reference active.
+```
+
+### Sync-clock status monitoring via telemetry
+
+Because the clock transition is asynchronous and managed autonomously by the FPGA, the definitive state of the clock path must be monitored via the device's realtime telemetry stream.
+
+The `nexatom_telemetry_data_t` structure provides three boolean fields that track the internal clock state machine:
+
+| Field | Description |
+|---|---|
+| `sync_clock_requested` | `true` if the host has issued a request for the external clock path via `nexatom_tt_request_sync_clock()`. |
+| `sync_clock_locked` | `true` if the hardware PLL has successfully locked onto a valid external clock signal. |
+| `sync_clock_active` | `true` if the hardware has successfully transitioned and is actively operating on the external clock domain. |
+
+**Verification.** Wait for valid, current telemetry reporting the requested reference active and locked before commencing acquisition. For the versioned telemetry view, check `HAS_COMMON_STATUS` before inspecting the `SYNC_REQUESTED`, `SYNC_ACTIVE` and `SYNC_LOCKED` bits in `sync_status_flags`. A field absent from the received layout is unavailable, not a negative lock result. Use a bounded wait and report failure if the reference never becomes usable; do not wait indefinitely or treat an old cached frame as the new request's response.
+
+This verifies the hardware's reported clock state. Applications that require absolute phase or timestamp alignment need a corresponding synchronization experiment; reference-clock lock alone does not establish that stronger claim. See [Telemetry and Diagnostics](2_11_telemetry.md) for the cache/request distinction.
