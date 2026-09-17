@@ -1,19 +1,75 @@
-# 2.9 System control
+## System Control
 
-## System enable / disable
+Global hardware state management—including data path enabling, peripheral resetting, and synchronized acquisition halting—is handled through the SDK's system control interfaces.
 
-`enable_system(True)` controls the system data path. Connection readiness, output selection, individual measurement enables and file saving are separate controls. An already-running firmware may remain stopped after connection; explicitly enable the system when starting your intended measurement.
+### System enable / disable (Data Shuffler)
 
-The primary processed/raw templates prepare settings and sinks while quiet, then enable/start the required path. Shutdown explicitly quiets it again. Do not add an implicit enable to a library-load or identity-only action.
+The system enable function controls acquisition in the FPGA's primary data path. Disabling it prevents the intended measurement from running; control traffic and diagnostic responses have their own paths. Set `NO_OUTPUT` as well when preparing a quiet transition or changing file-saving configuration.
 
-## Peripheral reset
+> **Best Practice.** Always disable the system before performing bulk register configurations (e.g., threshold adjustments, edge type changes, or routing). Re-enable the system only after all configurations have been committed to avoid generating spurious time tags during the transition state.
 
-`reset_peripherals(True)` asserts reset and `reset_peripherals(False)` releases it. A complete deliberate reset needs both stages. Reset is not a replacement for the native output barrier or a mandatory step for every acquisition.
+#### C API
 
-## Global acquisition stop
+```c
+nexatom_error_code_t nexatom_tt_enable_system(
+    nexatom_tt_handle device,
+    bool enable
+);
+```
 
-`request_global_stop_all_modes()` requests stopping measurement engines. Check its return and any expected terminal result; do not assume a command return has already delivered all final packets. Keep the required output and savers alive while waiting for terminal results, then select quiet output and finalize files.
+#### Python
 
-For C/C++ see [system control](../07_c_api/7_5_system_control.md). Use the full template cleanup so one error does not skip all remaining retirement steps.
+```python
+# Suspend processing
+device.enable_system(False)
 
-[Device operation](index.md)
+# ... perform channel configuration ...
+
+# Resume processing
+device.enable_system(True)
+```
+
+### Peripheral reset
+
+The peripheral reset function asserts or de-asserts the FPGA peripheral reset control. It is a destructive measurement transition: stop active measurements and complete saver cleanup before using it. Routine runtime connection does not require a user-written reset/initialization sequence; `connect_runtime()` owns startup.
+
+To perform a complete reset cycle, the host must explicitly assert the reset state and subsequently de-assert it to return the device to normal operation.
+
+#### C API
+
+```c
+nexatom_error_code_t nexatom_tt_reset_peripherals(
+    nexatom_tt_handle device,
+    bool reset
+);
+```
+
+#### Python
+
+```python
+# Assert peripheral reset
+device.reset_peripherals(True)
+
+# Return to normal operation
+device.reset_peripherals(False)
+```
+
+In preview.8, successful reset release also selects `REALTIME_DATA` in the native implementation. Explicitly select the output required by the next operation after a deliberate reset; do not assume a previous raw/quiet output mode survived it. A peripheral reset is not the service-entry operation used for firmware updates.
+
+### Global acquisition stop
+
+The global stop function requests a shared stop for active hardware measurement engines such as TIHI, MFCO and correlation. It is useful when ending an experiment with several engines enabled. A successful host call confirms command admission; it does not prove that all terminal packets have already reached the host or that files are closed.
+
+#### C API
+
+```c
+nexatom_error_code_t nexatom_tt_request_global_stop_all_modes(nexatom_tt_handle device);
+```
+
+#### Python
+
+```python
+device.request_global_stop_all_modes()
+```
+
+Retain callbacks/savers long enough to receive the terminal data required by the experiment. Then set `NO_OUTPUT`, disable the system and test sources, close active savers, and disconnect. Attempt every cleanup step even if an earlier one fails, while preserving the errors. The SDK examples demonstrate this sequence without forcing a process exit or closing the FTDI handle behind the native library.

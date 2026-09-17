@@ -1,20 +1,31 @@
-# 2. Device operation
+# Hardware
 
-These pages describe SDK controls. Electrical, environmental and precision specifications must come from the documentation for your exact instrument; the [version scope](../index.md#version-scope-and-migration) describes the limits of SDK qualification.
+This chapter explains the UTT810 hardware interface as exposed through SDK preview.8: how to connect an instrument, configure its inputs, choose an output path, and interpret hardware status. The native library owns the FTDI transport, protocol selection and hardware commands. Examples use physical units and the resolved device profile rather than raw register writes.
 
-| Section | Topic |
-| --- | --- |
-| [2.1 Operating conditions](2_1_operating_conditions.md) | Discovery, selection and native identity |
-| [2.2 Input channels](2_2_input_channels.md) | Channel authority, threshold, edge and routing |
-| [2.3 Data connection](2_3_data_connection.md) | Output modes and transport |
-| [2.4 Calibration](2_4_calibration.md) | Requests and status |
-| [2.5 LEDs](2_5_leds.md) | Supported indicator controls |
-| [2.6 Test signal](2_6_test_signal.md) | Profile-based internal pulses |
-| [2.7 Synthetic input delay](2_7_synthetic_input_delay.md) | Delay units and limits |
-| [2.8 External clock](2_8_external_clock.md) | Capability and status |
-| [2.9 System control](2_9_system_control.md) | Enable, reset and stop |
-| [2.10 CPS](2_10_cps_configuration.md) | Period and rate units |
-| [2.11 Telemetry](2_11_telemetry.md) | Requests, cached views and validity |
-| [2.12 Runtime handoff](2_12_runtime_handoff.md) | Same-handle firmware service |
+| Property | Value |
+|---|---|
+| Supported workflow | One selected instrument per application workflow |
+| Hardware families | Original Zynq runtime, bootloader-equipped Zynq, and bootloader-equipped Kintex through one native API |
+| Public input channels | Up to 8 (0–7), restricted by the effective public channel mask |
+| Transport | FTDI FT60x USB 3.0 |
+| Protocol modes | Runtime; service/bootloader where supported |
+| Firmware storage | Bootloader-managed slots on equipped instruments |
 
-[Manual contents](../index.md)
+The firmware advertises identity/layout/features, and the API resolves the supported settings and units for that model/image. Input count, digital output count, input-delay limit and test-pulse clock are distinct properties. Query them rather than assuming all generations are interchangeable. Accepted configuration ranges are not electrical safety ratings; use the supplied instrument specifications for external signal amplitude, termination and operating environment.
+
+## Chapter contents
+
+| Section                                               | Topic |
+|-------------------------------------------------------|---|
+| [Operating Conditions](2_1_operating_conditions.md)   | USB connection, device discovery, state machine, protocol modes |
+| [Input Channels](2_2_input_channels.md)               | Threshold, edge type, hysteresis, routing, test pulses |
+| [Data Connection](2_3_data_connection.md)             | Output modes, CPS period, data flow architecture |
+| [Calibration](2_4_calibration.md)                     | Calibration data and workflow |
+| [LEDs](2_5_leds.md)                                   | Channel LEDs and RGB LED control |
+| [Test Signal](2_6_test_signal.md)                     | Internal test pulse generator |
+| [Synthetic Input Delay](2_7_synthetic_input_delay.md) | Per-channel input delay |
+| [External Clock Input](2_8_external_clock.md)         | Capability check, reference request and lock/active verification |
+| [System Control](2_9_system_control.md)               | System enable, peripheral reset and global stop |
+| [Counts per Second (CPS)](2_10_cps_configuration.md)   | CPS measurement, normalized rates and period selector |
+| [Telemetry](2_11_telemetry.md)                        | Device health, temperature, status validity and configuration dumps |
+| [Bootloader Handoff](2_12_runtime_handoff.md)          | Native runtime entry and runtime ↔ service transitions |
