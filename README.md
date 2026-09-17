@@ -1,31 +1,10 @@
-# Nexatom Downloads
+# Nexatom downloads
 
-Welcome to the Nexatom Downloads repository. This repository hosts Nexatom binaries and related resources.
+This repository hosts public downloads for the Nexatom time-tagger GUI application and the NexatomTT SDK.
 
-## About Nexatom
+| Product | Downloads | Documentation |
+| --- | --- | --- |
+| Time-tagger GUI | [Public releases](https://github.com/nexatom-research/nexatom-downloads/releases) — select the Time Tagger application | Application release notes and help supplied with the download |
+| NexatomTT SDK | [Public releases](https://github.com/nexatom-research/nexatom-downloads/releases) — select the SDK and host platform | [SDK manual](docs/index.md), [installation](docs/01_getting_started/1_1_installation.md) and [tutorials](docs/03_tutorials/index.md) |
 
-Nexatom is a powerful tool for [add your description here].
-
-## Getting Started
-
-To get started with Nexatom, download the latest binaries from this repository.
-
-## Downloads
-
-You can find the latest releases and binaries in the [Releases](https://github.com/nexatom-research/nexatom-downloads/releases) section.
-
-## Documentation
-
-For detailed documentation and usage instructions, please visit our [documentation site](https://nexatom-research.github.io/nexatom-downloads).
-
-## Support
-
-If you encounter any issues or have questions, please open an [Issue](https://github.com/nexatom-research/nexatom-downloads/issues) on GitHub.
-
-## License
-
-[Add your license information here]
-
----
-
-**Last Updated:** May 28, 2026
+Visit the [Nexatom website](https://www.nexatom.in) for the public download interface and instrument information. This documentation update does not announce a new GUI or SDK release.
