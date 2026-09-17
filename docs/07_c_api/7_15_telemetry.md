@@ -13,7 +13,7 @@ Use callbacks or the supported request/getter API to observe available health fi
 | `nexatom_tt_request_telemetry` | `[In] nexatom_tt_handle device` | `nexatom_error_code_t` | Manually triggers the FPGA to emit a single telemetry payload. |
 | `nexatom_tt_get_telemetry` | `[In] nexatom_tt_handle device`<br>`[Out] nexatom_telemetry_data_t* telemetry` | `nexatom_error_code_t` | Legacy request/wait getter returning the fixed telemetry record. |
 | `nexatom_tt_get_telemetry_view_v1` | `[In] nexatom_tt_handle device`<br>`[In/Out] nexatom_tt_telemetry_view_v1_t* telemetry` | `nexatom_error_code_t` | Reads the latest cached versioned view; initialize size/version and inspect field availability. Does not itself request a new sample. |
-| `nexatom_tt_request_config_dump`| `[In] nexatom_tt_handle device` | `nexatom_error_code_t` | Commands the hardware to serialize its entire memory-mapped configuration space and send it back to the host via the `config_dump` callback. |
+| `nexatom_tt_request_config_dump`| `[In] nexatom_tt_handle device` | `nexatom_error_code_t` | Requests the runtime's defined configuration-register dump. The legacy callback copies at most 128 records; use the versioned view for the full supported response and check its record count. |
 
 ### Data Structures
 

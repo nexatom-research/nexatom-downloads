@@ -43,9 +43,9 @@ Filled through the caller-provided output pointer. These are API capability valu
 | `max_count_rate` | `uint32_t` | Capability rate value; not a measured no-loss throughput guarantee. |
 | `time_resolution_ps` | `uint32_t` | API timing capability in ps, not a measurement of absolute accuracy. |
 | `max_threshold_mv` | `uint16_t` | Maximum supported threshold setting, not an electrical absolute maximum. |
-| `max_histogram_bins` | `uint32_t` | Maximum hardware bins for TIHI (usually 1024). |
-| `supports_calibration` | `bool` | True if the unit supports auto-thermal calibration. |
-| `supports_file_saving` | `bool` | True if direct-to-disk binary saving is enabled. |
+| `max_histogram_bins` | `uint32_t` | Maximum configurable TIHI bins for this runtime; query it rather than assuming the 1024-element callback array is fully configurable. |
+| `supports_calibration` | `bool` | General calibration capability; does not independently establish support for automatic temperature/time triggers. |
+| `supports_file_saving` | `bool` | Native file-saving capability; does not indicate that a sink is currently enabled or data has been written. |
 | `supports_external_clock` | `bool` | True if a 10MHz Reference In is available. |
 | `supports_gating` | `bool` | True if hardware TTL gating is supported. |
 
@@ -86,6 +86,28 @@ if (nexatom_tt_connect_runtime(my_device, 20000) == NEXATOM_SUCCESS) {
 ### Profile and application contract
 
 Before measurement use `nexatom_tt_get_device_profile_v1(device, &profile)`. Initialize `struct_size` and `struct_version` with the matching header constants. Inspect control/service flags, `effective_public_tdc_mask`, supported output mask, feature flags, `max_channel_input_delay_ps` and test-pulse clock/bounds. A state enum or physical channel count is not a substitute for authority.
+
+For example, after runtime connection, check that the intended two inputs and processed output are available before configuring them:
+
+```c
+// Fragment inside the acquisition owner; return/failure still goes through its cleanup.
+nexatom_tt_device_profile_v1_t profile = {0};
+profile.struct_size = sizeof(profile);
+profile.struct_version = NEXATOM_TT_DEVICE_PROFILE_V1_VERSION;
+nexatom_error_code_t rc = nexatom_tt_get_device_profile_v1(my_device, &profile);
+if (rc != NEXATOM_SUCCESS)
+    return -1;
+
+const uint32_t wanted_channels = (1u << 0) | (1u << 1);
+if (!(profile.profile_flags & NEXATOM_TT_PROFILE_CONTROL_AUTHORIZED) ||
+    (profile.profile_flags & NEXATOM_TT_PROFILE_IN_SERVICE) ||
+    (profile.effective_public_tdc_mask & wanted_channels) != wanted_channels ||
+    !(profile.supported_output_mode_mask & (1u << NEXATOM_OUTPUT_REALTIME_DATA))) {
+    fprintf(stderr, "This runtime cannot perform the requested acquisition.\n");
+    return -1;
+}
+// Also check the feature bit for each engine you intend to enable.
+```
 
 `nexatom_tt_get_application_contract` exposes native's resolved application contract. `nexatom_tt_apply_inventory_profile_v1`, `nexatom_tt_apply_manual_profile_v1`, `nexatom_tt_clear_profile_evidence_v1`, `nexatom_tt_configure_runtime_compatibility` and `nexatom_tt_set_bootloader_probe_enabled` are controlled compatibility tools, not ordinary startup prerequisites. Use their exact declarations from the header; do not override an unknown model by guessing capabilities.
 

@@ -29,6 +29,9 @@ typedef void (*nexatom_count_rate_callback)(nexatom_cps_data_t data, void* user_
 typedef void (*nexatom_multi_tau_correlation_callback)(nexatom_corm_callback_data_t data, void* user_data);
 typedef void (*nexatom_linear_correlation_callback)(nexatom_corl_callback_data_t data, void* user_data);
 typedef void (*nexatom_telemetry_callback)(nexatom_telemetry_data_t data, void* user_data);
+typedef void (*nexatom_config_dump_callback)(nexatom_config_dump_data_t data, void* user_data);
+typedef void (*nexatom_tt_config_dump_view_callback_v1)(
+    const nexatom_tt_config_dump_view_v1_t* data, void* user_data);
 typedef void (*nexatom_connection_status_callback)(int connected, int ready, void* user_data);
 ```
 
@@ -38,6 +41,7 @@ typedef void (*nexatom_connection_status_callback)(int connected, int ready, voi
 
 ```c
 #include <stdio.h>
+#include "nexatomtt_c_api.h"
 
 // 1. Define the callback
 void on_count_rate_received(nexatom_cps_data_t data, void* user_data) {
@@ -48,28 +52,33 @@ void on_count_rate_received(nexatom_cps_data_t data, void* user_data) {
     printf("CPS on Ch0: %u\n", data.counts[0]);
 }
 
-int main() {
-    int record_counter = 0;
-    
-    // 2. Register the callback and provide the context pointer
-    nexatom_tt_set_count_rate_callback(
-        my_device, 
-        on_count_rate_received, 
-        &record_counter
-    );
-    
-    // ... (Run measurement) ...
-    
-    // 3. Clear is not a fence; record_counter stays alive through destruction.
-    nexatom_tt_clear_callbacks(my_device);
-    nexatom_tt_disconnect(my_device); // Complete code checks both returned statuses.
+// 2. The acquisition owner initializes its counter to zero and keeps that
+//    storage alive throughout registration, measurement, and final teardown.
+static nexatom_error_code_t register_counter(
+    nexatom_tt_handle my_device, int* record_counter) {
+    return nexatom_tt_set_count_rate_callback(
+        my_device, on_count_rate_received, record_counter);
+}
+
+// 3. Call after stopping acquisition and finalizing any active file sinks.
+//    This helper consumes the handle: the caller must not destroy it again.
+static int close_device_and_report(
+    nexatom_tt_handle my_device, int* record_counter) {
+    // Clearing is not a fence: a previously selected callback may still run.
+    nexatom_error_code_t clear_rc = nexatom_tt_clear_callbacks(my_device);
+    if (clear_rc != NEXATOM_SUCCESS)
+        fprintf(stderr, "Callback clearing failed: %s\n", nexatom_tt_get_last_error_message());
+    nexatom_error_code_t close_rc = nexatom_tt_disconnect(my_device);
+    if (close_rc != NEXATOM_SUCCESS)
+        fprintf(stderr, "Disconnect failed: %s\n", nexatom_tt_get_last_error_message());
+
+    // Keep callback code and counter storage alive until destruction returns.
     nexatom_tt_destroy(my_device);
-    
-    printf("Total records processed safely: %d\n", record_counter);
-    return 0;
+    printf("Total records processed: %d\n", *record_counter);
+    return clear_rc == NEXATOM_SUCCESS && close_rc == NEXATOM_SUCCESS ? 0 : 1;
 }
 ```
 
-The example's counter is read only after native destruction. Protect it if another application thread reads it during acquisition. For production use the complete template's checked cleanup.
+These are helpers for the acquisition owner, not a complete measurement program. Check registration before starting the engine. The counter is read only after native destruction; protect it if another application thread reads it during acquisition. The complete acquisition template additionally owns configuration, starts/stops, and file finalization. Do not invoke disconnect or destruction from inside a native callback; request shutdown on the owning application thread instead.
 
 Preview.7 also exposes `nexatom_tt_set_telemetry_view_callback_v1`, `nexatom_tt_set_config_dump_view_callback_v1` and `nexatom_tt_set_fast_tihi_histogram_callback_v1`. Use the exact versioned typedefs and available fields from the header. Registering a callback does not grant hardware capability. Ordinary callback clearing has no logging-style quiescence guarantee; see [lifetime details](../06_in_depth_guides/6_5_callback_thread_safety_and_data_lifetime.md).
