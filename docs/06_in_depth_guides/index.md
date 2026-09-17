@@ -1,12 +1,16 @@
-# 6. In-depth guides
+# In-Depth Guides
 
-- [6.1 File saving and export](6_1_file_saving_and_data_export.md)
-- [6.2 Offline NXTT reader](6_2_offline_time_tag_binary_decoder.md)
-- [6.3 Structured logging](6_3_logging_system.md)
-- [6.4 Curve fitting and analysis](6_4_curve_fitting_and_analysis_pipelines.md)
-- [6.5 Callback thread safety and lifetime](6_5_callback_thread_safety_and_data_lifetime.md)
-- [6.6 Native runtime startup](6_6_bootloader_first_device_startup.md)
+While the tutorials in Chapter 3 demonstrate the baseline code required to operate the UTT810, advanced integration often requires a deeper understanding of the underlying SDK mechanics and mathematical models.
 
-These contracts complement the [annotated acquisition templates](../03_tutorials/index.md#processed-and-raw-template-anatomy). Use the header, Python modules and file-format descriptions shipped with your package when implementing a consumer.
+This chapter explores the theoretical and architectural concepts driving the NexatomTT SDK. It explains the binary file layout, the native host curve-fitting models and the lifecycle rules for firmware/runtime transitions. The original guide structure is retained while the API details describe preview.8.
 
-[Manual contents](../index.md)
+## Chapter contents
+
+| Topic | Description |
+|---|---|
+| [File Saving and Data Export](6_1_file_saving_and_data_export.md) | Native file rotation, export formats, and the `.nxtt` binary byte layout. |
+| [Offline Time-Tag Binary Decoder](6_2_offline_time_tag_binary_decoder.md) | Advanced usage of the `NexatomTimeTagReader` for decoding single files and sequential series. |
+| [Logging System](6_3_logging_system.md) | Filtering, log modules, bounded delivery, statistics and clean unregister. |
+| [Curve Fitting and Analysis Pipelines](6_4_curve_fitting_and_analysis_pipelines.md) | Mathematical models for TIHI lifetime fitting, CORM correlation, DLS, FCS, and DCS. |
+| [Callback Thread Safety and Data Lifetime](6_5_callback_thread_safety_and_data_lifetime.md) | Memory ownership, pass-by-value FFI boundaries, and Python garbage collection safety. |
+| [Bootloader-First Device Startup](6_6_bootloader_first_device_startup.md) | Slot selection and native runtime readiness on the same device handle. |

@@ -22,7 +22,7 @@ The 16-byte host representation of a decoded event. It is not the packed disk re
 | Field | Type | Description |
 | :--- | :--- | :--- |
 | `timestamp_ps` | `uint64_t` | Decoded timestamp in ps; raw rollover is extended within a runtime session. Do not assume each acquisition resets the hardware time origin. |
-| `channel` | `uint8_t` | The physical SMA input port (e.g., 0-7) that triggered the event. |
+| `channel` | `uint8_t` | Decoded public channel index. Interpret it using the runtime's channel mapping; it is not independently a physical connector identifier. |
 | `_padding` | `uint8_t[7]` | Explicit host ABI padding; this makes a 16-byte record, not a universal 16-byte alignment requirement. |
 
 #### `nexatom_time_tag_file_header_t`

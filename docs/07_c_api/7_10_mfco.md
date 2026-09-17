@@ -28,7 +28,7 @@ MFCO payloads are passed by-value to the callback registered in Section 7.8. The
 | Field | Type | Description |
 | :--- | :--- | :--- |
 | `channel_mask` | `uint8_t` | MFCO channel mask metadata/readback. |
-| `acquisition_done_status` | `nexatom_acquisition_done_status_t` | Reason the measurement stopped (normal, timeout, error). |
+| `acquisition_done_status` | `nexatom_acquisition_done_status_t` | Hardware status: manual stop (`0x2`), stop-count reached (`0x4`), or duration reached (`0x5`) are defined terminal reasons. Zero can mean Running; do not infer success from the legacy `NORMAL_COMPLETION` alias. |
 | `background_subtracted` | `uint8_t` | `1` if background was subtracted from pattern counts. |
 | `coincidence_window_ps` | `uint32_t` | Echoes the active temporal window configuration. |
 | `background_level_per_pattern` | `float` | Background counts per pattern that were subtracted (if applied). |
