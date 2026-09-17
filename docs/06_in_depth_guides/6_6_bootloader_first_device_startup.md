@@ -1,59 +1,26 @@
-## Bootloader-First Device Startup
+# 6.6 Native runtime startup
 
-For maximum operational safety, NexatomTT hardware natively powers on into `BOOTLOADER` mode. This ensures the device remains recoverable even if a corrupted or incompatible firmware image resides in flash memory. Consequently, host applications must actively orchestrate the transition from `BOOTLOADER` to `RUNTIME` mode prior to configuring data acquisition.
+Use native `connect_runtime` for measurement readiness. It handles a device already in runtime or one that needs to boot an existing valid image from firmware service. It retains the same native handle and waits for runtime/profile authorization within the supplied budget.
 
-### [`open_runtime_device()` context manager](6_6_bootloader_first_device_startup.md#context-manager)
-
-The `nexatomtt.runtime_boot` Python module provides the `open_runtime_device()` context manager. This function completely abstracts the complex state machine required to safely inspect flash memory, boot a firmware image, and survive the subsequent USB bus disconnection.
-
-```mermaid
-stateDiagram-v2
-    [*] --> BOOTLOADER : Hardware Power-On
-    
-    state open_runtime_device() {
-        BOOTLOADER --> InspectSlots : Query Slot Table
-        InspectSlots --> SelectSlot : Valid Image Found
-        SelectSlot --> USB_Drop : Execute Boot Command
-        USB_Drop --> RUNTIME : Wait for OS Re-enumeration
-        RUNTIME --> Verify : Assert Protocol Mode
-    }
-    
-    Verify --> [*] : Yield NexatomDevice
-```
-
-**Usage:**
 ```python
-from nexatomtt.runtime_boot import open_runtime_device, RuntimeBootOptions
+from nexatomtt import NexatomLibrary, RuntimeBootOptions, open_runtime_device
 
-options = RuntimeBootOptions(timeout_ms=10000)
-with open_runtime_device(library, options) as device:
-    device.enable_system(True) # Device is guaranteed to be in RUNTIME mode
+library = NexatomLibrary(home="/path/to/sdk")
+devices = library.discover_devices()
+if len(devices) != 1:
+    raise RuntimeError("Select one intended device before starting")
+with open_runtime_device(library, devices[0],
+                         options=RuntimeBootOptions(timeout_ms=20000)) as device:
+    # Native has established readiness. Choose controls from this profile.
+    profile = device.get_device_profile()
+    print(hex(profile.product_model_id))
+    # Connecting does not start the application's intended measurement.
 ```
 
-### [Slot selection strategy](6_6_bootloader_first_device_startup.md#slot-selection-strategy)
+The helper signature is `open_runtime_device(library, device_info, *, options=..., log=..., pre_connect_profile=...)`. The optional pre-connect hook is a controlled compatibility/inventory facility; normal discovery does not need a manual profile.
 
-The UTT810 hardware contains multiple isolated flash memory slots, allowing several firmware images to reside on the device simultaneously. When `open_runtime_device()` queries the hardware slot table, it selects the boot target using a strict priority cascade:
+An explicit `preferred_slot` chooses the service-mode boot target. If runtime is already present, the helper completes native readiness there. It does not force a new boot, write an image or change the default slot. For deliberate service/boot round trips use [the existing tutorial](../03_tutorials/3_6_runtime_bootloader_handoff_validation.md).
 
-1.  **Preferred Slot:** If the user explicitly defines `options.preferred_slot`, the orchestrator attempts to boot it. If the slot is empty or corrupted, it fails immediately rather than falling back.
-2.  **Default Slot:** If no preferred slot is specified, the orchestrator boots the slot currently marked as `default` in the hardware's non-volatile memory.
-3.  **Lowest Valid Slot:** If no default is set, the orchestrator scans all slots and boots the lowest-indexed slot containing a valid, verified firmware image.
+Handle timeout, unsupported identity and absent valid images directly. Do not implement model-specific register sequences, re-enumeration loops or fixed-delay workarounds in the client. Service-entry/boot reset boundaries are owned by native; caller-selected measurement start remains explicit.
 
-### [USB re-enumeration and identity matching](6_6_bootloader_first_device_startup.md#usb-re-enumeration-and-identity-matching)
-
-When the device receives a boot command, the FPGA halts, the hardware drops off the USB bus, and the FTDI controller re-initializes. From the perspective of the host OS, the device has been physically unplugged and plugged back in.
-
-If multiple NexatomTT devices are connected to the same host PC, the orchestrator must guarantee it reconnects to the *exact same physical unit* after re-enumeration. It utilizes the `DeviceIdentity` structure to achieve this:
-*   **Primary Match:** `connection_id` (The physical USB port / topology path).
-*   **Fallback Match:** `serial_number` (Unique hardware identifier).
-
-The orchestrator polls the USB bus continuously until a device matching these identity parameters reappears in `RUNTIME` mode.
-
-### [Error recovery and timeout configuration](6_6_bootloader_first_device_startup.md#error-recovery-and-timeout-configuration)
-
-USB re-enumeration speeds vary drastically between operating systems (e.g., Windows may take up to 4 seconds to assign a driver to the re-enumerated endpoint). The `RuntimeBootOptions` dataclass provides granular timeout configurations to prevent infinite polling loops:
-
-*   **`timeout_ms`**: The absolute maximum time allowance for the entire boot-and-reconnect sequence.
-*   **`mode_timeout_sec`**: The maximum time to wait for the device to settle into the targeted protocol mode.
-*   **`poll_sec`**: The sleep interval between device discovery attempts during the USB drop phase.
-
-If the device fails to reach `RUNTIME` mode within the specified `timeout_ms`, or if the selected firmware slot throws a boot error, the orchestrator raises a `RuntimeBootError` and cleanly releases all intermediate handles.
+[In-depth guides](index.md)

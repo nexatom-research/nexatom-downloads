@@ -1,37 +1,21 @@
-## Synthetic Input Delay
+# 2.7 Synthetic input delay
 
-Small, programmable synthetic delays can be applied to individual input channels. This feature is typically used to compensate for differing external cable lengths or to temporally align the arrival of correlated signals prior to multi-channel coincidence processing.
+## Per-channel input delay configuration
 
-```mermaid
-flowchart LR
-    A["Discriminator"] --> B["Edge Detector"]
-    B --> C{"Synthetic Delay Block<br/>(0 - 4000 ps)"}
-    C --> D["FPGA Data Shuffler &<br/>Coincidence Engines"]
-```
+`set_channel_input_delay(channel, delay_ps)` and `nexatom_tt_set_channel_input_delay` accept integer picoseconds. First validate the selected channel and `profile.max_channel_input_delay_ps`.
 
-### [Per-channel input delay configuration](2_7_synthetic_input_delay.md#per-channel-input-delay-configuration)
-
-The synthetic input delay is applied dynamically within the FPGA logic immediately following the discriminator.
-
-| Parameter | Range | Resolution |
-|---|---|---|
-| `delay_ps` | `0` to `4000` | Picoseconds (ps) |
-
-Providing a `delay_ps` value greater than `4000` will result in a `NEXATOM_ERROR_INVALID_PARAMETER` return code in C, or raise a `NexatomError` exception in Python.
-
-#### C API
-
-```c
-nexatom_tt_set_channel_input_delay(
-    nexatom_tt_handle device,
-    uint8_t channel,
-    uint32_t delay_ps
-);
-```
-
-#### Python
+Preview.7 supports profile limits beyond the older manual's fixed 4000 ps range. Do not replace that old limit with a universal 256000 ps allowance: the connected profile remains authoritative, including a zero limit. The published Zynq checks include settings above 200 ns, but do not qualify every model/image or infer picosecond physical accuracy from API units.
 
 ```python
-# Compensate for ~50 cm extra BNC cable length on channel 1 (~2500 ps delay)
-device.set_channel_input_delay(channel=1, delay_ps=2500)
+# Fragment inside a connected, authorized measurement setup; output is quiet.
+profile = device.get_device_profile()
+channel, requested_ps = 1, 220000
+if not (int(profile.effective_public_tdc_mask) & (1 << channel)):
+    raise ValueError("Channel is not authorized")
+if requested_ps > int(profile.max_channel_input_delay_ps):
+    raise ValueError("Requested delay exceeds this device profile")
+device.set_channel_input_delay(channel, requested_ps)
+# Acceptance records the requested control value, not analog readback.
 ```
+
+[Device operation](index.md) · [Channel controls](../07_c_api/7_7_channel_config.md)

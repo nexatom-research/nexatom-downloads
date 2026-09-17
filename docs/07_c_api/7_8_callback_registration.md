@@ -1,8 +1,8 @@
 # Callback Registration
 
-The NexatomTT C API is highly asynchronous and event-driven. Instead of forcing the host application to aggressively poll the USB buffer, the native C++ `ProcessingThread` automatically parses incoming packets and dispatches them directly to user-defined function pointers.
+The NexatomTT C API dispatches decoded data asynchronously to registered callbacks. Applications use the public API rather than polling USB buffers or depending on internal thread classes.
 
-**Critical Thread Safety Rule:** All data payload structures (TIHI, MFCO, etc.) are passed **by-value**. The host application unconditionally owns the memory provided within the scope of the callback. Do not attempt to retain pointers to arrays nested inside the structs after the callback returns.
+**Callback ownership:** Fixed data records such as TIHI/MFCO/CPS are passed by value; copy them before retaining data beyond the callback. The versioned configuration-dump callback instead receives a borrowed view pointer and borrowed records: deep-copy both metadata and records before return. Neither a pointer to a local by-value argument nor a shallow copy of a pointer-based view establishes lasting ownership.
 
 ### Function Reference
 
@@ -16,7 +16,7 @@ The NexatomTT C API is highly asynchronous and event-driven. Instead of forcing 
 | `nexatom_tt_set_telemetry_callback` | `[In] nexatom_tt_handle device`<br>`[In] nexatom_telemetry_callback callback`<br>`[In] void* user_data` | `nexatom_error_code_t` | Binds a function pointer to receive periodic `nexatom_telemetry_data_t` hardware health updates. |
 | `nexatom_tt_set_config_dump_callback` | `[In] nexatom_tt_handle device`<br>`[In] nexatom_config_dump_callback callback`<br>`[In] void* user_data` | `nexatom_error_code_t` | Binds a function pointer to receive register states requested via manual diagnostic dumps. |
 | `nexatom_tt_set_connection_status_callback` | `[In] nexatom_tt_handle device`<br>`[In] nexatom_connection_status_callback callback`<br>`[In] void* user_data` | `nexatom_error_code_t` | Binds a function pointer that triggers asynchronously if the physical USB connection drops or re-establishes. |
-| `nexatom_tt_clear_callbacks` | `[In] nexatom_tt_handle device` | `nexatom_error_code_t` | Synchronously blocks until all active background dispatches finish, then nullifies all registered function pointers to prevent segfaults during host teardown. |
+| `nexatom_tt_clear_callbacks` | `[In] nexatom_tt_handle device` | `nexatom_error_code_t` | Clears stored registrations; an already-selected invocation can remain. Retain callback code/user data until native destruction completes. |
 
 ### Expected Function Signatures
 
@@ -60,10 +60,16 @@ int main() {
     
     // ... (Run measurement) ...
     
-    // 3. Critically important: Clear callbacks before destroying context
+    // 3. Clear is not a fence; record_counter stays alive through destruction.
     nexatom_tt_clear_callbacks(my_device);
+    nexatom_tt_disconnect(my_device); // Complete code checks both returned statuses.
+    nexatom_tt_destroy(my_device);
     
     printf("Total records processed safely: %d\n", record_counter);
     return 0;
 }
 ```
+
+The example's counter is read only after native destruction. Protect it if another application thread reads it during acquisition. For production use the complete template's checked cleanup.
+
+Preview.7 also exposes `nexatom_tt_set_telemetry_view_callback_v1`, `nexatom_tt_set_config_dump_view_callback_v1` and `nexatom_tt_set_fast_tihi_histogram_callback_v1`. Use the exact versioned typedefs and available fields from the header. Registering a callback does not grant hardware capability. Ordinary callback clearing has no logging-style quiescence guarantee; see [lifetime details](../06_in_depth_guides/6_5_callback_thread_safety_and_data_lifetime.md).

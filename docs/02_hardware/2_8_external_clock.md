@@ -1,34 +1,15 @@
-## External Clock Input
+# 2.8 External clock input
 
-The UTT810 supports synchronization to an external reference clock, allowing multiple devices or disparate laboratory systems to share a common, unified time base.
+## Requesting external sync-clock operation
 
-> **Python Wrapper Support.** External clock configuration is currently only exposed in the native C API. It is not yet wrapped in the `NexatomDevice` Python class.
+Check the active profile/capabilities before `request_sync_clock(enable)` or `nexatom_tt_request_sync_clock`. A successful request is distinct from detecting a reference and locking to it.
 
-### [Requesting external sync-clock operation](2_8_external_clock.md#requesting-external-sync-clock-operation)
+Use the reference frequency, voltage, termination and cabling specified for your instrument. This SDK manual does not establish those physical limits or promise synchronisation between two boards merely because both are connected to the same PC.
 
-Switching the hardware to an external clock is an asynchronous operation. The host software issues a request, and the device's internal phase-locked loop (PLL) attempts to acquire and lock onto the external signal before dynamically switching clock domains.
+## Sync-clock status monitoring via telemetry
 
-#### C API
+Use the versioned telemetry view and its field availability indicators. Keep requested, detected/locked and active clock state distinct. A missing field is unknown, not false; a cached sample may be stale. Explicitly request a newer sample when necessary.
 
-```c
-nexatom_tt_request_sync_clock(
-    nexatom_tt_handle device,
-    bool enable
-);
-```
+Clock lock alone does not measure relative board skew or prove that two acquisitions share a timestamp origin. Such experiments need their own measured acceptance criteria.
 
-Calling this function with `enable = true` does not guarantee immediate synchronization. The system will only switch to the external clock if a valid signal is detected and locked. If `enable = false`, the hardware immediately requests a return to the internal oscillator.
-
-### [Sync-clock status monitoring via telemetry](2_8_external_clock.md#sync-clock-status-monitoring-via-telemetry)
-
-Because the clock transition is asynchronous and managed autonomously by the FPGA, the definitive state of the clock path must be monitored via the device's realtime telemetry stream.
-
-The `nexatom_telemetry_data_t` structure provides three boolean fields that track the internal clock state machine:
-
-| Field | Description |
-|---|---|
-| `sync_clock_requested` | `true` if the host has issued a request for the external clock path via `nexatom_tt_request_sync_clock()`. |
-| `sync_clock_locked` | `true` if the hardware PLL has successfully locked onto a valid external clock signal. |
-| `sync_clock_active` | `true` if the hardware has successfully transitioned and is actively operating on the external clock domain. |
-
-**Verification.** The `sync_clock_active` flag is the sole definitive indicator that subsequent time tags and data packets are synchronized to the external reference. Host software should poll telemetry and wait for `sync_clock_active == true` before commencing data acquisition.
+[Device operation](index.md) · [Telemetry](2_11_telemetry.md)

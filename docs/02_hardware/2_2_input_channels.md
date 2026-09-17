@@ -1,100 +1,25 @@
-# Input Channels
+# 2.2 Input channels
 
-The UTT810 features 8 independent input channels with configurable discriminator logic. All input channel configurations are applied directly to the FPGA hardware registers.
+## Channel count and indexing
 
-```mermaid
-flowchart LR
-    A["Analog Input<br/>(SMA)"] --> B["Discriminator<br/>(Threshold)"]
-    B --> C["Hysteresis<br/>Filter"]
-    C --> D["Edge Detector<br/>(Rising/Falling)"]
-    D --> E["Channel Routing<br/>Matrix"]
-    E --> F["FPGA TDC"]
-```
+Use zero-based public channel IDs authorized by `effective_public_tdc_mask`. A physical lane count or the legacy eight-element callback array does not authorize additional public inputs. The primary templates validate the entire channel plan before writing it.
 
-> **Python Wrapper Support.** Advanced input configurations (edge type, hysteresis, and routing) are currently only exposed in the native C API. They are not yet wrapped in the `NexatomDevice` Python class.
+## Threshold configuration
 
-### [Channel count and indexing](2_2_input_channels.md#channel-count-and-indexing)
+`set_channel_threshold(channel, threshold_mv)` uses integer millivolts. Bound the request by native capabilities (the examples also enforce the API ceiling of 2500 mV). Choose values appropriate to the external signal and instrument specification.
 
-The UTT810 hardware provides 8 physical input channels. Throughout both the native C API and the Python wrapper, channels are strictly zero-indexed.
+## Edge type selection
 
-| Parameter | Range |
-|---|---|
-| Channel index | `0` through `7` |
-| Count (`NEXATOM_MAX_CHANNELS`) | `8` |
+`set_channel_edge_type(channel, edge_type)` uses 0 for rising and 1 for falling. An edge change may initiate recalibration. Successful command acceptance does not prove recalibration completion or the measured response of an analog input.
 
-Passing a channel index outside the `0–7` range will result in a `NEXATOM_ERROR_INVALID_PARAMETER` return code or a `NexatomError` exception.
+## Input hysteresis
 
-### [Threshold configuration](2_2_input_channels.md#threshold-configuration)
+`set_channel_hysteresis(channel, hysteresis_mv)` accepts the native API's 0–175 mV range where supported. This is a control range, not a complete specification of input voltage tolerance or comparator behaviour.
 
-The discriminator voltage threshold can be configured independently for each channel. The threshold is specified in millivolts (mV). The maximum valid threshold is hardware-dependent and can be queried via the `max_threshold_mv` field in `nexatom_tt_capabilities_t`.
+## Channel routing
 
-#### C API
+`set_channel_routing(source_channel, target_channel)` is capability-dependent. Native validates it; do not infer that selecting channels for MFCO analysis disables other physical inputs. Preview.7 does not provide a general Python `enable_channel` method; use only the controls actually exported by your package.
 
-```c
-nexatom_tt_set_channel_threshold(
-    nexatom_tt_handle device,
-    uint8_t channel,
-    uint16_t threshold_mv
-);
-```
+For practical configuration code see `channel_setup.py` in the packaged Python examples and the shared setup in `examples/sdk/`. [Test pulses](2_6_test_signal.md) exercise the digital acquisition path and cannot validate analog threshold, hysteresis or edge response.
 
-#### Python
-
-```python
-device.set_channel_threshold(channel=0, threshold_mv=1000)
-```
-
-### [Edge type selection](2_2_input_channels.md#edge-type-selection)
-
-Input channels can be configured to generate a time tag on either the rising or falling edge of the incoming pulse.
-
-| `edge_type` value | Trigger edge |
-|---|---|
-| `0` | Rising edge |
-| `1` | Falling edge |
-
-#### C API
-
-```c
-nexatom_tt_set_channel_edge_type(
-    nexatom_tt_handle device,
-    uint8_t channel,
-    uint8_t edge_type
-);
-```
-
-*(This function is not currently exposed in the Python wrapper.)*
-
-### [Input hysteresis](2_2_input_channels.md#input-hysteresis)
-
-To prevent multi-triggering or ringing on noisy input signals, a hysteresis voltage can be applied to the discriminator comparator.
-
-The maximum permitted hysteresis is 175 mV, which corresponds to 50% of the typical 350 mV LVDS differential voltage swing.
-
-#### C API
-
-```c
-nexatom_tt_set_channel_hysteresis(
-    nexatom_tt_handle device,
-    uint8_t channel,
-    uint16_t hysteresis_mv
-);
-```
-
-*(This function is not currently exposed in the Python wrapper.)*
-
-### [Channel routing](2_2_input_channels.md#channel-routing)
-
-Internal FPGA logic permits routing the physical signal from one hardware input channel to another logical software channel before time-tag generation. This is useful for multi-trigger logic mapping without external cable splitters.
-
-#### C API
-
-```c
-nexatom_tt_set_channel_routing(
-    nexatom_tt_handle device,
-    uint8_t source_channel,
-    uint8_t target_channel
-);
-```
-
-*(This function is not currently exposed in the Python wrapper.)*
+[Device operation](index.md) · [C channel controls](../07_c_api/7_7_channel_config.md)

@@ -1,67 +1,25 @@
-## Curve Fitting and Analysis Pipelines
+# 6.4 Curve fitting and analysis pipelines
 
-To minimize computational latency and language barrier overhead, the NexatomTT SDK performs intensive mathematical fitting directly within the native C++ library. The SDK utilizes optimized, multi-threaded Levenberg-Marquardt non-linear least squares solvers.
+TIHI fitting and correlation-derived DLS/FCS/DCS analysis run on the host. Configuration selects models, fit ranges and experimental parameters; successful configuration does not guarantee a converged or physically meaningful fit.
 
-### [TIHI lifetime fitting models](6_4_curve_fitting_and_analysis_pipelines.md#tihi-lifetime-fitting-models)
+## TIHI
 
-When `nexatom_tt_enable_tihi_fitting()` is active, the SDK attempts to fit the accumulated Time Interval Histogram (TCSPC) data to a specified mathematical model prior to dispatching the callback. The resulting parameters are populated in the `NexatomTihiFittingData` struct.
+Configure acquisition first, then optional background subtraction, signal/background regions, model, minimum counts, convergence threshold and iteration limit. Read the fitting record's attempted/converged/curve flags and valid bins. Preserve the original histogram and background settings; a fitted lifetime requires an appropriate experiment and model.
 
-The following models are natively supported:
+## Correlation and physical analyses
 
-**Single Exponential:** (Fluorescence lifetime, simple decay)
-$$y(t) = A \cdot \exp\left(-\frac{t}{\tau}\right) + B$$
+CORL/CORM return lag axes and normalization statistics. Check `normalization_valid`; values without valid normalization must not be labelled normalized g². DLS/FCS/DCS outputs are embedded in the CORM callback, not delivered through standalone analysis callback setters.
 
-**Bi-Exponential:** (Complex decay, mixed fluorophores)
-$$y(t) = A_1 \cdot \exp\left(-\frac{t}{\tau_1}\right) + A_2 \cdot \exp\left(-\frac{t}{\tau_2}\right) + B$$
+The C ABI exports one `analysis_result` selected by `analysis_type`: NONE, DLS, FCS or DCS. If multiple results are available, selection priority is DLS, then FCS, then DCS. Enable only the analysis intended for the exported result where practical.
 
-**Gaussian:** (Instrument Response Function, symmetric pulse analysis)
-$$y(t) = A \cdot \exp\left(-\frac{(t-\mu)^2}{2\sigma^2}\right) + B$$
+| Analysis | Inputs to establish before interpretation |
+| --- | --- |
+| DLS | Wavelength, scattering angle, temperature, viscosity and refractive index |
+| FCS | Confocal dimensions, experimental conditions/calibration diffusion and selected fit model |
+| DCS | Optical tissue parameters, source/detector separation, model parameters and wavelength |
 
-**Lorentzian:** (Spectral line shapes, resonance profiles)
-$$y(t) = \frac{A}{1 + \left(\frac{t-\mu}{\gamma}\right)^2} + B$$
+Use `fit_result` for quality, fitted curve, ROI, beta and signal-to-noise. Reserved quality fields inside nested analysis records currently remain zero. Uncomputed derived values can be NaN/zero; do not turn them into successful measurements. For example, a record field named perfusion or flow is not by itself a validated clinical measurement.
 
-**Stretched Exponential (Kohlrausch):** (Disordered systems, heterogeneous relaxation)
-$$y(t) = A \cdot \exp\left(-\left(\frac{t}{\tau}\right)^\beta\right) + B$$
+The advanced [DLS](../07_c_api/7_12_dls.md), [FCS](../07_c_api/7_13_fcs.md) and [DCS](../07_c_api/7_14_dcs.md) reference pages retain the relevant controls. Product application notes remain separate from this SDK manual.
 
-> **Auto-Select Mode:** If configured to `AUTO`, the SDK evaluates the Single, Bi-Exponential, and Gaussian models simultaneously, returning the parameters of the model yielding the lowest reduced chi-squared ($\chi_\nu^2$) statistic.
-
-### [Correlation fitting (Multi-Tau CORM)](6_4_curve_fitting_and_analysis_pipelines.md#correlation-fitting)
-
-For Intensity Correlation ($g^{(2)}(\tau)$) evaluated on a quasi-logarithmic lag scale, the SDK computes comprehensive goodness-of-fit metrics alongside the primary decay parameters.
-
-The solver yields the **Correlation Time** ($\tau_c$) and the **Coherence Factor** ($\beta$). Furthermore, the SDK natively computes:
-*   $\chi^2$ and Reduced $\chi^2$ ($\chi_\nu^2$)
-*   Coefficient of Determination ($R^2$)
-*   Signal-to-Noise Ratio (SNR)
-
-To reject baseline noise at extreme lag times, users can restrict the solver via ROI-constrained fitting. The fitted curve is evaluated at the original discrete lag times and appended to the callback payload.
-
-### [Dynamic Light Scattering (DLS) analysis](6_4_curve_fitting_and_analysis_pipelines.md#dynamic-light-scattering-analysis)
-
-When DLS analysis is enabled (`nexatom_tt_enable_dls_analysis()`), the SDK applies Cumulant Analysis to the correlation data to extract nanoparticle sizing metrics.
-
-By defining the experimental wavelength, scattering angle, temperature, and solvent viscosity, the SDK directly computes the diffusion coefficient. The output `nexatom_dls_analysis_result_t` struct yields:
-*   **Z-average diameter:** Intensity-weighted mean hydrodynamic size.
-*   **Polydispersity Index (PDI):** Dimensionless measure of the broadness of the size distribution.
-*   **Mean decay rate ($\Gamma$)**, Variance, and Skewness.
-
-### [Fluorescence Correlation Spectroscopy (FCS) analysis](6_4_curve_fitting_and_analysis_pipelines.md#fluorescene-correlation-spectroscopy-analysis)
-
-The FCS module decomposes concentration and diffusion kinetics from confocal optical setups. Configuration requires strict definition of the confocal volume (lateral and axial waist radii).
-
-The solver accommodates multiple complex physical phenomena:
-*   **Multi-component diffusion:** Resolves single and two-component kinetic models.
-*   **Triplet state correction:** Compensates for fluorophores entering dark states.
-*   **Anomalous diffusion:** Fits the $\alpha$ parameter for non-Brownian sub-diffusion in crowded environments (e.g., live cells).
-*   **Flow component separation:** Resolves directed active transport versus passive thermal diffusion.
-
-Outputs include absolute concentration, particles per volume, and characteristic diffusion times.
-
-### [Diffuse Correlation Spectroscopy (DCS) analysis](6_4_curve_fitting_and_analysis_pipelines.md#diffuse-correlation-spectroscopy-analysis)
-
-Designed for deep-tissue in-vivo hemodynamics, the DCS module fits the semi-infinite photon diffusion equation to the measured temporal auto-correlation of scattered light.
-
-Users must provide tissue optical properties (absorption coefficient $\mu_a$, reduced scattering coefficient $\mu_s'$) and source-detector separation. The SDK outputs:
-*   **Blood Flow Index (BFI):** Relative index of microvascular perfusion.
-*   **Decorrelation time:** Inverse indicator of scatterer movement speed.
-*   **Brownian motion parameters:** To model erythrocyte displacement.
+[In-depth guides](index.md)

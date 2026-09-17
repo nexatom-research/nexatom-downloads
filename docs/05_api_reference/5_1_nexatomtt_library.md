@@ -1,63 +1,20 @@
-## The NexatomTT Library
+# 5.1 NexatomTT library and constants
 
-This section defines the fundamental constants, enumerations, and limit bounds utilized throughout the SDK. These values dictate hardware capabilities, buffer sizings, and operational state machines.
+`NexatomLibrary(home=...)` locates and loads the extracted SDK. `version()` returns the native version string; `library_info()` returns build information. Neither should be confused with the SDK preview release label.
 
-### [Constants and limits](5_1_nexatomtt_library.md#constants-and-limits)
+Use `error_message(code)` for a stable code description and copy `last_error_message()` promptly for current native diagnostics. `NexatomError` carries the failed code and message; do not suppress cleanup failures after a capture.
 
-| Constant | Value | Description |
-|----------|-------|-------------|
-| `NEXATOM_MAX_CHANNELS` | 8 | Maximum physical input channels available on the UTT810. |
-| `NEXATOM_MAX_STRING_LENGTH` | 256 | Maximum byte size for string buffers (e.g., serial numbers, error messages). |
-| `NEXATOM_MAX_HISTOGRAM_BINS` | 1024 | The absolute maximum size of the TIHI hardware histogram array. |
-| `NEXATOM_MAX_CONFIGURABLE_TIME_HISTOGRAM_BINS` | 1023 | The maximum user-settable bin count (reserving 1 bin for overflow). |
-| `NEXATOM_MAX_CORRELATION_LAGS` | 80 | The fixed number of correlation lag times computed by the hardware engines. |
-| `NEXATOM_CONFIG_DUMP_MAX_REGISTERS` | 128 | Maximum number of register address-value pairs returned in a config dump. |
+| Constant family | Meaning |
+| --- | --- |
+| `NEXATOM_OUTPUT_*` | Output selection, checked against the profile's output-mode mask |
+| `NEXATOM_AGGREGATION_*` | REPLACE, ACCUMULATE or AVERAGE result handling |
+| `NEXATOM_PD_PACKET_*`, `NEXATOM_PD_FILE_*` | Processed packet and file formats |
+| `NEXATOM_TT_FILE_*` | Time-tag file formats |
+| `NEXATOM_TT_PROFILE_*`, `NEXATOM_TT_FEATURE_*` | Native profile authority and available feature families |
+| `NEXATOM_HARDWARE_PROTOCOL_MODE_*` | Unknown, service/bootloader or runtime protocol |
 
-### [Error codes (`nexatom_error_code_t`)](5_1_nexatomtt_library.md#error-codes)
+Use exported symbolic constants instead of reproducing enum numbers. Acquisition completion is not a generic sequential success code: retain the actual result status and consult the result contract. The legacy array maxima describe ABI storage, not permission to use every physical channel or the maximum for every model.
 
-All C API functions return a signed 32-bit integer indicating success or the specific mode of failure. In the Python API, any negative return value automatically raises a `NexatomError` exception.
+The binding also exposes library-level structured logging through `set_log_callback`, `unregister_log_callback`, logging capabilities/configuration/statistics and module controls. See [logging](../06_in_depth_guides/6_3_logging_system.md).
 
-*   `0`: `NEXATOM_SUCCESS`
-*   `-1`: `NEXATOM_ERROR_INVALID_PARAMETER`
-*   `-2`: `NEXATOM_ERROR_NOT_CONNECTED`
-*   `-3`: `NEXATOM_ERROR_ALREADY_CONNECTED`
-*   `-4`: `NEXATOM_ERROR_CONNECTION_FAILED`
-*   `-5`: `NEXATOM_ERROR_TIMEOUT`
-*   `-6`: `NEXATOM_ERROR_DEVICE_BUSY`
-*   `-7`: `NEXATOM_ERROR_ACQUISITION_RUNNING`
-*   `-8`: `NEXATOM_ERROR_NO_ACQUISITION`
-*   `-9`: `NEXATOM_ERROR_CONFIGURATION_FAILED`
-*   `-10`: `NEXATOM_ERROR_MEMORY_ALLOCATION`
-*   `-11`: `NEXATOM_ERROR_FILE_IO`
-*   `-12`: `NEXATOM_ERROR_NOT_SUPPORTED`
-*   `-13`: `NEXATOM_ERROR_CALIBRATION_FAILED`
-*   `-14`: `NEXATOM_ERROR_MODE_RESTORE_FAILED`
-*   `-99`: `NEXATOM_ERROR_INTERNAL` (Fatal SDK state violation)
-
-### [Device states (`nexatom_tt_state_t`)](5_1_nexatomtt_library.md#device-states)
-
-The internal state machine governs which commands are valid at any given time.
-*   `DISCONNECTED` (0)
-*   `CONNECTING` (1)
-*   `CONNECTED` (2): Idle, ready for configuration.
-*   `CONFIGURING` (3): Actively writing to FPGA registers.
-*   `ACQUIRING` (4): Measurement engines are active (`enable_system(True)`).
-*   `STOPPING` (5)
-*   `ERROR` (6)
-
-### [Aggregation modes (`nexatom_aggregation_mode_t`)](5_1_nexatomtt_library.md#aggregation-modes)
-
-Governs how the SDK processes sequential data payloads from the FPGA before dispatching the user callback. Applies to TIHI, MFCO, and Correlation engines.
-*   `ACCUMULATE` (0): New hardware counts are summed directly into the existing host-side histogram.
-*   `REPLACE` (1): The host-side histogram is cleared and overwritten by the latest hardware packet.
-*   `AVERAGE` (2): Maintains a running statistical average across sequential hardware packets.
-
-### [Acquisition done status (`nexatom_acquisition_done_status_t`)](5_1_nexatomtt_library.md#acquisition-done-status)
-
-Included in the final callback payload when an active measurement terminates.
-*   `NORMAL_COMPLETION` (0): Terminated naturally based on hardware stop conditions.
-*   `MANUAL_STOP` (1): Terminated by a user-issued stop command.
-*   `EVENT_COUNT_REACHED` (2): Terminated via the `stop_count` limit.
-*   `TIME_DURATION_REACHED` (3): Terminated via the `stop_duration_ms` limit.
-*   `DIVIDEND_OVERFLOW` (4): Hardware integration registers overflowed.
-*   `UNKNOWN` (5)
+[Python reference](index.md)

@@ -1,59 +1,35 @@
-## Measurement Modules
+# 5.5 Measurement modules
 
-This section documents the advanced mathematical and analytical configuration endpoints. These methods dictate how the internal C++ solvers evaluate data (e.g., background subtraction, curve fitting, and physical modeling) before dispatching the payload to your Python callbacks.
+Prepare supported controls while quiet, then explicitly enable/start the intended engines. Profile validation and native errors remain authoritative for every method below. Retain status/quality metadata when interpreting a callback.
 
-### [Time Interval Histogram (TIHI) advanced config](5_5_measurement_modules.md#time-interval-histogram-config)
+## Time histogram
 
-| Method | Parameters | Returns | Description |
-| :--- | :--- | :--- | :--- |
-| `set_tihi_background_method` | `method: int` | `None` | Sets the baseline subtraction mode: `NONE`, `USER_CONSTANT`, or `USER_REGION`. |
-| `set_tihi_user_background_value` | `value: float` | `None` | Defines the static baseline subtracted from all bins if `USER_CONSTANT` is active. |
-| `set_tihi_signal_region` | `start_bin: int`, `end_bin: int` | `None` | Restricts fitting algorithms and SNR calculations to a specific Region of Interest (ROI). |
-| `enable_tihi_fitting` | `enable: bool` | `None` | Activates the Levenberg-Marquardt non-linear least squares solver on the active histogram. |
-| `set_tihi_fitting_model` | `model: int` | `None` | Selects the target equation: `EXPONENTIAL`, `BI_EXPONENTIAL`, `GAUSSIAN`, `LORENTZIAN`, `STRETCHED`, or `AUTO`. |
+`set_time_histogram_channels(start_channel, stop_channel)`, `set_time_histogram_bin_width(bin_width_ps)` and `set_time_histogram_num_bins(num_bins)` configure normal TIHI. Set stop count/duration, aggregation, first-stop/bidirectional behaviour, and callback before `enable_time_histogram(True)` / `start_time_histogram()`. Background and fitting controls include `set_tihi_background_method`, `set_tihi_signal_region`, `set_tihi_background_region`, `enable_tihi_fitting`, fitting parameters and model. See [TIHI C reference](../07_c_api/7_9_tihi.md).
 
-### [Multi-Fold Coincidence (MFCO) advanced config](5_5_measurement_modules.md#multi-fold-coincidence-config)
+Fast TIHI is a separate capability: `start_fast_tihi(configuration)` accepts the versioned V1/V2 configuration, `stop_fast_tihi()` stops it, and its callback carries the versioned histogram. Do not substitute it for normal TIHI based only on a model name.
 
-| Method | Parameters | Returns | Description |
-| :--- | :--- | :--- | :--- |
-| `set_multifold_coincidence_pattern_filter` | `channel: int`, `requirement: int` | `None` | Filters the output based on specific channel presence (`DONT_CARE`, `REQUIRED`, or `FORBIDDEN`). |
-| `disable_multifold_coincidence_pattern_filter` | *None* | `None` | Resets all channel requirements to `DONT_CARE`. |
-| `set_mfco_background_method` | `method: int` | `None` | Sets the noise subtraction mode: `NONE`, `USER_CONSTANT`, or `USER_SELECTED_PATTERN_BIN`. |
+## Multifold coincidence
 
-### [Intensity Correlation (CORL / CORM)](5_5_measurement_modules.md#intensity-correlation)
+`set_multifold_coincidence_channels(channels)` accepts an iterable of channel IDs for up to eight MFCO slots. `0xff` disables a slot; omitted slots are padded with `0xff`. It does not accept a single channel bitmask or an array of enable booleans. Current returned pattern bins are analyzed in software; slot/mask metadata is not a guarantee of physical input gating.
 
-| Method | Parameters | Returns | Description |
-| :--- | :--- | :--- | :--- |
-| `enable_linear_correlator` | `enable: bool` | `None` | Activates the strictly linear (CORL) correlation engine. |
-| `enable_multi_tau_correlator` | `enable: bool` | `None` | Activates the quasi-logarithmic (CORM) correlation engine. |
-| `set_intensity_correlation_channels` | `ch_a: int`, `ch_b: int` | `None` | Assigns the two physical inputs for cross-correlation (or set both to the same channel for auto-correlation). |
-| `set_intensity_correlation_bin_width` | `width_8ns: int` | `None` | Sets the base hardware lag resolution (must be a multiple of the 8ns FPGA clock). |
+Set the window in ps, stop conditions, aggregation, optional pattern filter and background method, then enable/start MFCO. `set_multifold_coincidence_pattern_filter(requirements)` takes exactly eight requirements. Use documented requirement constants. See [pattern helpers](5_6_mfco_pattern_analysis_helpers.md) and [MFCO reference](../07_c_api/7_10_mfco.md).
 
-### [Dynamic Light Scattering (DLS) analysis](5_5_measurement_modules.md#dynamic-light-scattering-analysis)
+## Intensity correlation
 
-Extracts hydrodynamic nanoparticle sizes from the CORM output via Cumulant Analysis.
+Use separate `set_intensity_correlation_channel_a(channel)` and `_channel_b(channel)` methods. `set_intensity_correlation_bin_width(bin_width_in_8ns_units)` retains the public 8 ns unit; native translates for the active profile. `set_intensity_correlation_num_bins(num_bins)` configures integration sample depth, not the 80 returned lag points. Configure stop conditions and linear/multi-tau aggregation, enable the desired correlators, then start. Check normalization validity. See [correlation](../07_c_api/7_11_correlation.md).
 
-| Method | Parameters | Returns | Description |
-| :--- | :--- | :--- | :--- |
-| `enable_dls_analysis` | `enable: bool` | `None` | Activates the DLS fitting algorithms on the correlation data. |
-| `set_dls_experimental_conditions` | `wavelength_nm: float`, `angle_deg: float`, `temp_k: float`, `viscosity_cp: float`, `refractive_idx: float` | `None` | Defines the physical parameters of the experimental setup required to extract the diffusion coefficient. |
-| `set_dls_fit_range` | `start_lag_ns: int`, `end_lag_ns: int` | `None` | Restricts the Cumulant solver to a specific temporal region of the correlation decay. |
+## Scientific analysis
 
-### [Fluorescence Correlation Spectroscopy (FCS)](5_5_measurement_modules.md#fluorescence-correlation-spectroscopy)
+| Analysis | Key Python signatures/units |
+| --- | --- |
+| DLS | `set_dls_fit_range(start_index, end_index)`; `set_dls_experimental_conditions(wavelength_nm, angle_deg, temperature_c, viscosity_mPa_s, refractive_index)`; bounds, cumulant enable and fitting control |
+| FCS | `set_fcs_fit_range(start_index, end_index)`; `set_fcs_confocal_volume(omega_xy_um, omega_z_um)`; `set_fcs_experimental_conditions(temperature_celsius, viscosity_mPa_s, wavelength_nm, calibration_diffusion_um2_s)` |
+| DCS | `set_dcs_fit_range(start_index, end_index)`; `set_dcs_tissue_properties(mu_a, mu_s_prime, source_detector_separation_cm)`; `set_dcs_model_parameters(anisotropy_g, tissue_n, wavelength_nm)` |
 
-Decomposes confocal molecular diffusion kinetics and concentrations.
+Each family has `enable_*_analysis` and fitting controls. These are host analysis models, not a guarantee of scientifically valid results from arbitrary signals. See [fitting/result validity](../06_in_depth_guides/6_4_curve_fitting_and_analysis_pipelines.md).
 
-| Method | Parameters | Returns | Description |
-| :--- | :--- | :--- | :--- |
-| `enable_fcs_analysis` | `enable: bool` | `None` | Activates the FCS decomposition solver. |
-| `set_fcs_confocal_volume` | `lateral_radius_nm: float`, `axial_radius_nm: float` | `None` | Defines the optical observation volume ($V_{eff}$) parameters. |
-| `set_fcs_experimental_conditions` | `temp_k: float`, `viscosity_cp: float`, `wavelength_nm: float` | `None` | Defines the solvent and excitation constraints. |
+## DTC
 
-### [Diffuse Correlation Spectroscopy (DCS)](5_5_measurement_modules.md#diffuse-correlation-spectroscopy)
+For a profile authorizing DTC, use `apply_dtc_output(configuration, timeout_ms=1000)`, inspect the returned apply result, then use `set_dtc_global_enable(enable)` as intended. `get_dtc_status` and `clear_dtc_status` have separate purposes. A rejected apply raises `NexatomDtcApplyRejected` with the returned diagnostic result; do not treat a proposed configuration as applied.
 
-Models deep-tissue hemodynamics using the semi-infinite photon diffusion equation.
-
-| Method | Parameters | Returns | Description |
-| :--- | :--- | :--- | :--- |
-| `enable_dcs_analysis` | `enable: bool` | `None` | Activates DCS in-vivo blood flow modeling. |
-| `set_dcs_tissue_properties` | `mu_a: float`, `mu_s_prime: float`, `separation_cm: float` | `None` | Defines the absorption coefficient, reduced scattering coefficient, and optode physical distance. |
+[Python reference](index.md)

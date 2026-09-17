@@ -25,7 +25,7 @@ When a custom callback is registered, it receives a fully-copied `nexatom_log_re
 | `module` | `nexatom_log_module_t` | Enum identifying the source component (e.g., `TRANSPORT` = 1, `DECODER` = 2). |
 | `level` | `nexatom_log_level_t` | Enum severity (`DEBUG` = 1, `INFO` = 2, `WARNING` = 3, `ERROR` = 4). |
 | `category` | `nexatom_log_category_t` | Enum classifying the log event (e.g., `REGISTER_WRITE`, `ERROR_CONDITION`). |
-| `sequence_id` | `uint64_t` | Per-thread monotonically increasing sequence ID. |
+| `sequence_id` | `uint64_t` | Process-global delivery ordering ID. |
 | `repeat_count` | `uint32_t` | Identifies duplicate messages suppressed by the backend (0 if none). |
 | `message_length` | `uint32_t` | The string length of the message payload (excluding the null terminator). |
 | `message` | `char[1024]` | The actual UTF-8 formatted log message, guaranteed to be null-terminated. |
@@ -50,7 +50,7 @@ int main() {
     nexatom_tt_set_log_callback(my_custom_logger, NULL);
 
     // 3. Configure the verbosity matrix
-    // Silence everything except hardware commands and USB transport errors
+    // Enable hardware command diagnostics; use queried capabilities for availability.
     for (int i = 0; i < NEXATOM_LOG_MODULE_COUNT; i++) {
         nexatom_tt_set_module_enabled((nexatom_log_module_t)i, false);
     }
@@ -58,6 +58,13 @@ int main() {
     nexatom_tt_set_module_enabled(NEXATOM_LOG_MODULE_HARDWARE_CMD, true);
     nexatom_tt_set_module_log_level(NEXATOM_LOG_MODULE_HARDWARE_CMD, NEXATOM_LOG_DEBUG);
     
-    return 0;
+    // Retire the process-global callback before its state can be released.
+    return nexatom_tt_unregister_log_callback(5000) == NEXATOM_SUCCESS ? 0 : 1;
 }
 ```
+
+### Versioned logging controls
+
+Preview.7 also exposes `nexatom_tt_get_logging_capabilities`, `nexatom_tt_get_logging_configuration`, `nexatom_tt_configure_logging` and `nexatom_tt_get_logging_statistics`. Initialize their record `struct_size` and `version` as specified in the shipped header. Query available modules/levels/categories rather than assuming every build includes DEBUG output.
+
+`nexatom_tt_unregister_log_callback(timeout_ms)` waits for quiescence. Logging is process-global and separate from device callback clearing. Retain handler resources on failure; do not unregister from a native callback. Its bounded queue can drop diagnostic records when a consumer is slow; see [logging behaviour](../06_in_depth_guides/6_3_logging_system.md).

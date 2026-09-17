@@ -2,7 +2,7 @@
 
 ### [License](index.md#license)
 
-The NexatomTT SDK is provided under a non-exclusive license strictly for use with official Nexatom instrumentation hardware. Reverse engineering the proprietary USB communication protocol or utilizing the SDK to interface with non-Nexatom hardware is strictly prohibited.
+The NexatomTT SDK is licensed for applications operating Nexatom hardware. The package's terms define permitted use/redistribution, restrictions and applicable exceptions; this summary does not replace them.
 
 For the complete and legally binding terms of use, refer to the `LICENSE.txt` file included in the root directory of the SDK distribution.
 
@@ -11,7 +11,7 @@ For the complete and legally binding terms of use, refer to the `LICENSE.txt` fi
 To provide high-performance hardware interfacing and data processing capabilities, the NexatomTT SDK distributes and links against several third-party libraries:
 
 *   **FTDI D3XX Runtime:** Distributed under the proprietary FTDI Chip software license.
-*   **GCC Runtime Libraries:** (`libgcc`, `libstdc++`) Distributed under the GNU GPL v3.0 with the GCC Runtime Library Exception, which permits linking with proprietary and closed-source software without viral licensing effects.
+*   **GCC Runtime Libraries:** (`libgcc`, `libstdc++`) Supplied under their applicable GNU GPL terms with the GCC Runtime Library Exception; retain the full notices and exception text.
 *   **MinGW-w64 winpthreads:** Distributed under permissive open-source licenses.
 *   **HDF5 (1.14.6):** Utilized for processed data exports, distributed under the HDF Group / NCSA BSD-style license.
 
@@ -21,7 +21,9 @@ For exact copyright attribution, maintainer lists, and the full text of these li
 
 > [!CAUTION]
 > **Field Update Interruption Risk**
-> When executing a firmware field update via the SDK (or the `field_update_e2e.py` tool), **do not disconnect the USB cable or interrupt power to the device** until the `FINALIZE` phase successfully completes.
+> When executing a firmware field update via the SDK (or `field_update_e2e.py`), **do not disconnect USB or interrupt power while writing. Check the final successful load/verification result**; the progress API uses its documented COMPLETED/FAILED phases, not a FINALIZE phase.
 
 *   **Image Validation:** Only flash firmware images that adhere to the `<NAME>_<VERSION>.bin` convention and have been explicitly provided by Nexatom for your exact hardware model (e.g., UTT810).
-*   **Boot Failures:** Loading a corrupt, truncated, or incompatible firmware image into the `default` boot slot will prevent the device from booting into `RUNTIME` mode. In this event, the device will permanently fallback to `BOOTLOADER` mode upon power-up, requiring you to re-flash a valid image to restore acquisition capabilities.
+*   **Boot Failures:** A corrupt or incompatible default image can prevent runtime boot. Recovery depends on the service firmware and remaining valid slots; do not assume recovery is guaranteed. Preserve a known-good image where possible.
+
+Preview.7 includes no firmware image. Keep the complete platform package, FTDI/vendor licenses and notices. Linux includes the bundled FTDI userspace library and optional USB permission rule; Windows additionally uses its matching FTDI driver and compiler runtime DLLs.

@@ -1,38 +1,33 @@
-## Callback Thread Safety and Data Lifetime
+# 6.5 Callback thread safety and data lifetime
 
-Bridging asynchronous, multi-threaded C++ hardware events into managed languages like Python introduces severe memory lifetime and concurrency risks. The NexatomTT SDK employs strict memory boundaries to guarantee thread safety across the Foreign Function Interface (FFI).
+Callbacks may run on native worker threads or synchronously during an API call. Connection registration can invoke its callback inline, and field-update progress callbacks run within the calling operation. Do not assume a UI thread. Return promptly; transfer plotting, disk export and expensive analysis to application work queues, and protect shared state appropriately.
 
-### [Pass-by-value callback semantics](6_5_callback_thread_safety_and_data_lifetime.md#pass-by-value-callback-semantics)
+## C and C++
 
-Unlike traditional C APIs that dispatch pointers to internal memory buffers, the NexatomTT SDK strictly utilizes **pass-by-value** semantics for all data callbacks.
+Most fixed data callbacks receive a by-value record. Its fields can be copied into your own storage, but a pointer to that local argument becomes invalid when the callback returns. By-value delivery does not extend a C local variable's lifetime. Keep the registered function and `user_data` alive until native device destruction completes.
 
-When the background `ProcessingThread` dispatches a payload (e.g., `nexatom_tihi_callback_data_t`), the entire struct—including all histogram bins and mathematical fit results—is copied directly into the host language's memory space.
+**The C versioned configuration-dump callback is a pointer-based exception.** It receives a borrowed view whose records pointer also expires when the callback returns. Copy the view's metadata and deep-copy its valid records into application-owned storage before returning. Copying only the top-level view leaves a dangling records pointer. Python's public wrapper performs an owned deep copy for this view.
 
-*   **Zero Dangling Pointers:** If the hardware connection drops, or if the user issues a `request_global_stop_all_modes()` command mid-callback, the internal hardware buffers are safely torn down without risking access violations in the host application.
-*   **Async Dispatch Safety:** The host application unconditionally owns the data packet. It can safely push the struct into thread-safe queues (e.g., Python's `queue.Queue`) for delayed processing by a GUI event loop.
-*   **Performance Overhead:** Because aggregated hardware data (TIHI, MFCO, CPS) is typically emitted at display rates (1–10 Hz), the microsecond-level CPU overhead of copying a few kilobytes of struct data is mathematically negligible compared to the architectural safety it provides.
+```c
+/* Fragment: the application owns slot and synchronizes it with its consumer. */
+static void receive_cps(nexatom_cps_data_t data, void *user_data) {
+    nexatom_cps_data_t *slot = (nexatom_cps_data_t *)user_data;
+    *slot = data; /* Copy the record; never store &data for later use. */
+}
+```
 
-### [Python callback reference management](6_5_callback_thread_safety_and_data_lifetime.md#python-callback-reference-management)
+This fragment requires application synchronization if another thread accesses `slot`; it is not a lock-free queue implementation. Use the packaged complete templates for practical ownership.
 
-When passing a Python function to a C API via `ctypes.CFUNCTYPE`, the Python Garbage Collector (GC) is unaware that the native C library holds a reference to the function pointer. If the Python function object falls out of scope and is garbage collected, subsequent executions of the callback by the C++ background thread will instantly trigger a segmentation fault.
+## Python
 
-The `NexatomDevice` wrapper class safely encapsulates this lifecycle:
-*   **`_callbacks` dictionary:** Retains a strong reference to the active `CFUNCTYPE` object, preventing premature garbage collection.
-*   **`_retired_callbacks` list:** When hot-swapping a callback (assigning a new callback while the hardware is actively acquiring), the old callback is moved to a retired list. This prevents a race condition where the Python GC destroys the old callback while the C++ thread is mid-dispatch. The retired list is safely flushed on the next GC cycle.
+The public wrapper copies records before invoking Python handlers and retains ctypes callback functions. An owned Python record can be queued, but application concurrency and bounded-memory policy remain your responsibility. Do not replace the public wrapper with a raw callback that retains borrowed memory.
 
-### [Callback registration and clearing](6_5_callback_thread_safety_and_data_lifetime.md#callback-registration-and-clearing)
+## Retirement and reentrancy
 
-The C API exposes 9 distinct registration functions to assign function pointers for specific data endpoints:
-*   `nexatom_tt_set_time_histogram_callback()`
-*   `nexatom_tt_set_multifold_coincidence_callback()`
-*   `nexatom_tt_set_count_rate_callback()`
-*   `nexatom_tt_set_multi_tau_correlation_callback()`
-*   `nexatom_tt_set_linear_correlation_callback()`
-*   `nexatom_tt_set_telemetry_callback()`
-*   `nexatom_tt_set_config_dump_callback()`
-*   `nexatom_tt_set_connection_status_callback()`
-*   `nexatom_tt_set_log_callback()` *(Global scope, not per-device)*
+Clearing or replacing ordinary data registrations does not fence an invocation already selected by native. The Python binding retains retired callback references until native destruction. C/FFI callers must likewise keep handler code and user data alive through device destruction; garbage collection is not a native lifetime guarantee.
 
-> **Note:** The Python `NexatomDevice` wrapper currently exposes 5 of these 9 callbacks: CPS, Telemetry, TIHI, MFCO, and Connection Status. The remaining 4 (Multi-Tau Correlation, Linear Correlation, Config Dump, and Log) are available exclusively through the C API. See Section 7.8 for the full C callback reference.
+Logging has a separate process-global `unregister_log_callback` with explicit quiescence. Successful logging unregister permits releasing its resources; timeout/BUSY/failure does not. Do not apply that stronger logging contract to ordinary device callback setters.
 
-To safely detach the host application from the background processing thread—especially prior to destroying a GUI window or shutting down the device—invoke `nexatom_tt_clear_callbacks()`. This synchronously blocks until all active dispatches complete, then zeroes all function pointers, guaranteeing no further code execution in the host environment.
+Do not destroy/close a device, replace callbacks, unregister logging or synchronously wait for the same callback from within a native callback. Unsupported reentrant operations may be rejected. Keep a control thread responsible for start/stop/cleanup, and report cleanup errors as part of the run outcome.
+
+[In-depth guides](index.md) · [Python callbacks](../05_api_reference/5_4_callback_types.md)

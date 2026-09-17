@@ -1,59 +1,19 @@
-## Test Signal
+# 2.6 Test signal
 
-The UTT810 features an internal test pulse generator capable of injecting synthetic signals into the time-tagging pipeline independently for each channel. This is designed for validating the software data path, testing coincidence logic without optical sources, and verifying SDK integration.
+## Enabling the internal test pulse generator
 
-### [Enabling the internal test pulse generator](2_6_test_signal.md#enabling-the-internal-test-pulse-generator)
+Use `enable_channel_test_pulse(channel, enable)` on authorized inputs. The acquisition templates configure pulses while quiet and explicitly disable them during cleanup. Their `--internal-test` option records that the source was internal.
 
-When the test pulse is enabled for a given channel, the hardware ignores the physical analog input on the SMA connector and injects the internally generated digital signal directly into the FPGA discriminator logic. The channel must be configured with a valid threshold and edge type for the synthetic pulses to generate time tags.
+## Configuring test pulse parameters
 
-#### C API
+`set_channel_test_pulse_params(channel, period, width)` takes **clock cycles**, not a frequency or picoseconds. Read these profile fields:
 
-```c
-nexatom_tt_enable_channel_test_pulse(
-    nexatom_tt_handle device,
-    uint8_t channel,
-    bool enable
-);
-```
+- `test_pulse_clock_hz`
+- `test_pulse_min_period_cycles`
+- `test_pulse_max_period_cycles`
 
-#### Python
+For a supported clock, frequency is clock/period and pulse duration is width/clock. Keep period within the reported range, with `0 < width < period`. A missing/zero clock or unusable limits means no usable pulse plan; do not substitute a hard-coded 125 MHz clock.
 
-```python
-device.enable_channel_test_pulse(channel=0, enable=True)
-```
+The shared setup in the packaged templates derives a plan near 100 kHz. Internal pulses test acquisition, file persistence and controlled digital timing relationships. They bypass the external analog-input test and do not establish analog calibration or maximum throughput.
 
-### [Configuring test pulse parameters](2_6_test_signal.md#configuring-test-pulse-parameters)
-
-The frequency and duty cycle of the test pulse are fully configurable. Parameters are specified in units of the FPGA's 125 MHz internal clock cycles. At 125 MHz, one clock cycle is exactly 8 nanoseconds.
-
-| Parameter | Valid Range (Cycles) | Physical Equivalent |
-|---|---|---|
-| `period_cycles` | `1` to `125000000` | Period of the signal (8 ns to 1.0 s) |
-| `width_cycles` | `1` to `125000000` | Pulse high-time duration (8 ns to 1.0 s) |
-
-> **Constraint.** The `width_cycles` must be strictly less than `period_cycles` to generate a valid toggling signal.
-
-#### C API
-
-```c
-nexatom_tt_set_channel_test_pulse_params(
-    nexatom_tt_handle device,
-    uint8_t channel,
-    uint32_t period_cycles,
-    uint32_t width_cycles
-);
-```
-
-#### Python
-
-```python
-# Configure a 1 MHz signal (1000 ns period) with 50% duty cycle (500 ns width)
-# 1000 ns / 8 ns = 125 cycles
-#  500 ns / 8 ns =  62 cycles (rounded)
-
-device.set_channel_test_pulse_params(
-    channel=0, 
-    period_cycles=125, 
-    width_cycles=62
-)
-```
+[Device operation](index.md) · [Quick start](../01_getting_started/1_2_quick_start.md)

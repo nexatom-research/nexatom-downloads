@@ -1,10 +1,12 @@
-# Getting Started
+# 1. Getting started
 
-This chapter guides you from installing the NexatomTT SDK to making your first measurement with the UTT810 hardware.
+This chapter uses the [preview.7 SDK](../index.md#version-scope-and-migration).
 
-Please refer to:
+1. [Install the package and USB driver](1_1_installation.md).
+2. [Run a processed or raw acquisition](1_2_quick_start.md).
+3. [Integrate C, C++ or Python](1_3_programming.md).
+4. Use [firmware management](1_4_firmware.md) only when you need to inspect or change an image slot.
 
-* **[Installation Guide](1_1_installation.md)** for installing the native library, Python wrapper, and FTDI drivers on Windows x64.
-* **[Quick Start Workflow](1_2_quick_start.md)** for running your first measurement, streaming CPS, and capturing time-tags.
-* **[Programming Languages](1_3_programming.md)** for integrating the C ABI or writing your first script in Python.
-* **[Firmware Management](1_4_firmware.md)** for understanding the boot sequence and performing field updates.
+The examples can boot an existing valid runtime when needed. Loading firmware is not a normal installation or measurement prerequisite.
+
+[Manual contents](../index.md)

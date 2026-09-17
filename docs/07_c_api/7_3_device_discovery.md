@@ -2,7 +2,7 @@
 
 These endpoints manage scanning the host's USB controller for attached NexatomTT instruments and safely allocating (and destroying) the opaque `nexatom_tt_handle`.
 
-*Note: Allocating the handle via `nexatom_tt_create` does **not** open the physical USB endpoints. You must call `nexatom_tt_connect` (see Section 7.4) after creation.*
+*Creating a handle does not open the USB session. Use `nexatom_tt_connect_runtime` for measurement readiness; `nexatom_tt_connect` remains available for explicit service/diagnostic workflows. See [connection](7_4_device_connection.md).*
 
 ### Function Reference
 
@@ -18,12 +18,12 @@ When discovering devices, the SDK returns a static metadata block for each instr
 
 | Field | Type | Description |
 | :--- | :--- | :--- |
-| `serial_number` | `char[256]` | Unique factory serial number string (e.g., `"NTT-10045"`). |
-| `firmware_version` | `char[256]` | Running FPGA bitstream version. |
-| `hardware_version` | `char[256]` | PCB revision identifier. |
+| `serial_number` | `char[256]` | Complete FT601 selection string; programmable identity, not a guarantee of factory uniqueness. |
+| `firmware_version` | `char[256]` | Available version string; discovery alone may not know the runtime image. |
+| `hardware_version` | `char[256]` | Available hardware string; use the resolved profile for authoritative identity. |
 | `device_name` | `char[256]` | Human-readable product name string. |
 | `connection_type` | `char[256]` | Underlying transport layer (typically `"FTDI"` or `"Mock"`). |
-| `connection_id` | `char[256]` | OS-level unique hardware identifier or COM port mapping. |
+| `connection_id` | `char[256]` | Transport selection information; not a persistent COM-port or physical USB topology contract. |
 
 ### C Example: Enumerating and Creating a Handle
 
@@ -34,11 +34,11 @@ nexatom_tt_handle my_device = NULL;
 
 // 1. Scan the USB bus (up to 4 devices)
 nexatom_error_code_t err = nexatom_tt_discover_devices(devices, 4, &num_found);
-if (err == 0 && num_found > 0) {
+if (err == 0 && num_found == 1) {
     printf("Found %zu NexatomTT instrument(s)!\n", num_found);
     printf("First device Serial: %s\n", devices[0].serial_number);
     
-    // 2. Allocate the handle memory for the first device
+    // 2. This example requires one unambiguous device; otherwise select intentionally.
     err = nexatom_tt_create(&devices[0], &my_device);
     if (err == 0) {
         printf("Handle successfully allocated.\n");

@@ -14,8 +14,8 @@ This module supports bidirectional (Start-Stop and Stop-Start) accumulation, mul
 | `nexatom_tt_set_time_histogram_first_stop_mode`| `[In] nexatom_tt_handle device`<br>`[In] bool first_stop` | `nexatom_error_code_t` | If true, only the first Stop photon after a Start is counted (classic TDC). If false, multi-stop is enabled. |
 | `nexatom_tt_set_time_histogram_bin_width`| `[In] nexatom_tt_handle device`<br>`[In] uint32_t bin_width_ps` | `nexatom_error_code_t` | Sets the hardware bin width resolution in picoseconds. |
 | `nexatom_tt_set_time_histogram_num_bins` | `[In] nexatom_tt_handle device`<br>`[In] uint32_t num_bins` | `nexatom_error_code_t` | Sets the length of the hardware histogram array (max `1024`). |
-| `nexatom_tt_start_time_histogram` | `[In] nexatom_tt_handle device` | `nexatom_error_code_t` | Synchronously issues the FPGA "START" command. |
-| `nexatom_tt_stop_time_histogram` | `[In] nexatom_tt_handle device` | `nexatom_error_code_t` | Synchronously halts the TIHI module and forces a final callback dispatch. |
+| `nexatom_tt_start_time_histogram` | `[In] nexatom_tt_handle device` | `nexatom_error_code_t` | Requests START for the enabled TIHI engine; observe measurement results separately. |
+| `nexatom_tt_stop_time_histogram` | `[In] nexatom_tt_handle device` | `nexatom_error_code_t` | Requests stopping TIHI. Observe the expected terminal result separately; successful return does not promise its callback already ran. |
 | `nexatom_tt_set_time_histogram_stop_conditions`| `[In] nexatom_tt_handle device`<br>`[In] uint32_t stop_count`<br>`[In] uint32_t stop_duration_ms`<br>`[In] bool use_duration`| `nexatom_error_code_t` | Configures auto-stop limits. Set `use_duration = true` and a non-zero `stop_duration_ms` for time-based stops, or `use_duration = false` and a non-zero `stop_count` for count-based stops. |
 | `nexatom_tt_set_time_histogram_aggregation_mode`| `[In] nexatom_tt_handle device`<br>`[In] nexatom_aggregation_mode_t mode` | `nexatom_error_code_t` | Controls whether host arrays accumulate (`NEXATOM_AGGREGATION_ACCUMULATE`) or overwrite (`NEXATOM_AGGREGATION_REPLACE`) on new packets. |
 | `nexatom_tt_set_tihi_background_method` | `[In] nexatom_tt_handle device`<br>`[In] nexatom_tihi_background_method_t method` | `nexatom_error_code_t` | Sets the algorithm used to subtract baseline noise (`NEXATOM_TIHI_BG_NONE` = 0, `NEXATOM_TIHI_BG_USER_CONSTANT` = 1, `NEXATOM_TIHI_BG_USER_REGION` = 2). |
@@ -34,7 +34,7 @@ When the TIHI engine dispatches a frame, it passes this massive structure by val
 | :--- | :--- | :--- |
 | `num_bins` / `bin_width_ps` | `uint32_t` | Active bins limit and temporal resolution per bin. |
 | `start_channel` / `stop_channel` | `uint8_t` | The hardware channel maps used to generate this curve. |
-| `acquisition_done_status` | `nexatom_acquisition_done_status_t` | Reason measurement stopped (`NORMAL_COMPLETION` = 0x0, `MANUAL_STOP` = 0x2, `EVENT_COUNT_REACHED` = 0x4). |
+| `acquisition_done_status` | `nexatom_acquisition_done_status_t` | Completion/status byte. Do not treat the historical zero-valued normal alias as terminal success: zero can mean Running. Validate the documented manual/count/duration terminal statuses. |
 | `_padding1` | `uint8_t[1]` | **Required 1-byte alignment padding.** |
 | `total_counts` | `uint64_t` | Aggregate sum of all counts across the histogram array. |
 | `mean_time_ps` / `std_dev_ps` | `double` | Statistical estimates of arrival time and distribution width. |
@@ -61,3 +61,9 @@ When the TIHI engine dispatches a frame, it passes this massive structure by val
 | `background_level_per_bin` | `float` | Counts/bin that were subtracted (0 if no subtraction). |
 | `packets_accumulated` | `uint32_t` | Number of raw data packets aggregated into this histogram. |
 | `bins` | `uint32_t[1024]` | **The absolute time-binned photon counts. Only `[0]` to `num_bins-1` are valid.** |
+
+Validate the requested histogram length against both `NEXATOM_MAX_HISTOGRAM_BINS` and the active native capability. The public array extent is not a guarantee of every firmware's supported configuration. Preserve aggregation mode: summing overlapping ACCUMULATE snapshots double-counts data.
+
+### Fast TIHI
+
+Fast TIHI is a separate profile-dependent feature, exposed by `nexatom_tt_start_fast_tihi_v1`, `nexatom_tt_start_fast_tihi_v2`, `nexatom_tt_stop_fast_tihi` and its versioned histogram callback. V1/V2 configuration sizes, context count, supported window mode and duration fields are defined in the header. Use the matching versioned record rather than reinterpreting a normal TIHI result. The package's advanced example illustrates capability checks; registration or a model name alone does not establish support.

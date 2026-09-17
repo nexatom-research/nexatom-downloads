@@ -1,91 +1,49 @@
-# Software Overview
+# 4. Software overview
 
-## [Architecture and Data Flow](index.md#architecture-and-data-flow)
+The Windows/Linux SDK exposes a native C ABI. C++ uses the same public header; Python uses ctypes wrappers around that ABI. Applications do not need internal C++ classes or firmware packet parsing to configure supported measurements.
 
-The NexatomTT SDK architecture is designed to robustly manage high-bandwidth streaming data while exposing a deterministic, state-safe control surface to the host application.
+## Device and data ownership
 
-### [Native library](index.md#native-library)
+Discovery returns selection records. A created device handle owns its native session until destruction. Native runtime startup resolves protocol/profile readiness; the application then chooses a measurement using the authorized channels, features and limits.
 
-The core engine is implemented in modern C++ and compiled into a monolithic dynamic link library (`nexatomTT.dll`). It exclusively exposes a stable, flat `extern "C"` Application Binary Interface (ABI). This guarantees high-performance interoperation with Foreign Function Interfaces (FFI)—such as Python's `ctypes`—avoiding C++ name mangling, ABI mismatches, and standard library linkage complications.
+Acquisition data flows from the instrument through native transport/decoding to callbacks and native file savers. Scientific fitting is host processing. Raw NXTT and processed CSV/TAB/HDF5 are different output products; none is a blanket guarantee of lossless maximum-rate acquisition.
 
-### [Data pipeline](index.md#data-pipeline)
+## Architecture and data flow
 
-Data acquisition relies on a pipelined threading architecture to prevent hardware buffer overflows during host OS scheduling interruptions:
-
-1.  **FTDI Transport:** A dedicated read thread fetches raw bulk transfers from the FTDI D3XX kernel driver, rapidly moving data into large, pre-allocated internal circular buffers.
-2.  **Decoder:** An intermediate processing stage parses the proprietary binary framing protocol, reconstructing hardware events, timestamps, and diagnostic telemetry.
-3.  **ProcessingThread:** A routing thread aggregates the decoded data structures into their respective software modules (e.g., TIHI, MFCO, CPS).
-4.  **Callbacks:** Finally, completed data payloads are dispatched asynchronously to the host application via registered callback functions.
+The native library separates USB reads, decoding, result processing and file delivery so an application can consume structured data. These stages buffer work, but cannot guarantee that an arbitrary input rate or host scheduling delay will never overflow a buffer.
 
 ```mermaid
 flowchart TD
-    subgraph Hardware ["Hardware Level"]
-        A["UTT810 USB 3.0 Endpoint"]
-    end
-    subgraph SDK ["nexatomTT.dll (Native C++ SDK)"]
-        B["FTDI D3XX Kernel Driver"]
-        C["Decoder Thread"]
-        D["ProcessingThread (Router)"]
-    end
-    subgraph Host ["Host Language (Python / User Space)"]
-        E["Registered Callback Function"]
-    end
-    
-    A -->|Raw Bulk Transfers| B
-    B -->|Circular Buffers| C
-    C -->|Decoded Events| D
-    D -.->|Async Dispatch by Value| E
+    A["Instrument USB endpoint"] --> B["FTDI runtime and host USB driver"]
+    B --> C["Native transport and decoder"]
+    C --> D["Native result processing"]
+    D --> E["Application callbacks"]
+    D --> F["Native file saving"]
+    E --> G["Application queue / analysis / display"]
 ```
 
-### [Thread safety model](index.md#thread-safety-model)
+The diagram describes ownership and data flow, not an additional client protocol. C/C++ and Python consumers share this native path.
 
-The native SDK library is inherently thread-safe. All configuration, system control, and lifecycle API functions are internally guarded by mutexes. It is safe to invoke `nexatom_tt_` functions from multiple host threads concurrently.
+### Memory management
 
-Conversely, host software must respect the callback dispatch model:
-*   Data callbacks are invoked asynchronously by the SDK's internal background `ProcessingThread`.
-*   If a host language callback (e.g., in Python) must update a GUI, modify shared state, or interact with an event loop, **the user is strictly responsible** for implementing appropriate thread-safety mechanisms (e.g., locks or thread-safe message queues) to bridge the background worker thread to the main execution thread.
+Opaque handles hide native implementation details. Pair each successful `nexatom_tt_create` with `nexatom_tt_destroy`; pair each successful reader open with `nexatom_tt_close_time_tag_reader`. A disconnect retires the transport session without freeing the device handle. Caller-provided output buffers remain caller-owned.
 
-### [Memory management](index.md#memory-management)
+Natural C ABI alignment remains significant even when a record contains explicit padding. Arrays and nested structures must match the shipped header exactly. Keep SDK/native identities together instead of mixing bindings from one archive with a library from another.
 
-The native library completely encapsulates all internal memory allocations and hardware buffer lifecycles. Users are never required to manually allocate or free memory for device communication.
+## Errors and completion
 
-To maximize safety across language FFI boundaries, the SDK strictly employs **pass-by-value** semantics for data callbacks. When a callback fires (e.g., yielding a `nexatom_cps_data_t` or `nexatom_tihi_data_t` struct), the entire payload is copied into the host language's memory space.
+Check each declaration's return type: many operations return `nexatom_error_code_t`, while create/version/logging/close functions may use other types. Python converts native failures to exceptions. Keep an error's message before another operation changes diagnostic state.
 
-## [Precompiled Libraries and Language Bindings](index.md#precompiled-libraries-and-language-bindings)
+A successful command can mean admission, not completion. Observe expected acquisition status, telemetry response or field-update outcome. A cached value is not necessarily hardware readback. Connection, system enable, output mode, engine start and file saving are distinct operations.
 
-### [Native DLL and runtime dependencies](index.md#native-dll-and-runtime-dependencies)
+## Callbacks and concurrency
 
-The SDK distributes several precompiled binaries for the Windows x64 platform. Due to Windows library loading rules, **all of the following DLLs must be co-located in the same directory**:
+Callbacks can run on native workers or synchronously within an API call; do not assume a UI thread. C callbacks must copy data into application-owned storage before returning if later work needs it, including deep-copying records in a borrowed configuration view. Python's public wrappers copy records for Python ownership. Keep handlers short and hand expensive work to an application queue.
 
-*   `nexatomTT.dll` (~8.6 MB): The core NexatomTT library.
-*   `FTD3XXWU.dll`: The proprietary FTDI D3XX runtime driver.
-*   `libgcc_s_seh-1.dll`, `libstdc++-6.dll`, `libwinpthread-1.dll`: MinGW compiler runtimes.
+Thread safety does not mean every concurrent or callback-reentrant operation is allowed. Handle BUSY/timeouts and keep ordinary callback/user-data ownership until native destruction completes; clearing a registration alone does not fence an already-selected invocation. Logging has separate quiescent unregister. See [callback lifetime](../06_in_depth_guides/6_5_callback_thread_safety_and_data_lifetime.md).
 
-### [Python package (`nexatomtt`)](index.md#python-package-nexatomtt)
+## Application structure
 
-The official Python wrapper provides object-oriented abstractions over the C API without introducing external dependencies. It relies purely on the Python standard library (`ctypes`).
+Start from the packaged processed/raw templates. Keep one place responsible for selection, readiness, measurement start, final results, sink finalization and disconnect. Profile validation belongs before controls, while interpretation of results must retain status, availability and units.
 
-*   `nexatomtt._native`: Raw, low-level `ctypes` bindings mappings.
-*   `nexatomtt.analysis`: Helpers for Multi-Fold Coincidence (MFCO) pattern decoding.
-*   `nexatomtt.runtime_boot`: The orchestrator for safe bootloader-to-runtime transitions (`open_runtime_device()`).
-
-## [C API](index.md#c-api)
-
-### [Header organization](index.md#header-organization)
-
-The entire C API is defined in a single, comprehensive header file (`nexatomtt_c_api.h`). It is logically partitioned into constants, structs, callback typedefs, and functional API groups (e.g., Device Lifecycle, Hardware Config, Telemetry).
-
-### [Error handling convention](index.md#error-handling-convention)
-
-To ensure deterministic error checking across all languages, the SDK avoids C++ exceptions at the ABI boundary.
-
-*   **Return Type:** All functions return a `nexatom_error_code_t` (`int32`).
-*   **Success:** A return value of `0` (`NEXATOM_SUCCESS`) indicates success.
-*   **Failure:** A negative value indicates an error (e.g., `NEXATOM_ERROR_DEVICE_NOT_FOUND`).
-*   **Error Details:** The caller can invoke `nexatom_tt_get_last_error_message()` on the calling thread to retrieve a descriptive string of the most recent failure, or use `nexatom_tt_get_error_message(code)` for a generic lookup.
-
-### [Opaque handle pattern](index.md#opaque-handle-pattern)
-
-Device instances are managed using opaque pointers to prevent the host application from tampering with internal state structures:
-*   `nexatom_tt_handle`: Represents an active session with a physical device. Must be explicitly freed via `nexatom_tt_destroy()`.
-*   `nexatom_tt_time_tag_reader_t*`: Represents an offline binary file parser. Must be closed via `nexatom_tt_close_time_tag_reader()`.
+[Manual contents](../index.md) · [Python reference](../05_api_reference/index.md) · [C API](../07_c_api/index.md)

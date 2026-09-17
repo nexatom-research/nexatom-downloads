@@ -1,28 +1,20 @@
-# Hardware
+# 2. Device operation
 
-This chapter documents the hardware interface of the UTT810 time tagger as exposed through the SDK. All hardware behaviour described here is mediated by the FTDI D3XX USB transport and the native library — there is no direct register-level access from user code.
+These pages describe SDK controls. Electrical, environmental and precision specifications must come from the documentation for your exact instrument; the [version scope](../index.md#version-scope-and-migration) describes the limits of SDK qualification.
 
-| Property | Value |
-|---|---|
-| Hardware model | UTT810 |
-| Input channels | 8 (0–7) |
-| Transport | FTDI FT60x USB 3.0 |
-| Protocol modes | Runtime, Bootloader |
-| Firmware storage | Flash slots (bootloader-managed) |
+| Section | Topic |
+| --- | --- |
+| [2.1 Operating conditions](2_1_operating_conditions.md) | Discovery, selection and native identity |
+| [2.2 Input channels](2_2_input_channels.md) | Channel authority, threshold, edge and routing |
+| [2.3 Data connection](2_3_data_connection.md) | Output modes and transport |
+| [2.4 Calibration](2_4_calibration.md) | Requests and status |
+| [2.5 LEDs](2_5_leds.md) | Supported indicator controls |
+| [2.6 Test signal](2_6_test_signal.md) | Profile-based internal pulses |
+| [2.7 Synthetic input delay](2_7_synthetic_input_delay.md) | Delay units and limits |
+| [2.8 External clock](2_8_external_clock.md) | Capability and status |
+| [2.9 System control](2_9_system_control.md) | Enable, reset and stop |
+| [2.10 CPS](2_10_cps_configuration.md) | Period and rate units |
+| [2.11 Telemetry](2_11_telemetry.md) | Requests, cached views and validity |
+| [2.12 Runtime handoff](2_12_runtime_handoff.md) | Same-handle firmware service |
 
-## Chapter contents
-
-| Section                                               | Topic |
-|-------------------------------------------------------|---|
-| [Operating Conditions](2_1_operating_conditions.md)   | USB connection, device discovery, state machine, protocol modes |
-| [Input Channels](2_2_input_channels.md)               | Threshold, edge type, hysteresis, routing, test pulses |
-| [Data Connection](2_3_data_connection.md)             | Output modes, CPS period, data flow architecture |
-| [Calibration](2_4_calibration.md)                     | Calibration data and workflow |
-| [LEDs](2_5_leds.md)                                   | Channel LEDs and RGB LED control |
-| [Test Signal](2_6_test_signal.md)                     | Internal test pulse generator |
-| [Synthetic Input Delay](2_7_synthetic_input_delay.md) | Per-channel input delay |
-| [System Control](2_8_system_control.md)               | System enable, peripheral reset, sync clock, global stop |
-| [Counts per Second (CPS)](2_9_cps_configuration.md)   | CPS measurement and period selector |
-| [Telemetry](2_10_telemetry.md)                        | Device health, temperature, status monitoring |
-| [Bootloader Handoff](211-bootloader-handoff)          | Runtime ↔ bootloader service entry |
-| [External Clock Input](2_12_external_clock_input.md)  | Sync clock request |
+[Manual contents](../index.md)

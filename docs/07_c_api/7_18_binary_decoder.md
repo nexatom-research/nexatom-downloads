@@ -11,19 +11,19 @@ Instead of parsing raw bytes manually, this decoder provides an iterator-like in
 | `nexatom_tt_open_time_tag_file_reader` | `[In] const char* path`<br>`[Out] nexatom_tt_time_tag_reader_t** out_reader` | `nexatom_error_code_t` | Opens a single `.nxtt` file and allocates the iterator handle. |
 | `nexatom_tt_open_time_tag_series_reader`| `[In] const char* directory`<br>`[In] const char* series_key`<br>`[In] uint32_t seq_start`<br>`[In] uint32_t seq_end`<br>`[Out] nexatom_tt_time_tag_reader_t** out_reader` | `nexatom_error_code_t` | Opens a sequence of rotated `.nxtt` files from `directory` matching `series_key` (the base filename pattern). The `seq_start` (1-based) and `seq_end` parameters define the inclusive sequence range to load. Pass `seq_end = 0` to load all remaining contiguous files. |
 | `nexatom_tt_get_time_tag_header` | `[In] nexatom_tt_time_tag_reader_t* reader`<br>`[Out] nexatom_time_tag_file_header_t* header` | `nexatom_error_code_t` | Extracts metadata (like creation date) embedded at the top of the `.nxtt` binary. |
-| `nexatom_tt_read_time_tag_batch` | `[In] nexatom_tt_time_tag_reader_t* reader`<br>`[Out] nexatom_time_tag_t* out_tags`<br>`[In] size_t max_tags`<br>`[Out] size_t* out_count` | `nexatom_error_code_t` | Reads the next sequential block of decoded photon tags into a pre-allocated array. Returns a specific error code on EOF. |
+| `nexatom_tt_read_time_tag_batch` | `[In] nexatom_tt_time_tag_reader_t* reader`<br>`[Out] nexatom_time_tag_t* out_tags`<br>`[In] size_t max_tags`<br>`[Out] size_t* out_count` | `nexatom_error_code_t` | Fills the caller's batch. EOF is `NEXATOM_SUCCESS` with zero count; a nonzero error must be preserved. |
 | `nexatom_tt_close_time_tag_reader` | `[In] nexatom_tt_time_tag_reader_t* reader` | `void` | Closes the file handles and frees the iterator memory. Must be called to prevent memory leaks. |
 
 ### Data Structures
 
 #### `nexatom_time_tag_t`
-The fundamental 16-byte structure representing a single photon event.
+The 16-byte host representation of a decoded event. It is not the packed disk record or the USB wire format.
 
 | Field | Type | Description |
 | :--- | :--- | :--- |
-| `timestamp_ps` | `uint64_t` | The absolute, continuous arrival time of the event in picoseconds, referenced to the moment the FPGA acquisition started. |
+| `timestamp_ps` | `uint64_t` | Decoded timestamp in ps; raw rollover is extended within a runtime session. Do not assume each acquisition resets the hardware time origin. |
 | `channel` | `uint8_t` | The physical SMA input port (e.g., 0-7) that triggered the event. |
-| `_padding` | `uint8_t[7]` | **Required 7-byte padding** to ensure strict 16-byte alignment across all C++ standard library implementations. |
+| `_padding` | `uint8_t[7]` | Explicit host ABI padding; this makes a 16-byte record, not a universal 16-byte alignment requirement. |
 
 #### `nexatom_time_tag_file_header_t`
 Parsed from the top of the binary file. Note the FFI alignment padding fields.
@@ -47,10 +47,15 @@ if (nexatom_tt_open_time_tag_file_reader("/data/run_1.nxtt", &reader) == 0) {
     // 2. Allocate our batch buffer
     size_t batch_size = 10000;
     nexatom_time_tag_t* batch = malloc(batch_size * sizeof(nexatom_time_tag_t));
+    if (batch == NULL) {
+        nexatom_tt_close_time_tag_reader(reader); // Reader ownership exists even on allocation failure.
+        return -1;
+    }
     size_t tags_read = 0;
+    nexatom_error_code_t read_status;
     
     // 3. Iterate through the file until EOF
-    while (nexatom_tt_read_time_tag_batch(reader, batch, batch_size, &tags_read) == 0) {
+    while ((read_status = nexatom_tt_read_time_tag_batch(reader, batch, batch_size, &tags_read)) == NEXATOM_SUCCESS) {
         if (tags_read == 0) break; // End of file
         
         // Process this block (e.g., software cross-correlation)
@@ -61,11 +66,16 @@ if (nexatom_tt_open_time_tag_file_reader("/data/run_1.nxtt", &reader) == 0) {
         }
     }
     
-    // 4. Teardown
+    // 4. An error is not EOF; report it before subsequent diagnostics change.
+    if (read_status != NEXATOM_SUCCESS)
+        fprintf(stderr, "Decode failed: %s\n", nexatom_tt_get_last_error_message());
+    // The complete caller also propagates read_status as its failed run result.
     free(batch);
     nexatom_tt_close_time_tag_reader(reader);
 }
 ```
+
+Offline readers require no device handle but enforce safe output/saving conditions if a device is connected. Quiet and finalize acquisition first. Reader close releases resources; EOF also releases temporary output ownership. A mode-restore failure remains an error. See [reader lifecycle and series keys](../06_in_depth_guides/6_2_offline_time_tag_binary_decoder.md).
 
 ### C Example: Loading a Rotated Series
 

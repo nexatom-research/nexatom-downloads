@@ -1,36 +1,36 @@
-# C API Complete Function Reference
+# C API Function Reference
 
-This chapter serves as the exhaustive, low-level dictionary for the native C Application Programming Interface defined in `nexatomtt_c_api.h`.
+This chapter explains the public C API in the package's `include/nexatomtt_c_api.h`. That shipped header is authoritative for exact declarations, record layouts and newly added functions. These pages cover the preview.7 API families while retaining the earlier manual's reference structure.
 
 While Chapter 5 focuses on the object-oriented Python abstractions, this chapter documents the raw hardware control endpoints, memory management rules, and pointer semantics required when integrating the SDK into C, C++, Rust, LabVIEW, or other Foreign Function Interface (FFI) environments.
 
 ### Architectural Rules
 Before utilizing the C API, developers must adhere to the following architectural constraints:
-1.  **Return Codes:** Every function returns a signed 32-bit `nexatom_error_code_t`. A return value of `0` (`NEXATOM_SUCCESS`) indicates success. Any negative value indicates a failure.
+1.  **Return Codes:** Check the declared return type. For `nexatom_error_code_t`, `NEXATOM_SUCCESS` is success and a nonzero result must be handled. Some functions return strings or `void` instead.
 2.  **String Encodings:** All string buffers (e.g., serial numbers, error messages) expect and return strictly **UTF-8** encoded null-terminated character arrays.
-3.  **Pass-by-Value:** To guarantee thread safety, all asynchronous data payloads (TIHI, MFCO, CPS) are dispatched strictly by-value. The host application unconditionally owns the memory provided in the callback.
+3.  **Callback ownership:** Fixed by-value records can be copied into application storage. The versioned configuration-dump callback is a borrowed pointer/view exception and requires a deep copy of its records. Follow the exact typedef and [callback ownership rules](../06_in_depth_guides/6_5_callback_thread_safety_and_data_lifetime.md).
 
 ## Chapter Contents
 
-*Note: Due to the massive scale of the C API (130 functions), this reference is split into modular pages based on functional subsystems.*
+The reference is grouped by function. For complete processed/raw applications use `examples/sdk/hardware.c` or `hardware.cpp` and their shared acquisition code; see [template anatomy](../03_tutorials/index.md#processed-and-raw-template-anatomy).
 
-| Module                                   | Function Count | Description |
-| :--- |:-----------------------------------------| :--- |
-| [**Library Version and Error Handling**](7_1_library_version.md) | 4 | Endpoints for checking SDK versions and extracting error strings. |
-| [**Logging Configuration**](7_2_logging_config.md)           | 4 | Host-side log levels, file rotation, and stdout rules. |
-| [**Device Discovery and Lifecycle**](7_3_device_discovery.md)       | 3 | Scanning the USB bus and allocating hardware handles. |
-| [**Device Connection and State**](7_4_device_connection.md)          | 7 | Establishing USB sessions and querying system states. |
-| [**System Control**](7_5_system_control.md)                       | 9 | Master routing, system resets, and hardware mode selection. |
-| [**Field Update / Bootloader**](7_6_field_update.md)            | 7 | Flash memory mapping and firmware flashing state machines. |
-| [**Channel Configuration**](7_7_channel_config.md)                | 9 | Input thresholds, synthetic delays, and test pulse routing. |
-| [**Callback Registration**](7_8_callback_registration.md)                | 9 | Binding host C functions to background hardware event loops. |
-| [**Time Interval Histogram (TIHI)**](7_9_tihi.md)       | 17 | High-speed Start/Stop decay profiling and curve fitting. |
-| [**Multifold Coincidence (MFCO)**](7_10_mfco.md)         | 12 | 8-channel temporal correlation and pattern filtering logic. |
-| [**Intensity Correlation (CORL/CORM)**](7_11_correlation.md)    | 12 | Linear (CORL) and Logarithmic Multi-Tau (CORM) correlators. |
-| [**DLS Analysis**](7_12_dls.md)                         | 6 | Dynamic Light Scattering models (Hydrodynamic radius, PDI). |
-| [**FCS Analysis**](7_13_fcs.md)                         | 5 | Fluorescence Correlation Spectroscopy (Diffusion, Concentration). |
-| [**DCS Analysis**](7_14_dcs.md)                         | 5 | Diffuse Correlation Spectroscopy (Blood flow, tissue perfusion). |
-| [**Telemetry and Register Diagnostics**](7_15_telemetry.md)   | 5 | FPGA thermals, voltages, and low-level register probing. |
-| [**Calibration**](7_16_calibration.md)                          | 4 | Hardware thermal-drift compensation and delay line sweeps. |
-| [**File Saving**](7_17_file_saving.md)                          | 6 | Direct-to-disk streaming of raw binary time tags and processed arrays. |
-| [**Time Tag Binary Decoder**](7_18_binary_decoder.md)              | 5 | Offline `.nxtt` file parsing and CSV conversion logic. |
+| Module | Description |
+| --- | --- |
+| [Library version and errors](7_1_library_version.md) | Native identity and diagnostics |
+| [Logging](7_2_logging_config.md) | Structured logs, configuration, statistics and quiescent unregister |
+| [Discovery and lifecycle](7_3_device_discovery.md) | Device selection and handle ownership |
+| [Connection and profile](7_4_device_connection.md) | Runtime readiness, authority and capabilities |
+| [System control](7_5_system_control.md) | Enable, reset, clock request and output selection |
+| [Field update](7_6_field_update.md) | Existing image slots, guarded loading and same-handle boot |
+| [Channel configuration](7_7_channel_config.md) | Threshold, edge, delay, hysteresis and test pulses |
+| [Callbacks](7_8_callback_registration.md) | Data, telemetry/configuration views and callback lifetime |
+| [TIHI](7_9_tihi.md) | Normal/Fast TIHI and fitting |
+| [MFCO](7_10_mfco.md) | Patterns, aggregation and result quality |
+| [CORL/CORM](7_11_correlation.md) | Intensity correlation and normalization |
+| [DLS](7_12_dls.md) | Host light-scattering analysis controls |
+| [FCS](7_13_fcs.md) | Host fluorescence-correlation analysis controls |
+| [DCS](7_14_dcs.md) | Host diffuse-correlation analysis controls |
+| [Telemetry and configuration](7_15_telemetry.md) | Requests, available views and DTC status/apply controls |
+| [Calibration](7_16_calibration.md) | Supported requests and automatic triggers |
+| [File saving](7_17_file_saving.md) | Native raw/processed file sinks |
+| [Binary reader](7_18_binary_decoder.md) | Offline NXTT batches and series |

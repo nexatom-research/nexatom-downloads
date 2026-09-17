@@ -1,29 +1,32 @@
-## Callback Types
+# 5.4 Callback types
 
-The NexatomTT SDK uses asynchronous callbacks to push data and events from the background C++ `ProcessingThread` to the host application.
+Register Python callables through the device/library methods, not raw ctypes trampolines. The public binding retains callback references and copies native records for Python ownership.
 
-> **Python Implementation Note:** While the underlying C API requires a function pointer and an opaque `void* user_data` context pointer, the Python wrapper abstracts this away. You can simply pass standard Python functions or class methods. Python closures and object states eliminate the need for manual `user_data` management.
+| Registration | Data |
+| --- | --- |
+| `set_connection_status_callback` | `callback(connected: bool, ready: bool)`; no error argument, and registration can invoke it inline |
+| `set_count_rate_callback` | `NexatomCpsData` |
+| `set_time_histogram_callback` | `NexatomTihiData` |
+| `set_multifold_coincidence_callback` | `NexatomMfcoData` |
+| `set_linear_correlation_callback` | `NexatomCorlData` |
+| `set_multi_tau_correlation_callback` | `NexatomCormData` |
+| `set_telemetry_callback` | Legacy `NexatomTelemetryData` |
+| `set_telemetry_view_callback` | `NexatomTelemetryViewV1` |
+| `set_config_dump_callback` | Legacy configuration dump |
+| `set_config_dump_view_callback` | Versioned configuration view |
+| `set_fast_tihi_histogram_callback` | Fast TIHI result where supported |
+| Library `set_log_callback` | Owned `NexatomLogRecord`; process-global logger |
 
-### [Data callbacks](5_4_callback_types.md#callback-types)
+```python
+# Keep native callback work small; a separate consumer can process this snapshot.
+latest = {}
+def on_histogram(data):
+    latest["tihi"] = data  # The public Python wrapper supplies an owned record.
+device.set_time_histogram_callback(on_histogram)
+# Start/observe/stop the measurement using the complete acquisition template.
+# Clear callbacks from the owning control thread after acquisition is retired.
+```
 
-Data callbacks are triggered periodically based on the integration time of the respective hardware measurement engine. All data payloads are dispatched by value (see Section 6.5).
+`clear_callbacks()` clears device registrations but is not a quiescence fence for an already-selected invocation. Python retains retired callback references until native destruction; C/FFI consumers must preserve equivalent ownership. Library logging separately offers `unregister_log_callback(timeout_ms=...)` with explicit quiescence. On failure retain resources. Do not close a device or block waiting for yourself inside a callback. See [lifetime rules](../06_in_depth_guides/6_5_callback_thread_safety_and_data_lifetime.md).
 
-| Registration Method | Expected Python Signature | Trigger Condition |
-| :--- | :--- | :--- |
-| `set_time_histogram_callback` | `def on_tihi(data: NexatomTihiData) -> None:` | Fires when a TIHI measurement completes its integration window. |
-| `set_multifold_coincidence_callback` | `def on_mfco(data: NexatomMfcoData) -> None:` | Fires when an MFCO measurement completes its integration window. |
-| `set_count_rate_callback` | `def on_cps(data: NexatomCpsData) -> None:` | Fires continuously based on the `cps_period_selector` interval (typically 100ms or 1000ms). |
-| `set_multi_tau_correlation_callback` | `def on_corm(data: NexatomCormData) -> None:` | Fires when a CORM measurement completes its integration window. |
-| `set_linear_correlation_callback` | `def on_corl(data: NexatomCorlData) -> None:` | Fires when a CORL measurement completes its integration window. |
-| `set_telemetry_callback` | `def on_telem(data: NexatomTelemetryData) -> None:` | Fires upon explicit request via `request_telemetry()` or continuously if auto-telemetry is enabled. |
-| `set_config_dump_callback` | `def on_config(data: NexatomConfigDumpData) -> None:` | Fires upon explicit request via `request_config_dump()`. |
-
-### [Event callbacks](5_4_callback_types.md#event-callbacks)
-
-Event callbacks are triggered asynchronously based on system state changes, rather than hardware integration periods.
-
-| Registration Method | Expected Python Signature | Trigger Condition |
-| :--- | :--- | :--- |
-| `set_connection_status_callback` | `def on_status(connected: bool, ready: bool) -> None:` | Fires when the USB physical layer drops (`connected=False`) or when the device successfully reaches the Idle state (`ready=True`). |
-| `set_log_callback` *(Global Library Method)* | `def on_log(record: NexatomLogRecord) -> None:` | Fires whenever an internal SDK module emits a log message that passes the configured severity thresholds. |
-| *(Passed as argument to firmware loader)* | `def on_progress(progress: NexatomFieldUpdateProgress) -> None:` | Fires continuously during a firmware flash to report state machine phases and completion percentages. |
+[Python reference](index.md)

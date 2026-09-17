@@ -1,71 +1,19 @@
-## System Control
+# 2.9 System control
 
-Global hardware state management—including data path enabling, peripheral resetting, and synchronized acquisition halting—is handled through the SDK's system control interfaces.
+## System enable / disable
 
-### [System enable / disable (Data Shuffler)](2_9_system_control.md#system-enable-disable)
+`enable_system(True)` controls the system data path. Connection readiness, output selection, individual measurement enables and file saving are separate controls. An already-running firmware may remain stopped after connection; explicitly enable the system when starting your intended measurement.
 
-The system enable function controls the primary data shuffler within the FPGA. When disabled, no time tags are processed and no data is forwarded to the active output mode.
+The primary processed/raw templates prepare settings and sinks while quiet, then enable/start the required path. Shutdown explicitly quiets it again. Do not add an implicit enable to a library-load or identity-only action.
 
-> **Best Practice.** Always disable the system before performing bulk register configurations (e.g., threshold adjustments, edge type changes, or routing). Re-enable the system only after all configurations have been committed to avoid generating spurious time tags during the transition state.
+## Peripheral reset
 
-#### C API
+`reset_peripherals(True)` asserts reset and `reset_peripherals(False)` releases it. A complete deliberate reset needs both stages. Reset is not a replacement for the native output barrier or a mandatory step for every acquisition.
 
-```c
-nexatom_tt_enable_system(
-    nexatom_tt_handle device,
-    bool enable
-);
-```
+## Global acquisition stop
 
-#### Python
+`request_global_stop_all_modes()` requests stopping measurement engines. Check its return and any expected terminal result; do not assume a command return has already delivered all final packets. Keep the required output and savers alive while waiting for terminal results, then select quiet output and finalize files.
 
-```python
-# Suspend processing
-device.enable_system(False)
+For C/C++ see [system control](../07_c_api/7_5_system_control.md). Use the full template cleanup so one error does not skip all remaining retirement steps.
 
-# ... perform channel configuration ...
-
-# Resume processing
-device.enable_system(True)
-```
-
-### [Peripheral reset](2_9_system_control.md#peripheral-reset)
-
-The peripheral reset function asserts or de-asserts a hardware reset line distributed to all peripheral sub-components within the FPGA logic.
-
-To perform a complete reset cycle, the host must explicitly assert the reset state and subsequently de-assert it to return the device to normal operation.
-
-#### C API
-
-```c
-nexatom_tt_reset_peripherals(
-    nexatom_tt_handle device,
-    bool reset
-);
-```
-
-#### Python
-
-```python
-# Assert peripheral reset
-device.reset_peripherals(True)
-
-# Return to normal operation
-device.reset_peripherals(False)
-```
-
-### [Global acquisition stop](2_9_system_control.md#global-acquisition-stop)
-
-The global stop function pulses a synchronous stop signal to all active hardware acquisition engines (TIHI, MFCO, CORL, CORM). This serves as an immediate, software-triggered termination condition for any running histograms or correlations, ensuring all modules stop acquiring at the same deterministic clock edge.
-
-#### C API
-
-```c
-nexatom_tt_request_global_stop_all_modes(nexatom_tt_handle device);
-```
-
-#### Python
-
-```python
-device.request_global_stop_all_modes()
-```
+[Device operation](index.md)

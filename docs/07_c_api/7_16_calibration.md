@@ -1,14 +1,14 @@
 # Calibration
 
-To maintain sub-picosecond timing accuracy over long measurement campaigns, the NexatomTT hardware must periodically calibrate its internal delay lines to compensate for ambient thermal drift and internal die heating.
+Supported firmware can calibrate timing circuitry and expose calibration controls/status. This SDK reference does not establish sub-picosecond accuracy, a fixed completion time or a universal calibration schedule.
 
-This module allows developers to trigger this calibration manually, or instruct the background C++ thread to execute it automatically based on elapsed time or measured temperature deltas (monitored via the telemetry engine).
+The API requests manual calibration or configures supported automatic triggers. Check native capabilities and telemetry field availability before relying on their status.
 
 ### Function Reference
 
 | Function | Parameters (In/Out) | Returns | Description |
 | :--- | :--- | :--- | :--- |
-| `nexatom_tt_trigger_calibration` | `[In] nexatom_tt_handle device` | `nexatom_error_code_t` | Synchronously halts hardware acquisition, runs the internal delay-line calibration sweep (~100ms), and resumes operation. |
+| `nexatom_tt_trigger_calibration` | `[In] nexatom_tt_handle device` | `nexatom_error_code_t` | Requests calibration; successful return is not synchronous completion or proof acquisition resumed. |
 | `nexatom_tt_configure_auto_calibration` | `[In] nexatom_tt_handle device`<br>`[In] float temp_celsius`<br>`[In] uint16_t time_minutes` | `nexatom_error_code_t` | Sets the delta thresholds for automatic calibration. e.g., trigger every `2.5` degrees of temperature change, or every `60` minutes. |
 | `nexatom_tt_enable_auto_calibration` | `[In] nexatom_tt_handle device`<br>`[In] bool enable_temp`<br>`[In] bool enable_time` | `nexatom_error_code_t` | Toggles the active status of the automated background triggers independently. |
 | `nexatom_tt_set_calibration_settings` | `[In] nexatom_tt_handle device`<br>`[In] float temp_celsius`<br>`[In] uint16_t time_minutes`<br>`[In] bool enable_temp`<br>`[In] bool enable_time` | `nexatom_error_code_t` | Convenience function that atomically sets both the thresholds and the enable flags in a single C API call. |
@@ -16,7 +16,8 @@ This module allows developers to trigger this calibration manually, or instruct 
 ### C Example: Configuring Long-Term Stability
 
 ```c
-// 1. Manually trigger a baseline calibration before the experiment starts
+// Fragment: capability has been checked; complete code checks each return.
+// Request calibration, then observe supported completion evidence separately.
 nexatom_tt_trigger_calibration(my_device);
 
 // 2. We want to auto-calibrate if the FPGA die temp shifts by 2.0°C, 
@@ -32,5 +33,5 @@ nexatom_tt_set_calibration_settings(
     true    // enable_time
 );
 
-printf("Auto-calibration armed. Device is ready for 24-hour measurement.\n");
+// Accepted settings alone do not qualify a 24-hour measurement or timing accuracy.
 ```

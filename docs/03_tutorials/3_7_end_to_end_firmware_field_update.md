@@ -1,54 +1,19 @@
-## End-to-End Firmware Field Update
+# 3.7 End-to-end firmware field update
 
-The most advanced SDK workflow involves writing a new firmware image into a non-volatile flash slot and orchestrating the subsequent system reboot. The `field_update_e2e.py` script performs this safely by incorporating strict image validation, overwrite protection, and post-flash proof-of-life checks.
+Use this only with an image supplied for your instrument. Preview.7 includes no image. Inspect the intended device, reported slot table and supplier compatibility/checksum information before writing.
 
-**Relevant script:**
-*   `field_update_e2e.py`
-
-### Workflow
-
-1.  **Image Validation:** The script verifies that the provided `.bin` file exists and adheres to the firmware naming convention. The SDK supports two naming formats:
-    - **Standard format:** `<NAME>_<VERSION>.bin` — where `<NAME>` is exactly 4 ASCII alphanumeric characters and `<VERSION>` is a decimal unsigned integer (e.g., `BOOT_001.bin`). This is the format used by the SDK-shipped firmware manifest.
-    - **Extended format:** `nexatomtt_fwp_<model>_<semver>_<date>.bin` — a longer descriptive format used by the Nexatom CI/CD build pipeline for pre-release and custom builds (e.g., `nexatomtt_fwp_utt810_v1.0.0_20240401.bin`). When this format is detected, the SDK extracts the embedded name and version metadata from the binary header instead of the filename.
-2.  **Handoff Orchestration:** The script establishes a connection and checks the current protocol mode. If the device is actively acquiring data (`RUNTIME`), it halts the hardware engines and initiates the field-upgrade service entry (as detailed in `Runtime ↔ Bootloader Handoff Validation`), polling until `BOOTLOADER` mode is achieved.
-3.  **Slot Safety Validation:** The script refreshes the flash table and inspects the target slot state. By default, it will abort if the user attempts to overwrite a `VALID` slot or the designated default slot without explicit command-line override flags.
-4.  **Image Streaming:** The host calls `device.load_field_update_image()`. During execution, the native thread invokes a registered Python callback passing `NexatomFieldUpdateProgress` structures. This provides granular, realtime visibility into the state machine phases (`ERASE`, `WRITE`, `VERIFY`, and `FINALIZE`).
-5.  **Post-Flash Configuration:** If requested, the script designates the newly flashed slot as the default boot partition using `device.set_field_update_default_slot_with_status()`.
-6.  **Boot & Runtime Proof:** The script triggers `device.boot_field_update_slot()`, catches the USB bus reset, and re-enumerates the hardware via its unique `DeviceIdentity`. Once `RUNTIME` mode is confirmed, it performs a brief "proof of life" test by verifying the new image actively emits valid CPS and telemetry packets.
-
-### Execution
-
-To run the field update script, the safety flag `--i-understand-this-writes-firmware` must be explicitly provided.
-
-```powershell
-python python\examples\field_update_e2e.py `
-  --image "nexatomtt_fwp_utt810_v1.0.0_20240401.bin" `
-  --slot 1 `
-  --set-default-after-load `
-  --boot-after-load `
-  --i-understand-this-writes-firmware
+```sh
+# Display safeguards without opening or writing a device.
+python python/examples/field_update_e2e.py --help
+# Example write command: replace the illustrative image and slot deliberately.
+# This changes persistent firmware storage; keep USB and power connected.
+python python/examples/field_update_e2e.py --home . --image /path/to/BOOT_001.bin --slot 1 --i-understand-this-writes-firmware --boot-after-load
 ```
 
-**Expected Output:**
+The filename must follow the loader's four-alphanumeric-character application ID plus decimal version convention. A valid name does not establish hardware compatibility.
 
-```text
-Discovering NexatomTT devices.
-Selected device: name=UTT810, serial=NTT-00000001, connection=FTDI:1.
-Connecting to hardware and checking protocol mode.
-Runtime firmware detected; requesting field-upgrade service entry.
-Field-update status: slot_count=2 default_slot=0
-  slot 0: state=VALID version=1 default=True name=0x00000000
-  slot 1: state=EMPTY version=0 default=False name=0x00000000
-Loading nexatomtt_fwp_utt810_v1.0.0_20240401.bin into slot 1.
-Phase ERASE: 100.0% (134217728/134217728 bytes)
-Phase WRITE: 100.0% (12845056/12845056 bytes)
-Phase VERIFY: 100.0% (12845056/12845056 bytes)
-Phase FINALIZE: 100.0% (256/256 bytes)
-Setting slot 1 as the default slot.
-Field-update status: slot_count=2 default_slot=1
-Booting slot 1.
-Reconnecting after boot and running runtime proof of life.
-CPS total=0 period_ms=1000
-Telemetry seq=1 uptime_s=5
-Runtime proof of life succeeded. Field update E2E complete.
-```
+The tool enters/uses service, applies overwrite safeguards, loads the image and checks completion. `--allow-valid-slot-overwrite` and `--allow-default-slot-overwrite` are explicit overrides, not routine options. `--set-default-after-load` is a separate persistent choice and is deliberately absent above. Retain another known-good image where possible.
+
+Use the actual progress record and final return status, not assumed phase names or a fixed 5–15 second duration. If boot is requested, native establishes readiness on the same handle; verify runtime identity and acquisition afterward. Do not report failure as successful merely because some data was written or progress reached a percentage.
+
+[Tutorials](index.md) · [Firmware management](../01_getting_started/1_4_firmware.md)

@@ -1,85 +1,37 @@
-## File Saving and Data Export
+# 6.1 File saving and data export
 
-The NexatomTT SDK features a high-performance native file writing engine capable of streaming data directly to disk without routing payloads through the host language's virtual machine (e.g., the Python interpreter). The export pipeline strictly bifurcates based on the hardware output mode configured on the FPGA.
+## Choosing the output product
 
-```mermaid
-flowchart TD
-    FPGA["UTT810 FPGA Data Shuffler"]
-    
-    subgraph RAW ["RAW_TAGS Mode"]
-        RawStream["Unaggregated Time Tags"]
-        NxttFile["Native Binary Saver (.nxtt)"]
-    end
-    
-    subgraph REALTIME ["REALTIME_DATA Mode"]
-        Processors["Hardware Processors<br/>(TIHI, MFCO, CPS)"]
-        Hdf5File["Processed Saver<br/>(CSV / HDF5)"]
-        Callbacks["Host Callbacks"]
-    end
+Raw/encoded time-tag saving supports the native time-tag formats, including binary NXTT. Processed saving supports CSV, TAB and, in the published package, HDF5. Choose supported output modes and packet types from the active profile.
 
-    FPGA -->|"Max Bandwidth (up to USB limit)"| RawStream
-    RawStream --> NxttFile
+Enabling time-tag saving disables processed saves; enabling processed saving disables tag saves. Processed CSV/TAB and processed HDF5 cannot be mixed in one active configuration. File saving does not start an acquisition. Configure while quiet, explicitly start the measurement, observe required terminal results, then quiet output and finalize the sinks.
 
-    FPGA -->|"Hardware Aggregated"| Processors
-    Processors --> Hdf5File
-    Processors --> Callbacks
-```
+## NXTT binary format
 
-### [Raw time-tag file saving (`RAW_TAGS` mode)](6_1_file_saving_and_data_export.md#raw-time-tag-file-saving)
+NXTT is a little-endian **decoded time-tag file**, not the instrument's USB wire stream:
 
-When the device output type is set to `NEXATOM_OUTPUT_RAW_TAGS`, all on-board aggregation engines (TIHI, MFCO) are suspended. The SDK dedicates maximum USB bandwidth to streaming raw, individual photon events to disk.
+| Disk element | Serialized bytes |
+| --- | --- |
+| Header magic | 4 bytes, ASCII `NXTT` |
+| Creation timestamp | uint64, microseconds since epoch |
+| Output data type | uint32, encoded/raw mode |
+| Each block count | uint32 number of following tags |
+| Each tag | uint64 timestamp in ps, then uint8 channel, without padding |
 
-The native file saver is configured via the `nexatom_time_tag_file_config_t` struct and enabled via `nexatom_tt_enable_time_tag_file_saving()`.
+The disk header is **16 bytes** and each tag within a block is **9 bytes**. The C header and tag structures are aligned host representations; do not write/read them with `sizeof` as a disk codec. Prefer the supplied native reader.
 
-**File Rotation:**
-To prevent single-file filesystem limits on long acquisitions, the native saver automatically rotates output files based on configured thresholds:
-*   `max_file_size_mb`: Triggers rotation when the file exceeds this byte limit.
-*   `max_duration_minutes`: Triggers rotation based on elapsed wall-clock time.
-*   `max_event_count`: Triggers rotation after a specific number of time tags.
-*   `rotate_on_acquisition_boundary`: Forces a new file when a `start/stop` condition is triggered.
+## Processed formats
 
-**Naming Convention:**
-The SDK automatically generates sequentially numbered files using the following pattern:
-`<base_prefix>_<timestamp>_TAGS_<sequence>_<suffix>.<ext>`
+Processed text timestamps are Unix epoch milliseconds. CPS columns are rates in Hz. TIHI includes histogram settings/statistics and bins; MFCO includes pattern settings/counts; correlation stores lag/value pairs. Preserve packet-specific metadata and schema/producer identity.
 
-### [Processed data file saving (`REALTIME_DATA` mode)](6_1_file_saving_and_data_export.md#processed-data-file-saving)
+CSV is not generally safe to parse by splitting a string on commas. Where marked MFCO CSV v1 is present, skip leading `#` preamble lines, decode CSV quoting, then parse `metadata_json`; expect six fixed fields plus the declared pattern count. Historical unversioned MFCO and legacy TIHI/CORL/CORM CSV metadata have different framing. Use a format-specific parser or the documented TAB/HDF5 representation; do not silently treat an old file as a new schema.
 
-When the device output type is set to `NEXATOM_OUTPUT_REALTIME_DATA`, the native saver can persist the aggregated payload packets (CPS, TIHI, MFCO, CORM, CORL, TELM) to disk concurrently with callback dispatch.
+For HDF5, inspect root `schema_version` and dataset columns/units/description attributes. Version 3 MFCO carries additional result metadata; absent metadata in older files remains unavailable. Do not invent zero-valued quality evidence. Specialized Fast TIHI/configuration products likewise require their own packet/schema identity; a `.csv` extension does not establish a common row layout. Consult the package's C API guide for exact dataset/record schemas.
 
-This is enabled via `nexatom_tt_enable_processed_file_saving()` using `nexatom_processed_file_config_t`. Supported export formats include:
-*   **HDF5:** The recommended binary format for complex hierarchical structures (like Multi-Tau correlation matrices and TIHI fit results).
-*   **CSV / Tab-Separated:** Best for simple visual inspection of CPS and telemetry data.
+## Naming, rotation and finalization
 
-### [NXTT binary file format](6_1_file_saving_and_data_export.md#nxtt-binary-file-format)
+`base_filename` can include an output directory. Native creates directories and commonly date subdirectories; sequence numbers are inserted into stream filenames. Configurations provide size, duration, event-count and supported acquisition-boundary rotation, timestamp inclusion and a suffix. HDF5 uses a session container rather than per-packet rolling limits. Do not assume a file exists immediately after enabling an empty sink.
 
-The `.nxtt` file format is a proprietary, zero-overhead binary container designed exclusively for raw time tags. It is uncompressed to ensure that write speeds never bottleneck the USB 3.0 stream.
+`flush_immediately` affects file-manager flushing, not a durable-storage guarantee or proof that acquisition has finished. Check final files and cleanup errors. Keep the [raw](../03_tutorials/3_4_raw_time_tag_capture_and_offline_csv_export.md) or [processed](../03_tutorials/index.md#processed-and-raw-template-anatomy) template's stop/finalize order.
 
-**1. File Header (`nexatom_time_tag_file_header_t` — 20 bytes)**
-Every `.nxtt` file begins with a standardized metadata header:
-*   `magic` (`char[5]`): The null-terminated ASCII string `"NXTT\0"` (5 bytes).
-*   `_padding0` (`uint8_t[3]`): FFI alignment padding after the magic field.
-*   `created_timestamp_us` (`uint64_t`): A 64-bit unsigned integer representing microseconds since the UNIX epoch.
-*   `output_data_type` (`uint32_t`): Verifies the payload origin (matches `nexatom_output_data_type_t`).
-*   `_padding1` (`uint8_t[4]`): FFI alignment padding at end of header.
-
-> **Note for manual binary parsers:** The header occupies **20 bytes** on disk (not 16). The magic field is `char[5]` followed by 3 bytes of padding, giving 8 bytes before the timestamp. Account for both padding regions when seeking to the first time tag record.
-
-**2. Data Payload (Record Layout)**
-Immediately following the header, the file contains a packed array of `nexatom_time_tag_t` structs. Each record is exactly **16 bytes** long to guarantee optimal 64-bit CPU cache alignment.
-
-```mermaid
-flowchart LR
-    subgraph Record ["nexatom_time_tag_t (16 Bytes)"]
-        direction LR
-        A["Bytes 0–7<br/>timestamp_ps (uint64)"] --> B["Byte 8<br/>channel (uint8)"]
-        B --> C["Bytes 9–15<br/>padding (zeroed)"]
-    end
-    
-    style A fill:#e1f5fe,stroke:#0288d1,stroke-width:2px
-    style B fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
-    style C fill:#f5f5f5,stroke:#9e9e9e,stroke-width:2px
-```
-
-*   **`timestamp_ps`**: The absolute hardware timestamp in picoseconds since the acquisition started.
-*   **`channel`**: The zero-indexed physical channel that detected the edge.
-*   **`padding`**: Reserved space. These 7 bytes are explicitly zeroed by the SDK to prevent uninitialized memory leakage and to ensure the struct aligns perfectly on 16-byte boundaries.
+[In-depth guides](index.md)

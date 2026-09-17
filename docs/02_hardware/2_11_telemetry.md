@@ -1,97 +1,19 @@
-## Telemetry and Diagnostics
+# 2.11 Telemetry
 
-The UTT810 continuously monitors its internal state, temperature, and hardware errors. This diagnostic information is delivered to the host via telemetry packets.
+## Telemetry modes
 
-### [Telemetry modes](2_11_telemetry.md#telemetry-modes)
+Telemetry capability and field layout depend on the resolved runtime. `enable_telemetry(True)` configures periodic reporting where supported; it does not guarantee callbacks in every output mode. Current common-runtime periodic reporting requires processed output. Explicit supported requests can respond in quiet output mode without starting acquisition.
 
-The telemetry subsystem operates in one of three modes, which determines when the FPGA emits telemetry packets over the USB data path.
+## Requesting telemetry on-demand
 
-| Mode Value | Description |
-|---|---|
-| `0` | **Disabled:** No telemetry packets are emitted. |
-| `1` | **On-Request:** Telemetry is only emitted when explicitly requested by the host. |
-| `2` | **Periodic:** Telemetry is emitted automatically at approximately 1 Hz. |
+Use `request_telemetry()` / `nexatom_tt_request_telemetry`. Native encodes the appropriate request for the authorized runtime. Successful return accepts the request; observe a subsequent callback or view revision for a new sample instead of sleeping for an assumed response time.
 
-*(Note: Mode 3 is reserved and will be rejected).*
+## Polling latest telemetry
 
-#### C API
-```c
-/* Set the active telemetry mode */
-nexatom_tt_set_telemetry_mode(device, 2);
+`get_telemetry_view()` returns the latest available versioned view, or `None` when no view is available. It is a cache read, not a fresh device transaction. `get_telemetry()` is the legacy request/wait API and returns the fixed legacy record. Prefer a request plus callback/view when managing freshness explicitly.
 
-/* Legacy enable toggle (maps to periodic if true, disabled if false) */
-nexatom_tt_enable_telemetry(device, true);
-```
+Use availability indicators before interpreting version-specific fields. Keep received time, source version and sequence; sequences can wrap. The legacy `system_status_word` is not the entire common-runtime status payload and cannot establish a stopped output mode. The numeric telemetry serial is not the complete FT601 selection string.
 
-#### Python
-```python
-device.set_telemetry_mode(mode=2)
-device.enable_telemetry(enable=True)
-```
+See [C telemetry](../07_c_api/7_15_telemetry.md) and [Python callbacks](../05_api_reference/5_4_callback_types.md).
 
-### [Requesting telemetry on-demand](2_11_telemetry.md#requesting-telemetry-on-demand)
-
-When the telemetry mode is set to On-Request (`1`) or Periodic (`2`), the host can force the immediate emission of a telemetry packet. This is useful for capturing the exact device state synchronized with a specific software event.
-
-#### C API
-```c
-nexatom_tt_request_telemetry(device);
-```
-
-#### Python
-```python
-device.request_telemetry()
-```
-
-### [Polling latest telemetry](2_11_telemetry.md#polling-latest-telemetry)
-
-While telemetry packets invoke the `nexatom_telemetry_callback` (if registered), the SDK also caches the most recently received telemetry frame. The host can poll this cached state synchronously at any time.
-
-#### C API
-```c
-nexatom_telemetry_data_t telemetry;
-nexatom_tt_get_telemetry(device, &telemetry);
-```
-
-#### Python
-```python
-telemetry = device.get_telemetry()
-print(f"Uptime: {telemetry.uptime_seconds} s")
-```
-
-### [Telemetry data fields](2_11_telemetry.md#telemetry-data-fields)
-
-The `nexatom_telemetry_data_t` (C) or `NexatomTelemetryData` (Python) structure exposes comprehensive diagnostic fields:
-
-| Field | Type | Description |
-|---|---|---|
-| `device_serial` | `uint32_t` | Numeric portion of the device serial number |
-| `firmware_version` | `uint16_t` | Active firmware version |
-| `hardware_revision` | `uint16_t` | Active hardware revision |
-| `uptime_seconds` | `uint32_t` | Total elapsed seconds since power-on |
-| `temperature_celsius` | `float` | XADC temperature reading in Celsius |
-| `system_status_word` | `uint32_t` | Full hardware status register dump |
-| `mode_status_word` | `uint32_t` | Full operating mode status register dump |
-| `histogram_errors_word`| `uint32_t` | Bitmask of active histogram errors/overflows |
-| `active_channels_mask` | `uint8_t` | Bitmask of currently enabled physical channels |
-| `calibration_metadata` | `uint8_t` | Calibration engine state (see Section 2.4.3) |
-| `temp_status_flags` | `uint8_t` | Contains the `NEXATOM_TELM_TEMP_STATUS_FIXED_WARNING` flag indicating thermal drift |
-| `sync_clock_*` | `bool` | Booleans indicating external clock state (requested, active, locked) |
-
-### [Configuration register dump](2_11_telemetry.md#configuration-register-dump)
-
-For deep diagnostic tracing, the host can request the device to dump the contents of all its active configuration registers.
-
-> **Python Wrapper Support.** Configuration register dumping is currently only exposed in the native C API.
-
-When requested, the hardware emits a specialized telemetry frame that is delivered asynchronously to the `nexatom_config_dump_callback`.
-
-#### C API
-```c
-nexatom_tt_request_config_dump(device);
-```
-
-#### Data structure (`nexatom_config_dump_data_t`)
-The payload contains an array of `nexatom_config_register_value_t` structs (up to `128` pairs), each containing:
-*   `address` (`uint32_t`): Register memory address
-*   `value` (`uint32_t`): Current 32-bit register value
+[Device operation](index.md)

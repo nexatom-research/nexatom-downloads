@@ -1,40 +1,14 @@
-## Booting into Runtime from Bootloader
+# 3.2 Booting into runtime from bootloader
 
-When powered on, UTT810 devices typically start in the bootloader's boot-decision window. To perform data acquisition, host software must orchestrate a transition to the runtime firmware image. This tutorial demonstrates how to execute this handoff seamlessly without writing or modifying firmware.
-
-**Relevant script:**
-*   `boot_runtime.py`
-
-### Workflow
-
-The `boot_runtime.py` script relies on the `open_runtime_device()` context manager to abstract the complexities of USB re-enumeration and slot selection.
-
-1.  **Device Discovery:** The script invokes `lib.discover_devices(max_devices)` to locate attached UTT810 hardware.
-2.  **Configuration:** A `RuntimeBootOptions` dataclass is instantiated to define the USB connection timeout, mode resolution timeout, polling interval, and an optional preferred boot slot.
-3.  **Orchestration via Context Manager:** The `open_runtime_device()` context manager takes ownership of the boot sequence:
-    *   **Mode Detection:** Determines if the hardware is already in `RUNTIME` mode or currently in `BOOTLOADER` mode.
-    *   **Slot Selection:** If in `BOOTLOADER` mode, it requests the flash slot table and determines the best `VALID` image based on strict precedence (preferred slot $\rightarrow$ default slot $\rightarrow$ lowest-indexed valid slot).
-    *   **Reboot and Reconnect:** It issues the boot command, catches the resulting hardware USB disconnect, and polls the bus to re-acquire the device using its cached physical `connection_id` and `serial_number`.
-4.  **Yield to Runtime:** Once the device re-enumerates and confirms `RUNTIME` protocol mode, the context manager yields the `NexatomDevice` handle.
-
-> **Note.** If all flash slots are `EMPTY` or `CORRUPT`, the context manager will abort and raise a `RuntimeBootError`. In this scenario, firmware must be programmed using the field update workflow (see Section 3.7).
-
-### Execution
-
-To run the orchestration script, execute it from the command line. An explicit boot slot can optionally be provided.
-
-```powershell
-# Boot the default runtime slot
-python python\examples\boot_runtime.py
-
-# Force boot into slot 1 (if VALID)
-python python\examples\boot_runtime.py --boot-slot 1
+```sh
+# Request a usable measurement runtime, including boot from an existing valid slot.
+python python/examples/boot_runtime.py --home . --timeout-ms 20000
 ```
 
-**Expected Output:**
+The normal path calls native `connect_runtime` on one handle. Native identifies the active protocol, selects an existing valid runtime when in service, boots it and waits for profile/control readiness. The client does not need USB re-enumeration or model-specific delays.
 
-```text
-Discovering NexatomTT devices.
-Selected device: name=UTT810, serial=NTT-00000001, connection=FTDI:1.
-Runtime firmware is ready.
-```
+If an explicit service-mode boot target is needed, use the example's `--boot-slot` option after checking the slot table. That option does not force replacement of an already-running runtime. Use the [service round-trip tutorial](3_6_runtime_bootloader_handoff_validation.md) for that deliberate operation.
+
+No image is written and the default slot need not change. If no valid image is available, stop and obtain a compatible image through the [firmware workflow](3_7_end_to_end_firmware_field_update.md). A successful connection does not itself start your intended acquisition.
+
+[Tutorials](index.md) · [Startup helper](../06_in_depth_guides/6_6_bootloader_first_device_startup.md)
