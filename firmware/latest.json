@@ -1,0 +1,15 @@
+{
+  "catalogVersion": 1,
+  "schemaVersion": 2,
+  "releaseTag": "firmware-catalog-1",
+  "releaseUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/tag/firmware-catalog-1",
+  "manifestUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/download/firmware-catalog-1/firmware_manifest.json",
+  "manifestSha256": "5f05841b109807cbad967a8aeccf4cce48db5aa0f176dce203bec286b7228a73",
+  "bundleUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/download/firmware-catalog-1/nexatomtt-firmware-catalog-1.zip",
+  "bundleSizeBytes": 2263627,
+  "bundleSha256": "40f538fdbec249af57ce1d4d678d10d7e607631ae7393ed8018a2566a1c0f9e0",
+  "sha256SumsUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/download/firmware-catalog-1/SHA256SUMS.txt",
+  "imageBaseUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/download/firmware-catalog-1/",
+  "nativeGitCommit": "5553c2e687bbd4bf2a57a817f837172b4d9c41b4",
+  "publishedAt": "2026-09-23"
+}
