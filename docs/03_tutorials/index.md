@@ -24,7 +24,7 @@ The C/C++ project in `examples/sdk/` provides `hardware.c` and `hardware.cpp`, b
 
 | Stage | What happens | Where to adapt it |
 |---|---|---|
-| Enter runtime | Discover one instrument; native attaches or boots a valid runtime | Runtime timeout and intended device selection |
+| Enter runtime | Discover the instrument by `connection_id`; native attaches or boots a valid runtime | Runtime timeout and intended device selection |
 | Validate | Check the full plan against the native profile | Selected channels, supported modes and features |
 | Configure | Quiet the system, configure inputs and measurement engines | Threshold, edge, delay, hysteresis, TIHI span and coincidence window |
 | Prepare recording | Register callbacks and open native file sinks | Destination, format and rotation limits |

@@ -8,20 +8,20 @@ The NexatomTT SDK uses callbacks to push data and events into the host applicati
 
 ### [Data callbacks](5_4_callback_types.md#callback-types)
 
-Data callbacks deliver intermediate or final results according to the measurement's integration and stop settings. The public Python wrappers supply owned records. At the C boundary most fixed records are passed by value, with the versioned configuration view as a borrowed-pointer exception (see Section 6.5).
+Data callbacks deliver results according to the processor's result span and run end; `result_status` says why each one was published. The public Python wrappers supply owned records. At the C boundary every callback record is passed by value, including the Fast TIHI result with its bins, so the receiver owns its copy. The one exception is the versioned configuration-dump view, a pointer valid only during the call (see [callback lifetime](../06_in_depth_guides/6_5_callback_thread_safety_and_data_lifetime.md)).
 
 | Registration Method | Expected Python Signature | Trigger Condition |
 | :--- | :--- | :--- |
-| `set_time_histogram_callback` | `def on_tihi(data: NexatomTihiData) -> None:` | Fires when a TIHI measurement completes its integration window. |
-| `set_multifold_coincidence_callback` | `def on_mfco(data: NexatomMfcoData) -> None:` | Fires when an MFCO measurement completes its integration window. |
+| `set_time_histogram_callback` | `def on_tihi(data: NexatomTihiData) -> None:` | Fires for each published TIHI result: about once a second in `WHOLE_RUN`, once per block in `BLOCK`, and a final `RUN_COMPLETE` or `STOPPED` result. |
+| `set_multifold_coincidence_callback` | `def on_mfco(data: NexatomMfcoData) -> None:` | Fires for each published MFCO result, as for TIHI. |
 | `set_count_rate_callback` | `def on_cps(data: NexatomCpsData) -> None:` | Fires continuously based on the `cps_period_selector` interval (typically 100ms or 1000ms). |
-| `set_multi_tau_correlation_callback` | `def on_corm(data: NexatomCormData) -> None:` | Fires when a CORM measurement completes its integration window. |
-| `set_linear_correlation_callback` | `def on_corl(data: NexatomCorlData) -> None:` | Fires when a CORL measurement completes its integration window. |
+| `set_multi_tau_correlation_callback` | `def on_corm(data: NexatomCormData) -> None:` | Fires for each published CORM result, as for TIHI. |
+| `set_linear_correlation_callback` | `def on_corl(data: NexatomCorlData) -> None:` | Fires for each published CORL result, as for TIHI. |
 | `set_telemetry_callback` | `def on_telem(data: NexatomTelemetryData) -> None:` | Delivers the legacy telemetry representation. Request explicitly; periodic behavior depends on the runtime. |
 | `set_config_dump_callback` | `def on_config(data: NexatomConfigDumpData) -> None:` | Fires upon explicit request via `request_config_dump()`. |
 | `set_telemetry_view_callback` | `def on_telem(data: NexatomTelemetryViewV1) -> None:` | Supplies a versioned telemetry view; check availability flags. |
 | `set_config_dump_view_callback` | `def on_config(data: NexatomConfigDumpViewV1) -> None:` | Supplies an owned Python copy of versioned configuration records. |
-| `set_fast_tihi_histogram_callback` | `def on_fast(data: NexatomFastTihiHistogramV1) -> None:` | Supplies Fast TIHI results when the profile supports this engine. |
+| `set_fast_tihi_result_callback` | `def on_fast(data: NexatomFastTihiResult) -> None:` | Supplies one Fast TIHI context's result (four back to back per result) when the profile supports this engine. The C record is passed by value, bins included. |
 
 ### [Event callbacks](5_4_callback_types.md#event-callbacks)
 
@@ -29,7 +29,7 @@ Event callbacks report state changes or progress rather than histogram data. Reg
 
 | Registration Method | Expected Python Signature | Trigger Condition |
 | :--- | :--- | :--- |
-| `set_connection_status_callback` | `def on_status(connected: bool, ready: bool) -> None:` | Fires when the USB physical layer drops (`connected=False`) or when the device successfully reaches the Idle state (`ready=True`). |
+| `set_connection_status_callback` | `def on_status(connected: bool, ready: bool) -> None:` | Fires when the link drops (`connected=False`) or the device becomes ready (`ready=True`), including after an automatic reconnect. Registering only observes the connection; it does not open one. |
 | `set_log_callback` *(Global Library Method)* | `def on_log(record: NexatomLogRecord) -> None:` | Fires whenever an internal SDK module emits a log message that passes the configured severity thresholds. |
 | *(Passed as argument to firmware loader)* | `def on_progress(progress: NexatomFieldUpdateProgress) -> None:` | Fires continuously during a firmware flash to report state machine phases and completion percentages. |
 
@@ -51,7 +51,8 @@ def on_tihi(data):
 
 device.set_time_histogram_callback(on_tihi)
 # Start acquisition using the complete tutorial's sequence. A separate consumer
-# reads results, checks acquisition_done_status and updates plots or analysis.
+# reads results, checks result_status and acquisition_done_status and updates
+# plots or analysis. After Stop, wait for the one STOPPED result.
 ```
 
 Do not perform slow plotting or unbounded disk work in the native callback. The application must synchronize shared state and define how it reports dropped queue items. Native file saving is a separate path and does not depend on this example queue.

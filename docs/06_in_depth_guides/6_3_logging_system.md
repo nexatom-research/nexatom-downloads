@@ -21,7 +21,7 @@ The SDK codebase is partitioned into 11 distinct logging modules (`nexatom_log_m
 | `GLOBAL` | SDK-wide lifecycle and unhandled exceptions |
 | `TRANSPORT` | FTDI runtime I/O and USB bulk transfers |
 | `DECODER` | Proprietary binary framing protocol parsing |
-| `PROCESSING` | Data routing and hardware processor aggregation |
+| `PROCESSING` | Data routing and host summing of processor results |
 | `FILE_SAVING` | Native binary and HDF5/CSV export engines |
 | `HARDWARE_CMD` | Register-level FPGA read/write commands |
 | `DEVICE` | High-level device state machine (Connect, Disconnect) |
@@ -101,4 +101,4 @@ The binding copies a `NexatomLogRecord` for Python ownership. Keep the handler s
 
 On unregister timeout/BUSY/failure, retain the callback's resources and handle the error. Do not unregister or wait for logging quiescence from the log callback itself. `device.clear_callbacks()` only clears device registrations and does not unregister the process-global logger.
 
-`set_performance_monitoring()` is a retained compatibility control in preview.8: it stores a flag and logs the setting. It does not add host CPU/throughput statistics to public telemetry. Logging statistics describe the logger itself, not acquisition performance monitoring.
+`set_performance_monitoring()` is a retained compatibility control, and in this SDK still only that: it stores a flag and logs the setting. It does not add host CPU/throughput statistics to public telemetry. Logging statistics describe the logger itself, not acquisition performance monitoring.

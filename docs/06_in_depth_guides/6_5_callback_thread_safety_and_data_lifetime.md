@@ -22,7 +22,7 @@ static void on_cps(nexatom_cps_data_t data, void *user_data) {
 
 If another thread reads `snapshot`, protect the transfer with application synchronization; the fragment alone is not a thread-safe queue.
 
-**Configuration-view exception:** The C `nexatom_tt_set_config_dump_view_callback` handler receives a borrowed view. Both the view and its `records` pointer expire when the callback returns. Copy metadata and deep-copy the valid records; copying only the view preserves a dangling pointer. The public Python wrapper performs this deep copy and retains the copied records with the returned view.
+**Configuration-view exception:** The C `nexatom_tt_set_config_dump_view_callback_v1` handler receives a borrowed view; it is the one callback that receives a pointer, and every other callback receives its data by value. Both the view and its `records` pointer expire when the callback returns. Copy metadata and deep-copy the valid records; copying only the view preserves a dangling pointer. The public Python wrapper performs this deep copy and retains the copied records with the returned view.
 
 ### [Python callback reference management](6_5_callback_thread_safety_and_data_lifetime.md#python-callback-reference-management)
 
@@ -42,9 +42,9 @@ The C API exposes registration functions for measurement, diagnostic and event e
 *   `nexatom_tt_set_linear_correlation_callback()`
 *   `nexatom_tt_set_telemetry_callback()`
 *   `nexatom_tt_set_config_dump_callback()`
-*   `nexatom_tt_set_config_dump_view_callback()`
-*   `nexatom_tt_set_telemetry_view_callback()`
-*   `nexatom_tt_set_fast_tihi_histogram_callback()`
+*   `nexatom_tt_set_config_dump_view_callback_v1()`
+*   `nexatom_tt_set_telemetry_view_callback_v1()`
+*   `nexatom_tt_set_fast_tihi_result_callback()`
 *   `nexatom_tt_set_connection_status_callback()`
 *   `nexatom_tt_set_log_callback()` *(Global scope, not per-device)*
 

@@ -127,8 +127,8 @@ Retained identity utility for describing a discovery record. Normal runtime star
 
 | Property | Type | Description |
 | :--- | :--- | :--- |
-| `connection_id` | `str` | Transport selection identifier supplied by discovery. |
-| `serial_number` | `str` | USB bridge serial string. Model and image identity are separate native profile fields. |
+| `connection_id` | `str` | The board's identity: `usb:` plus the USB port path (Windows: PnP location path; Linux: sysfs device name). It selects the board and changes if the board moves to another USB port. |
+| `serial_number` | `str` | FT601 USB serial, for service information only. Boards can share it, so it never selects a board. Model and image identity are separate native profile fields. |
 
 ```python
 from nexatomtt import NexatomLibrary, RuntimeBootOptions, open_runtime_device

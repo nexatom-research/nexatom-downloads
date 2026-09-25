@@ -42,4 +42,4 @@ nexatom_error_code_t nexatom_tt_set_rgb_led_mode(
 );
 ```
 
-The 32-bit `mode` parameter selects the hardware-defined LED mode. There is no common public color/blink lookup table in preview.8. In Python the equivalent method is `device.set_rgb_led_mode(mode)`; use a value documented for your supplied image rather than guessing one.
+The 32-bit `mode` parameter selects the hardware-defined LED mode. The header defines no common public color/blink lookup table; the call passes the raw mode value. In Python the equivalent method is `device.set_rgb_led_mode(mode)`; use a value documented for your supplied image rather than guessing one.

@@ -7,7 +7,7 @@ The most advanced SDK workflow involves writing a new firmware image into a non-
 
 ### Workflow
 
-1.  **Image Validation:** Supply a separately qualified `.bin` image for the target instrument. The loader accepts `<NAME>_<VERSION>.bin`, where `NAME` is four ASCII alphanumeric characters and `VERSION` is an unsigned decimal integer. `BOOT_001.bin` is an illustrative filename, not a preview.8 bundled image. Verify the supplier's checksum and target compatibility; there is no generic extended-filename/binary-header fallback in this workflow.
+1.  **Image Validation:** Supply a separately qualified `.bin` image for the target instrument. The loader accepts `<NAME>_<VERSION>.bin`, where `NAME` is four ASCII alphanumeric characters and `VERSION` is an unsigned decimal integer. Use the current image from the [firmware catalogue](../01_getting_started/1_4_firmware.md#firmware-catalogues): `Z080_nnn.bin` for a UTT810, `K168_nnn.bin` for a UTT160810. The SDK bundles the current catalogue in its `firmware/` folder (`Z080_004.bin` and `K168_004.bin` with `firmware_manifest.json`); a newer catalogue may be published as a `firmware-catalog-N` release. Verify the catalogue checksum and target compatibility; there is no generic extended-filename/binary-header fallback in this workflow.
 2.  **Handoff Orchestration:** Connect and inspect the protocol mode. From runtime, stop engines, request service entry and refresh field-update status so native performs service discovery. The [handoff tutorial](3_6_runtime_bootloader_handoff_validation.md) explains this sequence.
 3.  **Slot Safety Validation:** The script refreshes the flash table and inspects the target slot state. By default, it will abort if the user attempts to overwrite a `VALID` slot or the designated default slot without explicit command-line override flags.
 4.  **Image Streaming:** Call `device.load_field_update_image()`. Its synchronous progress callback supplies `NexatomFieldUpdateProgress`: phase, percentage, bytes and slot information. Phases include sending the image, programming and verifying; the [phase table](../01_getting_started/1_4_firmware.md#field-update-workflow) gives the public numeric values. Check the operation's result, not just its last progress percentage.
@@ -21,7 +21,7 @@ To run the field update script, the safety flag `--i-understand-this-writes-firm
 ```powershell
 python python/examples/field_update_e2e.py `
   --home . `
-  --image "firmware/BOOT_001.bin" `
+  --image "firmware/Z080_004.bin" `
   --slot 1 `
   --boot-after-load `
   --i-understand-this-writes-firmware
@@ -32,14 +32,19 @@ Substitute the supplied image and an appropriate reported slot before running. A
 **Illustrative progress:** the script prints numeric phase values and actual byte counts; these lines show their form rather than a measured result.
 
 ```text
-Discovering NexatomTT devices.
-Selected device: name=UTT810, serial=NTT-00000001, connection=FTDI:1.
+Using first discovered NexatomTT device:
+  serial_number:    000000000001
+  firmware_version: X.X.X
+  hardware_version: X.X
+  device_name:      UTT810
+  connection_type:  FTDI
+  connection_id:    usb:PCIROOT(0)#PCI(0801)#PCI(0004)#USBROOT(0)#USB(4)
 Connecting to hardware and checking protocol mode.
 Runtime firmware detected; requesting field-upgrade service entry.
 Field-update status: slot_count=2 default_slot=0
   slot 0: state=VALID version=1 default=True name=0x00000000
   slot 1: state=EMPTY version=0 default=False name=0x00000000
-Loading firmware/BOOT_001.bin into slot 1.
+Loading firmware/Z080_004.bin into slot 1.
 phase=5 percent=<progress> bytes=<sent>/<total> slot=1 ...
 phase=6 percent=<progress> bytes=<sent>/<total> slot=1 ...
 phase=7 percent=<progress> bytes=<sent>/<total> slot=1 ...

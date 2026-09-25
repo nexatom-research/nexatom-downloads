@@ -33,7 +33,7 @@ if not int(profile.effective_public_tdc_mask) & (1 << channel):
 
 ### Threshold configuration
 
-The discriminator voltage threshold can be configured independently for each channel, in millivolts (mV). Preview.8 accepts the unipolar DAC range `0..2500 mV`; also consult `max_threshold_mv` in `nexatom_tt_capabilities_t` (`device.get_capabilities()` in Python). The native API performs the DAC conversion, so pass millivolts rather than a DAC code.
+The discriminator voltage threshold can be configured independently for each channel, in millivolts (mV). The SDK accepts the unipolar DAC range `0..2500 mV`; also consult `max_threshold_mv` in `nexatom_tt_capabilities_t` (`device.get_capabilities()` in Python). The native API performs the DAC conversion, so pass millivolts rather than a DAC code.
 
 This is a configuration range, **not the maximum voltage that may safely be applied to the input connector**. Use the instrument's electrical specifications for amplitude, polarity, impedance and termination. Command acceptance also does not constitute analog readback or calibration of the discriminator voltage.
 

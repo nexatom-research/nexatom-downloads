@@ -33,11 +33,11 @@ Select the **Windows** driver package for your architecture (x64).
 
 **Step 3.** Connect the UTT810 to a USB 3.0 port. Windows Device Manager should show the device under **Universal Serial Bus controllers** as an FTDI D3XX device.
 
-> **Note.** The Windows SDK ships `FTD3XXWU.dll` alongside `nexatomTT.dll`. This is the user-mode runtime that the native library links against at load time. The Windows device driver must also be installed. Keep the bundled runtime with its SDK; see `THIRD_PARTY_NOTICES.md` and `licenses/` for the supplied notices.
+> **Note.** The Windows SDK ships `FTD3XXWU.dll` alongside `nexatomTT.dll`. This is the user-mode runtime that the native library links against at load time. The Windows device driver must also be installed. Keep the bundled runtime with its SDK; see `LICENSE.txt` and `THIRD_PARTY_NOTICES.md` for the supplied terms and notices.
 
 #### Linux device access
 
-The Linux SDK includes the D3XX user-space library, `libftd3xx.so`. Keep it beside `libnexatomTT.so` and `libnexatomTT.so.1`. A Windows driver installer is not used on Linux.
+The Linux SDK includes the FTDI D3XX 1.1.8 user-space library, `libftd3xx.so`. Keep it beside `libnexatomTT.so` and `libnexatomTT.so.1`. A Windows driver installer is not used on Linux.
 
 An administrator can install the supplied USB-access rule from the extracted SDK:
 
@@ -46,7 +46,7 @@ sudo install -m 644 drivers/linux/51-ftd3xx.rules /etc/udev/rules.d/51-ftd3xx.ru
 sudo udevadm control --reload-rules
 ```
 
-Then reconnect the device's data USB and run examples as your ordinary user. The supplied vendor rule grants `MODE="0666"` access to its listed FTDI devices; a managed laboratory may use a group-based rule instead. If discovery succeeds but opening fails, check USB permissions and whether another application owns the device.
+Then reconnect the device's data USB and run examples as your ordinary user. Installing the rule is the only step that needs root; do not run acquisition programs with `sudo`, which leaves files owned by root and hides a permission problem. The supplied vendor rule grants `MODE="0666"` access to its listed FTDI devices (vendor `0403`, including the FT601's product `601f`); a managed laboratory may use a group-based rule instead, for example `MODE="0660", GROUP="plugdev"` with the users added to that group. Without a rule, discovery can list the board while opening it fails for a non-root user. If discovery succeeds but opening fails, check USB permissions and whether another application owns the device.
 
 WSL additionally requires USB forwarding from Windows into the intended distribution. Native Linux with a directly connected device does not require this forwarding step. Finish acquisition and close the device before changing which operating system owns it.
 
@@ -60,10 +60,10 @@ Extract the SDK archive. The resulting directory contains the following files:
 |---|---|---|
 | `nexatomTT.dll` | Windows | Core native library, exporting the public C ABI |
 | `FTD3XXWU.dll` | Windows | FTDI D3XX user-mode runtime |
-| `libgcc_s_seh-1.dll`, `libstdc++-6.dll`, `libwinpthread-1.dll` | Windows | Bundled compiler runtime dependencies |
 | `libnexatomTT.so`, `libnexatomTT.so.1` | Linux | Core shared library and its versioned name |
 | `libftd3xx.so` | Linux | FTDI D3XX user-space runtime |
 | `manifest.json` | Both | Package version, native identity and file checksums |
+| `README.md` | Both | Package overview |
 | `LICENSE.txt`, `THIRD_PARTY_NOTICES.md` | Both | SDK terms and third-party notices |
 
 | Directory | Contents |
@@ -73,21 +73,19 @@ Extract the SDK archive. The resulting directory contains the following files:
 | `python/nexatomtt/` | Python loader, device controls, structures, analysis helpers and runtime helper |
 | `python/examples/` | Commented measurement, saving, plotting and service examples |
 | `examples/sdk/` | Standalone C/C++ project with shared acquisition code |
-| `drivers/linux/` | Linux USB permission rule in the Linux package |
-| `licenses/` | Included dependency notices |
+| `firmware/` | Current firmware catalogue: `firmware_manifest.json` (schema 2) and the images it lists, `Z080_004.bin` (UTT810) and `K168_004.bin` (UTT160810) in this SDK |
+| `drivers/linux/` | Linux USB permission rule `51-ftd3xx.rules` (Linux package) |
+| `licenses/` | Dependency licences `HDF5-COPYING`, `FTDI-README.pdf` and `FTDI-ftd3xx.h` (Linux package); the Windows package carries its notices in `THIRD_PARTY_NOTICES.md` |
 | `docs/` | Packaged C API developer guide |
 
-Firmware images are supplied separately for the intended hardware. Preview.8 does not require a firmware download for ordinary acquisition when the instrument already has a usable runtime. See [Firmware Management](1_4_firmware.md) for intentional image updates.
+The `firmware/` folder holds the current catalogue for both instruments; later catalogues are published as `firmware-catalog-N` releases (see [Firmware catalogues](1_4_firmware.md#firmware-catalogues)). This SDK does not require a firmware download for ordinary acquisition when the instrument already has a usable runtime. See [Firmware Management](1_4_firmware.md) for intentional image updates.
 
-**DLL co-location rule.** All five DLL files must reside in the same directory. The Python wrapper loads `nexatomTT.dll` by absolute path from the SDK root and calls `os.add_dll_directory()` so that Windows can resolve the dependent MinGW and FTDI runtime DLLs at load time. Moving individual DLLs to a separate directory will cause `OSError` on import.
+**DLL co-location rule.** Both DLL files must reside in the same directory. The compiler runtime and HDF5 are linked into `nexatomTT.dll`, so no other runtime DLLs are needed. The Python wrapper loads `nexatomTT.dll` by absolute path from the SDK root and calls `os.add_dll_directory()` so that Windows can resolve the FTDI runtime DLL at load time. Moving one DLL to a separate directory will cause `OSError` on import.
 
 ```
 nexatomtt-sdk-windows-x64/
 ├── nexatomTT.dll            ← loaded by ctypes.CDLL()
-├── FTD3XXWU.dll             ← resolved via os.add_dll_directory()
-├── libgcc_s_seh-1.dll       ← resolved via os.add_dll_directory()
-├── libstdc++-6.dll          ← resolved via os.add_dll_directory()
-└── libwinpthread-1.dll      ← resolved via os.add_dll_directory()
+└── FTD3XXWU.dll             ← resolved via os.add_dll_directory()
 ```
 
 For C/C++ consumers, ensure the SDK root is on the DLL search path (e.g., place the executable in the SDK root, or add the SDK root to the `PATH` environment variable).
@@ -212,3 +210,15 @@ def find_default_home(start: Path | None = None) -> Path:
 **Error behavior.** If the resolved home does not contain the platform library, the constructor raises `FileNotFoundError` with the searched path. A missing dependency raises `OSError`. A mismatch between the supplied manifest and library raises a verification error. Keep the package intact rather than combining a new Python folder with an older DLL.
 
 For your own script, put it beside the `nexatomtt` package in the SDK's `python/` directory, or add that directory to `PYTHONPATH`. `NEXATOMTT_HOME` selects the native library; `PYTHONPATH` controls Python module imports. The supplied examples set their import path themselves.
+
+---
+
+### [Troubleshooting](1_1_installation.md#troubleshooting)
+
+| Symptom | Cause and fix |
+|---|---|
+| A Windows program exits at start with code `0xc0000135` (`STATUS_DLL_NOT_FOUND`) | A DLL the program needs was not found. Keep `nexatomTT.dll` and `FTD3XXWU.dll` next to the program, or put the SDK root on `PATH`. The supplied CMake project copies both beside its executables. |
+| Python raises `OSError` when loading the library | The same cause: one of the two DLLs was moved away from the SDK root, or `NEXATOMTT_HOME` names another folder. Keep the extracted package intact. |
+| Windows lists no device | The FTDI D3XX driver is not installed, or the board is not connected to a working USB 3.0 port. Check Device Manager for the FTDI D3XX device. |
+| Linux lists the board but opening it fails | USB permissions. Install `drivers/linux/51-ftd3xx.rules` as shown above, reload the rules and reconnect the board, then run as your ordinary user. |
+| Opening fails with `... already open ...` | Another program or handle owns that board. Close it first; a board can be open in one handle at a time. |

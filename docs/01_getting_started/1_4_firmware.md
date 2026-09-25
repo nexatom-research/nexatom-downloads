@@ -2,7 +2,26 @@
 
 Bootloader-equipped instruments store runtime firmware in flash memory slots managed by an on-device service bootloader. The SDK provides a field-update workflow for loading images, managing slots and booting runtime firmware. Original Zynq without a bootloader uses direct runtime attachment and does not acquire these service features simply because it uses the same API.
 
-Ordinary measurement does not require this workflow: native `connect_runtime` can boot an already-valid image when needed. Use field update when you intend to change firmware. Preview.8 supplies the service tools; obtain the image separately for the exact instrument/application.
+> **UTT810 units without a bootloader.** Early UTT810 units were delivered without the bootloader. They keep working with this SDK and connect directly to their runtime. To receive firmware updates, such a unit needs a one-time bootloader installation by Nexatom service; contact Nexatom to arrange it. From then on, updates are loaded through the SDK or the app like on any other unit.
+
+Ordinary measurement does not require this workflow: native `connect_runtime` can boot an already-valid image when needed. Use field update when you intend to change firmware. The SDK supplies the service tools and bundles the current firmware catalogue; catalogues are also published on their own (see [Firmware catalogues](#firmware-catalogues)).
+
+<a id="firmware-catalogues"></a>
+
+### [Firmware catalogues](1_4_firmware.md#firmware-catalogues)
+
+Nexatom publishes firmware as numbered catalogues. Each catalogue is a GitHub release named `firmware-catalog-N` in the [nexatom-downloads repository](https://github.com/nexatom-research/nexatom-downloads/releases). A release holds the images, their `firmware_manifest.json`, a `SHA256SUMS.txt` file and a zip bundle of all of them. The pointer `https://downloads.nexatom.in/firmware/latest.json` names the current catalogue; the Nexatom app follows that pointer, reads the manifest and offers the images that match the connected instrument.
+
+The SDK package carries the current catalogue in its `firmware/` folder (`firmware_manifest.json` plus the images it lists; catalogue 3 in this SDK: `Z080_004.bin` and `K168_004.bin`). A catalogue published after the SDK can carry newer images; the app finds them through `latest.json`, and an SDK user can download the `firmware-catalog-N` release directly.
+
+The current catalogue is **catalogue 3**:
+
+| Image | Instrument | Notes |
+|---|---|---|
+| `Z080_004.bin` | UTT810 (Zynq, 8 inputs) | Current UTT810 runtime, device protocol ABI 1.1 |
+| `K168_004.bin` | UTT160810 (Kintex, 16 inputs, 8 outputs) | Current UTT160810 runtime, device protocol ABI 1.1 |
+
+Image names follow the product: `Z080_nnn` for the UTT810 and `K168_nnn` for the UTT160810, where `nnn` is the build count. A higher number is a later build. A file name always means the same bytes in every catalogue; new bytes get a new number. The earlier `BOOT_001.bin` name is retired.
 
 ### [Firmware image format](1_4_firmware.md#firmware-image-format)
 
@@ -14,11 +33,11 @@ Firmware images use a strict filename convention:
 
 | Component | Format | Constraints | Example |
 |---|---|---|---|
-| `<NAME>` | ASCII alphanumeric | Exactly 4 characters, `isalnum()` | `BOOT` |
-| `<VERSION>` | Decimal unsigned integer | 0–4294967295 (`uint32`) | `001` |
+| `<NAME>` | ASCII alphanumeric | Exactly 4 characters, `isalnum()` | `Z080` |
+| `<VERSION>` | Decimal unsigned integer | 0–4294967295 (`uint32`) | `004` |
 | Extension | `.bin` | Required | `.bin` |
 
-**Valid example:** `BOOT_001.bin` — name `BOOT`, version `1`.
+**Valid example:** `Z080_004.bin` — name `Z080`, version `4`.
 
 The image loader validates this convention before loading a file. The example's `image_metadata_from_filename()` function extracts and validates the name and version from the filename stem by splitting on the last underscore:
 
@@ -32,15 +51,17 @@ Firmware images that do not match this convention are rejected with `ValueError`
 
 ### [Firmware manifest](1_4_firmware.md#firmware-manifest)
 
-An image delivery may include `firmware/firmware_manifest.json` with a schema version and an `images` array. The fields below explain that catalogue format. Preview.8's standard SDK archives contain no firmware image; use the manifest/checksum supplied with your separate image delivery. The earlier manual's `BOOT_001.bin` size and hash belonged to that earlier delivery and must not be reused for a different file.
+Each firmware catalogue carries a `firmware_manifest.json` with `schemaVersion` (currently 2), `catalogVersion` and an `images` array. The fields below explain that format. The SDK archives carry one catalogue in `firmware/firmware_manifest.json` beside its images; take an image, its size and its checksum from the same catalogue, whether that is the bundled one or a published `firmware-catalog-N` release.
 
 | Field | Type | Description |
 |---|---|---|
 | `fileName` | string | Image filename in `<NAME>_<VERSION>.bin` format |
 | `displayName` | string | Human-readable name |
 | `description` | string | Purpose of the image |
-| `model` | string | Target hardware model (`UTT810`) |
+| `model` | string | Target hardware model (`UTT810` or `UTT160810`) |
 | `channel` | string | Firmware channel (`runtime`) |
+| `status` | string | `current` for the image to install; `superseded` for an earlier build kept for reference |
+| `requires` | object | `abi` (device protocol ABI the image reports) and `minSdk` (oldest SDK that supports it) |
 | `sizeBytes` | integer | Image size in bytes |
 | `sha256` | string | SHA-256 hex digest for integrity verification |
 
@@ -55,7 +76,7 @@ from pathlib import Path
 
 directory = Path("firmware")
 catalogue = json.loads((directory / "firmware_manifest.json").read_text())
-entry = next(item for item in catalogue["images"] if item["fileName"] == "BOOT_001.bin")
+entry = next(item for item in catalogue["images"] if item["fileName"] == "Z080_004.bin")
 image = directory / entry["fileName"]  # Replace the illustrative name with your supplied image.
 if image.stat().st_size != entry["sizeBytes"]:
     raise ValueError("Image size differs from its manifest")
@@ -155,13 +176,13 @@ typedef void (*nexatom_field_update_progress_callback_t)(
 ```powershell
 python python/examples/field_update_e2e.py `
     --home . `
-    --image firmware/BOOT_001.bin `
+    --image firmware/Z080_004.bin `
     --slot 1 `
     --i-understand-this-writes-firmware `
     --boot-after-load
 ```
 
-This command illustrates the syntax; substitute the supplied compatible image path and a slot reported by your device. `BOOT_001.bin` is not bundled with preview.8. Do not select slot 1 merely because it appears in the example.
+This command illustrates the syntax; substitute the catalogue image for your instrument (`Z080_nnn.bin` for a UTT810, `K168_nnn.bin` for a UTT160810) and a slot reported by your device. The current images are in the SDK's `firmware/` folder, for example `firmware/Z080_004.bin`. Do not select slot 1 merely because it appears in the example.
 
 | Flag | Default | Description |
 |---|---|---|
@@ -222,7 +243,7 @@ def progress(p):
     print(f"Phase={p.phase} {p.percent}% {p.bytes_sent}/{p.total_bytes} bytes")
 
 device.load_field_update_image(
-    image_path="firmware/BOOT_001.bin",
+    image_path="firmware/Z080_004.bin",
     slot_index=1,
     set_default_after_load=False,
     boot_after_load=False,
@@ -235,6 +256,7 @@ device.load_field_update_image(
 
 ```c
 void on_progress(nexatom_field_update_progress_t p, void* ctx) {
+    (void)ctx;
     printf("Phase=%u %u%% %llu/%llu bytes\n",
            p.phase, p.percent,
            (unsigned long long)p.bytes_sent, (unsigned long long)p.total_bytes);
@@ -243,7 +265,7 @@ void on_progress(nexatom_field_update_progress_t p, void* ctx) {
 nexatom_field_update_request_t req = {0};
 req.struct_size = sizeof(req);
 req.slot_index = 1;
-req.image_path = "firmware\\BOOT_001.bin";
+req.image_path = "firmware\\Z080_004.bin";
 req.set_default_after_load = 0;
 req.boot_after_load = 0;
 
@@ -384,7 +406,7 @@ The `field_update_e2e.py` script enforces three levels of protection:
 **Image source.** Load only firmware images supplied by Nexatom or explicitly approved for your hardware model. The `firmware_manifest.json` provides SHA-256 checksums for verification. Verify the checksum before loading:
 
 ```powershell
-certutil -hashfile firmware\BOOT_001.bin SHA256
+certutil -hashfile firmware\Z080_004.bin SHA256
 ```
 
 Compare the output with the `sha256` field in `firmware_manifest.json`.

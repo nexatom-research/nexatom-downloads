@@ -29,3 +29,26 @@ if (status != 0) {
     printf("Connection failed! [%s] Detail: %s\n", error_name, detailed_reason);
 }
 ```
+
+### Device protocol ABI (1.0 and 1.1)
+
+The library version above is the host software. The instrument's runtime reports a separate **device protocol ABI**, the command/register protocol it speaks, as major (bits 31..16) and minor (bits 15..0). The resolved profile carries it in `nexatom_tt_device_profile_v1_t.software_interface_abi` (the field keeps its historical name).
+
+| Constant | Value | Runtimes |
+| :--- | :--- | :--- |
+| `NEXATOM_TT_DEVICE_PROTOCOL_ABI_1_0` | `0x00010000` | Earlier UTT160810 images |
+| `NEXATOM_TT_DEVICE_PROTOCOL_ABI_1_1` | `0x00010001` | Current images: `Z080_004` (UTT810) and `K168_004` (UTT160810) |
+
+This SDK recognises runtime ABI 1.0 and 1.1 exactly. A minor revision adds records and registers without changing existing ones, but the SDK never masks off the minor: a revision it does not know is refused rather than assumed compatible. Original UTT810 units without a bootloader report no device protocol ABI and are recognised through their legacy contract.
+
+```c
+// Fragment: after nexatom_tt_connect_runtime() succeeded on my_device.
+nexatom_tt_device_profile_v1_t profile = {0};
+profile.struct_size = sizeof(profile);
+profile.struct_version = NEXATOM_TT_DEVICE_PROFILE_V1_VERSION;
+if (nexatom_tt_get_device_profile_v1(my_device, &profile) == NEXATOM_SUCCESS) {
+    printf("Device protocol ABI %u.%u\n",
+           (unsigned)(profile.software_interface_abi >> 16),
+           (unsigned)(profile.software_interface_abi & 0xFFFFu));
+}
+```

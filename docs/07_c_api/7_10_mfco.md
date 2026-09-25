@@ -14,9 +14,8 @@ Rather than recording a START-to-STOP histogram like TIHI, MFCO reports an eight
 | `nexatom_tt_set_multifold_coincidence_pattern_filter`| `[In] nexatom_tt_handle device`<br>`[In] const uint8_t requirements[8]` | `nexatom_error_code_t` | Applies per-channel requirement constraints. Each element of the 8-byte array specifies the filter rule for the corresponding channel. |
 | `nexatom_tt_disable_multifold_coincidence_pattern_filter`| `[In] nexatom_tt_handle device` | `nexatom_error_code_t` | Disables software filtering, passing all 256 logic bins directly to the callback. |
 | `nexatom_tt_start_multifold_coincidence`| `[In] nexatom_tt_handle device` | `nexatom_error_code_t` | Requests START for the enabled MFCO engine; observe measurement results separately. |
-| `nexatom_tt_stop_multifold_coincidence`| `[In] nexatom_tt_handle device` | `nexatom_error_code_t` | Requests stop; observe the expected terminal result separately before finalizing sinks. |
-| `nexatom_tt_set_multifold_coincidence_stop_conditions`| `[In] nexatom_tt_handle device`<br>`[In] uint32_t stop_count`<br>`[In] uint32_t stop_duration_ms`<br>`[In] bool use_duration` | `nexatom_error_code_t` | Configures auto-stop triggers. Set `use_duration = true` for time-based stops, or `use_duration = false` for count-based stops. |
-| `nexatom_tt_set_multifold_coincidence_aggregation_mode`| `[In] nexatom_tt_handle device`<br>`[In] nexatom_aggregation_mode_t mode` | `nexatom_error_code_t` | Sets accumulation behavior (`NEXATOM_AGGREGATION_ACCUMULATE` = Add to existing, `NEXATOM_AGGREGATION_REPLACE` = Overwrite on new packets). |
+| `nexatom_tt_stop_multifold_coincidence`| `[In] nexatom_tt_handle device` | `nexatom_error_code_t` | Requests stop. Exactly one `STOPPED` result follows within 2 s; wait for it before finalizing sinks. |
+| `nexatom_tt_set_result_span`, `nexatom_tt_set_run_end`, `nexatom_tt_clear_result` | `processor = NEXATOM_RESULT_PROCESSOR_MULTIFOLD_COINCIDENCE` | `nexatom_error_code_t` | What a result covers, when the run ends and restarting the result. See the [result model](7_9_tihi.md#result-model). |
 | `nexatom_tt_set_mfco_background_method`| `[In] nexatom_tt_handle device`<br>`[In] nexatom_mfco_background_method_t method` | `nexatom_error_code_t` | Configures background subtraction for accidental dark count coincidence rejection (`NEXATOM_MFCO_BG_NONE` = 0, `NEXATOM_MFCO_BG_USER_CONSTANT` = 1, `NEXATOM_MFCO_BG_USER_SELECTED_PATTERN_BIN` = 2). |
 | `nexatom_tt_set_mfco_user_background_value`| `[In] nexatom_tt_handle device`<br>`[In] uint16_t value` | `nexatom_error_code_t` | Manual noise floor subtraction (range 0–65535). Only effective when method is `USER_CONSTANT`. |
 | `nexatom_tt_set_mfco_background_bin`| `[In] nexatom_tt_handle device`<br>`[In] uint8_t pattern_bin` | `nexatom_error_code_t` | Sets a specific logic bin (0–255) to represent the baseline noise level dynamically. Only effective when method is `USER_SELECTED_PATTERN_BIN`. |
@@ -36,17 +35,22 @@ MFCO payloads are passed by-value to the callback registered in Section 7.8. The
 | `pattern_filter.required_mask` | `uint8_t` | Echoes the active logic filter requirements. |
 | `pattern_filter.forbidden_mask` | `uint8_t` | Channels that must not be present. |
 | `pattern_filter.patterns_after_filter` | `uint32_t` | Number of retained patterns, which can include zero-count bins. |
-| `pattern_bins` | `uint32_t[256]` | **The absolute counts for each pattern.** Index `0x05` contains the counts where exactly Ch0 and Ch2 fired together. |
-| `singles` | `uint32_t[8]` | Convenience array tracking counts where *only* that specific channel fired. |
+| `pattern_bins` | `uint64_t[256]` | **The absolute counts for each pattern.** Index `0x05` contains the counts where exactly Ch0 and Ch2 fired together. |
+| `singles` | `uint64_t[8]` | Convenience array tracking counts where *only* that specific channel fired. |
 | `total_counts` | `uint64_t` | Sum of retained corrected bins, including pattern zero and exact singles. |
-| `num_doubles` | `uint32_t` | Count of events with exactly 2 channels firing simultaneously. |
-| `num_triples` | `uint32_t` | Count of events with exactly 3 channels firing simultaneously. |
-| `num_higher` | `uint32_t` | Count of events with 4 or more channels firing simultaneously. |
+| `num_doubles` | `uint64_t` | Count of events with exactly 2 channels firing simultaneously. |
+| `num_triples` | `uint64_t` | Count of events with exactly 3 channels firing simultaneously. |
+| `num_higher` | `uint64_t` | Count of events with 4 or more channels firing simultaneously. |
 | `top_patterns` | `struct[10]` | A sorted leaderboard array of the 10 most frequently occurring logic patterns and their counts. |
-| `packets_accumulated` | `uint32_t` | Number of raw data packets aggregated. |
-| `measurement_duration_ms` | `uint64_t` | Host wall-clock duration of the aggregation emission epoch; not a guaranteed MFCO live-time denominator. |
+| `packets_accumulated` | `uint32_t` | Hardware batches in this result. |
+| `measurement_duration_ms` | `uint64_t` | Host time from the start of this result to its last batch; for rates use `live_time_ms`. |
+| `result_status` | `nexatom_result_status_t` | Why the result was published: `RUNNING`, `BLOCK_COMPLETE`, `RUN_COMPLETE` or `STOPPED`. See [result model](7_9_tihi.md#result-model). |
+| `result_span` | `nexatom_result_span_t` | What it covers: `WHOLE_RUN` or `BLOCK`. |
+| `block_index` | `uint64_t` | Zero-based block number in `BLOCK`; 0 in `WHOLE_RUN`. |
+| `live_time_ms` | `double` | Measurement time in the result, excluding the dead time between batches. |
+| `live_time_exact` | `uint8_t` | 1 when every batch had a known length; 0 when Stop ended a batch. |
 | `result_metadata_version` | `uint8_t` | Zero means unavailable; version 1 or newer establishes the associated metadata contract. |
 | `done_status_error_flags_raw` | `uint8_t` | Preserved hardware error/status flags; inspect even if counts are nonzero. |
-| `host_quality_flags` | `uint16_t` | Host quality flags; retain with completion and aggregation information. |
+| `host_quality_flags` | `uint16_t` | Host quality flags; retain with completion and result information. |
 
-An exact pattern count differs from an inclusive coincidence count over all supersets. See [pattern analysis](../05_api_reference/5_6_mfco_pattern_analysis_helpers.md). REPLACE, ACCUMULATE and AVERAGE results have different aggregation meaning; do not sum overlapping snapshots or infer Hz from host elapsed time without a defined live-time measurement.
+An exact pattern count differs from an inclusive coincidence count over all supersets. See [pattern analysis](../05_api_reference/5_6_mfco_pattern_analysis_helpers.md). A `WHOLE_RUN` result is a running total and a `BLOCK` result covers one block; do not add overlapping results together. Use `live_time_ms` as the rate denominator rather than host elapsed time.

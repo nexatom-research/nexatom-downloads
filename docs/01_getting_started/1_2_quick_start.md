@@ -144,9 +144,11 @@ python python/examples/ftdi_realtime_smoke.py --home . --timeout-ms 20000 --dura
 | Flag | Default | Description |
 |---|---|---|
 | `--home` | Auto-detected | SDK root containing `nexatomTT.dll` |
-| `--timeout-ms` | `5000` | Device connect timeout (ms) |
+| `--timeout-ms` | `20000` | Native runtime startup budget, including boot when needed (ms) |
 | `--duration-sec` | `10.0` | Callback collection duration (s) |
 | `--max-devices` | `8` | Maximum FTDI devices to discover |
+| `--connection-id` | Empty | Board to open, as discovery lists it (`usb:` + USB port path). Required when more than one board is connected; the FT601 serial never selects a board |
+| `--auto-reconnect` | Off | Retry in the background if the working link drops; reconnects only to the same `connection_id` and the same instrument |
 | `--boot-slot` | Auto | Explicit VALID slot index to boot |
 | `--mode-timeout-sec` | `20.0` | Runtime boot/reconnect timeout (s) |
 | `--poll-sec` | `0.25` | Boot polling interval (s) |
@@ -172,12 +174,12 @@ The script executes the following call sequence after `open_runtime_device()` yi
 
 ```
 Using first discovered NexatomTT device:
-  serial_number:    NTT-XXXXXXXX
+  serial_number:    000000000001
   firmware_version: X.X.X
   hardware_version: X.X
   device_name:      UTT810
   connection_type:  FTDI
-  connection_id:    ...
+  connection_id:    usb:PCIROOT(0)#PCI(0801)#PCI(0004)#USBROOT(0)#USB(4)
 Runtime firmware ready; enabling realtime output.
 CPS period_ms=1000 total=... channels=8 counts=[...]
 Telemetry seq=1 uptime_s=... temp_c=XX.XX mode=0x03 status=0x00
@@ -185,6 +187,8 @@ Telemetry seq=1 uptime_s=... temp_c=XX.XX mode=0x03 status=0x00
 Observed callbacks: cps=N telemetry=N
 FTDI realtime smoke complete.
 ```
+
+The `connection_id` names the USB port the board is plugged into; on Linux it looks like `usb:2-1.3`. It is the value to pass to `--connection-id` when several boards are attached. The FT601 `serial_number` is shown for information only; several boards can print the same value.
 
 The script exits with code `0` on success. Exit code `2` can indicate missing required callbacks, a refused profile/control request or a runtime/native error. Read the printed diagnostic before checking the USB connection, device access, signal source or firmware state.
 
@@ -230,7 +234,7 @@ Edit `ChannelSettings` in `channel_setup.py` for different values per input. For
 
 #### Reading the result
 
-Each run creates `captures/processed-<id>/`. Native files contain one decoded result per record; `processed_summary.json` analyzes the latest snapshot. The template uses **REPLACE** aggregation, so it does not sum overlapping accumulated histograms. TIHI reports the bin sum and peak-bin start in ps. MFCO reports both exact selected-channel patterns and patterns containing those channels plus others. Completion reasons and error/quality flags remain beside the values.
+Each run creates `captures/processed-<id>/`. Native files contain one decoded result per record; `processed_summary.json` analyzes the latest snapshot. The template sets a 1 s `BLOCK` result span (`set_result_span(..., NEXATOM_RESULT_SPAN_BLOCK, 1000)`), so each TIHI/MFCO result covers its own block; do not add results that overlap. After Stop it waits for the one `STOPPED` result per processor before it closes the files. TIHI reports the bin sum and peak-bin start in ps. MFCO reports both exact selected-channel patterns and patterns containing those channels plus others. Completion reasons and error/quality flags remain beside the values.
 
 Omit `--internal-test` for external signals. Internal pulses exercise digital acquisition and saving; evaluating threshold, hysteresis and physical edge response requires an external source. The same workflow is available in the [C/C++ example project](1_3_programming.md#c-cpp-examples).
 
@@ -386,14 +390,14 @@ The script follows a strict 10-step hardware sequence:
     set_channel_input_delay(stop_ch, delay_ps)
     set_time_histogram_bin_width(1000)
     set_time_histogram_num_bins(selected_bins)  # Validated against native capabilities.
-    set_time_histogram_stop_conditions(0, 1000, True)
-    set_time_histogram_aggregation_mode(ACCUMULATE)
+    set_result_span(NEXATOM_RESULT_PROCESSOR_TIME_HISTOGRAM,
+                    NEXATOM_RESULT_SPAN_WHOLE_RUN)   # running total, ~1 s updates
     enable_time_histogram(True)
  8. Configure MFCO (while processor is disabled):
     set_multifold_coincidence_window(1000000)
     set_multifold_coincidence_channels([0,1,2,3,4,5,6,7])
-    set_multifold_coincidence_stop_conditions(0, 0, False)
-    set_multifold_coincidence_aggregation_mode(ACCUMULATE)
+    set_result_span(NEXATOM_RESULT_PROCESSOR_MULTIFOLD_COINCIDENCE,
+                    NEXATOM_RESULT_SPAN_WHOLE_RUN)
     enable_multifold_coincidence(True)
  9. start_time_histogram() + start_multifold_coincidence()
     Live Matplotlib update loop for duration_sec

@@ -86,9 +86,9 @@ The FTDI bridge may remain enumerated throughout the firmware transition. The fo
 
 | Field | Description |
 |---|---|
-| `connection_id` | Transport-specific connection identifier; not a permanent board identity |
-| `serial_number` | USB bridge serial string, separate from the runtime image |
+| `connection_id` | The board's identity: `usb:` plus the USB port path. It stays the same through a boot or service transition while the board stays in the same port |
+| `serial_number` | FT601 USB serial, for service information only; it never selects a board |
 | `product_model_id` | Native profile's model identity and associated contract |
-| `application_image_id` | Running image identity; changing firmware does not require changing the USB serial |
+| `application_image_id` | Running image identity; changing firmware does not change the USB serial or the `connection_id` |
 
-A boot ACK is not runtime readiness. If an explicit boot times out after transmission, preserve the error/status evidence and inspect the device; do not automatically send a second boot request. Run blocking boot/service operations off an application's UI thread. The ordinary workflow uses one instrument at a time, and both C and Python delegate these lifecycle decisions to the same native library.
+A boot ACK is not runtime readiness. If an explicit boot times out after transmission, preserve the error/status evidence and inspect the device; do not automatically send a second boot request. Run blocking boot/service operations off an application's UI thread. Each handle owns one board, and both C and Python delegate these lifecycle decisions to the same native library.
