@@ -1,23 +1,23 @@
 {
   "schemaVersion": 1,
   "artifactName": "nexatomtt-sdk",
-  "sdkVersion": "0.1.0-preview.8",
+  "sdkVersion": "0.1.0-preview.18.2",
   "channel": "preview",
   "platform": "windows-x64",
   "distribution": "public-preview",
   "nativeApiVersion": "1",
-  "nativeGitCommit": "7e4a54cb820d788e81c303ea8ec35c9281a0a1cd",
-  "fileName": "nexatomtt-sdk-v0.1.0-preview.8-windows-x64.zip",
-  "sizeBytes": 4788012,
-  "sha256": "29069d730ce6c82aaeeee036920dd4de603071de5dbc0f31724d1c48b24eafef",
-  "releaseTag": "nexatomtt-sdk-v0.1.0-preview.8",
-  "releaseUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/tag/nexatomtt-sdk-v0.1.0-preview.8",
-  "downloadUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/download/nexatomtt-sdk-v0.1.0-preview.8/nexatomtt-sdk-v0.1.0-preview.8-windows-x64.zip",
+  "nativeGitCommit": "d21ba52ba40b32907a06d32ffcdd16ea7e0ce023",
+  "fileName": "nexatomtt-sdk-v0.1.0-preview.18.2-windows-x64.zip",
+  "sizeBytes": 8778285,
+  "sha256": "ba48a611ee93baf3b43e4cd4d5a808167a70653f4f449e90e8468f5f720514fa",
+  "releaseTag": "nexatomtt-sdk-v0.1.0-preview.18.2",
+  "releaseUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/tag/nexatomtt-sdk-v0.1.0-preview.18.2",
+  "downloadUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/download/nexatomtt-sdk-v0.1.0-preview.18.2/nexatomtt-sdk-v0.1.0-preview.18.2-windows-x64.zip",
   "packageManifestPath": "manifest.json",
   "releaseNotes": [
     "Public preview SDK for NexatomTT on Windows x64.",
-    "Updates the SDK manual, adds inline workflow explanations to the C/C++ and Python acquisition templates, and simplifies the public package manifest.",
-    "Native acquisition behaviour is unchanged from preview.7. Its ZYNQ_004 internal-pulse qualification covered service return, all six C/C++/Python processed/raw workflows, saved-file decoding, digital delay through 256 ns and close/reopen.",
-    "Single active instrument. Kintex and legacy Zynq hardware qualification for this preview and external analog validation remain pending. Firmware is supplied separately."
+    "Adds the shared result model (one STOPPED result per processor after Stop), callbacks by value, board selection by USB port (connection_id; the FT601 serial is information only), auto-reconnect, nexatom_tt_get_file_saving_statistics, a statically linked runtime and CSV/TAB v2 and HDF5 schema 4 files; examples and manual updated.",
+    "Checked on Windows with Kintex K168_004 and Zynq Z080_004 through the Nexatom application on a library from the same source revision: connect, histogram Start/Stop, raw recording with file-saving statistics (Zynq) and clean disconnect; two boards on USB at once listed, opened and streamed independently.",
+    "Firmware catalogue 3 (Z080_004, K168_004) is included in firmware/. External analog validation and maximum sustained throughput remain pending."
   ]
 }
