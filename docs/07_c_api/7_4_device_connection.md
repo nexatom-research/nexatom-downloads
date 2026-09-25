@@ -8,10 +8,11 @@ This module also provides deterministic checks for the FPGA bootloader state (`n
 
 | Function | Parameters (In/Out) | Returns | Description |
 | :--- | :--- | :--- | :--- |
-| `nexatom_tt_connect` | `[In] nexatom_tt_handle device`<br>`[In] uint32_t timeout_ms` | `nexatom_error_code_t` | Opens/detects the session; use runtime connect for measurement readiness. |
+| `nexatom_tt_connect` | `[In] nexatom_tt_handle device`<br>`[In] uint32_t timeout_ms` | `nexatom_error_code_t` | Opens exactly the board at the handle's `connection_id` and waits until it can be controlled: transport open, first telemetry seen, control authority granted. A board in bootloader mode returns once the transport is open. `timeout_ms` bounds the whole call. Use runtime connect for measurement. |
 | `nexatom_tt_connect_runtime` | `[In] nexatom_tt_handle device`<br>`[In] uint32_t timeout_ms` | `nexatom_error_code_t` | Native discovers runtime/service, boots an existing valid slot when needed and waits for authorized runtime readiness on this handle. |
-| `nexatom_tt_disconnect` | `[In] nexatom_tt_handle device` | `nexatom_error_code_t` | Gracefully closes USB endpoints and terminates the physical session without freeing host memory. |
-| `nexatom_tt_get_device_info` | `[In] nexatom_tt_handle device`<br>`[Out] nexatom_tt_info_t* info` | `nexatom_error_code_t` | Retrieves the static string metadata (Serial Number, firmware version) for the currently connected handle. |
+| `nexatom_tt_disconnect` | `[In] nexatom_tt_handle device` | `nexatom_error_code_t` | Closes the USB session without freeing host memory. Every wait is bounded and in-flight data is dropped, not drained; finish file saving first. Also turns automatic reconnection off until the next successful connect. |
+| `nexatom_tt_set_auto_reconnect` | `[In] nexatom_tt_handle device`<br>`[In] bool enable` | `nexatom_error_code_t` | Off by default. When on, re-establishes a working link that dropped, to the same `connection_id` and the same instrument only. Never opens the first connection. |
+| `nexatom_tt_get_device_info` | `[In] nexatom_tt_handle device`<br>`[Out] nexatom_tt_info_t* info` | `nexatom_error_code_t` | Retrieves the string metadata (`connection_id`, FT601 serial, firmware version) for the handle's board. |
 | `nexatom_tt_get_capabilities` | `[In] nexatom_tt_handle device`<br>`[Out] nexatom_tt_capabilities_t* capabilities` | `nexatom_error_code_t` | Returns native capability values; combine these with the authorized device profile rather than treating them as measured physical specifications. |
 | `nexatom_tt_is_connected` | `[In] nexatom_tt_handle device`<br>`[Out] bool* is_connected` | `nexatom_error_code_t` | Queries if the physical USB session is currently established. |
 | `nexatom_tt_get_state` | `[In] nexatom_tt_handle device`<br>`[Out] nexatom_tt_state_t* state` | `nexatom_error_code_t` | Retrieves the active software driver state (e.g., `CONNECTED`, `ACQUIRING`, `ERROR`). |
@@ -110,5 +111,23 @@ if (!(profile.profile_flags & NEXATOM_TT_PROFILE_CONTROL_AUTHORIZED) ||
 ```
 
 `nexatom_tt_get_application_contract` exposes native's resolved application contract. `nexatom_tt_apply_inventory_profile_v1`, `nexatom_tt_apply_manual_profile_v1`, `nexatom_tt_clear_profile_evidence_v1`, `nexatom_tt_configure_runtime_compatibility` and `nexatom_tt_set_bootloader_probe_enabled` are controlled compatibility tools, not ordinary startup prerequisites. Use their exact declarations from the header; do not override an unknown model by guessing capabilities.
+
+### Connection errors and several boards
+
+`nexatom_tt_connect()` opens exactly the board at the handle's `connection_id` (see [board identity](7_3_device_discovery.md#board-identity-and-several-boards)). It never falls back to another board. When it fails, `nexatom_tt_get_last_error_message()` names the cause, for example `Device not found: no FT601 at USB port …` or `… already open …`. Several boards can be connected at once through separate handles.
+
+<a id="automatic-reconnection"></a>
+
+### Automatic reconnection
+
+```c
+// Fragment: my_device is connected; on_status is the application's handler.
+nexatom_tt_set_connection_status_callback(my_device, on_status, app_state);
+nexatom_tt_set_auto_reconnect(my_device, true);
+```
+
+`nexatom_tt_set_auto_reconnect()` is the explicit opt-in for retrying in the background after a working link goes away, which is what a cable pull looks like. It is off by default. It never opens the first connection: until a `nexatom_tt_connect()` has succeeded there is nothing to re-establish, and an explicit `nexatom_tt_disconnect()` turns the retries off until the next successful connect. Registering the connection status callback only observes the connection; it does not open or reopen one.
+
+A reconnect goes only to the same `connection_id` (the same USB port), never to another board. When the reconnected board reports its identity, the SDK compares product model, hardware revision and the instrument serial from telemetry with the instrument that the explicit connect saw; the FT601 USB serial is never used. If another instrument now sits in that port, the SDK refuses it: the handle is not marked ready, it is disconnected, the retries stop, and the error (beginning `Auto-reconnect refused:`) names both instruments. An explicit `nexatom_tt_connect()` accepts whichever instrument is in the port and makes it the one later reconnects must match. Readiness after a reconnect is reported through the connection status callback.
 
 Use the complete C/C++ acquisition templates for checked cleanup on every failure path. Connection success does not itself enable the application's measurement.

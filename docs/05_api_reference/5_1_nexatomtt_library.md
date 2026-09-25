@@ -52,14 +52,30 @@ The internal state machine governs which commands are valid at any given time.
 *   `STOPPING` (5)
 *   `ERROR` (6)
 
-<a id="aggregation-modes"></a>
+<a id="result-model"></a>
 
-### [Aggregation modes (`nexatom_aggregation_mode_t`)](5_1_nexatomtt_library.md#aggregation-modes)
+### [Result model (`nexatom_result_span_t`, `nexatom_result_status_t`, `nexatom_run_end_kind_t`)](5_1_nexatomtt_library.md#result-model)
 
-Governs how the SDK processes sequential data payloads from the FPGA before dispatching the user callback. Applies to TIHI, MFCO, and Correlation engines.
-*   `ACCUMULATE` (0): New hardware counts are summed directly into the existing host-side histogram.
-*   `REPLACE` (1): The host-side histogram is cleared and overwritten by the latest hardware packet.
-*   `AVERAGE` (2): Maintains a running statistical average across sequential hardware packets.
+TIHI, MFCO, the correlators (CORL and CORM) and Fast TIHI share one result model. The hardware measures in batches that the SDK programs (1 s for TIHI, MFCO and Fast TIHI; `num_bins × T` for the correlators); the host sums whole batches into the published results. The aggregation modes (`ACCUMULATE`, `REPLACE`, `AVERAGE`), `nexatom_aggregation_mode_t` and the `set_*_aggregation_mode()` and `set_*_stop_conditions()` calls no longer exist.
+
+Each call takes a processor: `NEXATOM_RESULT_PROCESSOR_TIME_HISTOGRAM` (0), `NEXATOM_RESULT_PROCESSOR_MULTIFOLD_COINCIDENCE` (1), `NEXATOM_RESULT_PROCESSOR_CORRELATION` (2, CORL and CORM) or `NEXATOM_RESULT_PROCESSOR_FAST_TIME_HISTOGRAM` (3). A processor that the running image lacks returns `NEXATOM_ERROR_NOT_SUPPORTED`.
+
+| Python method | What it sets |
+| --- | --- |
+| `set_result_span(processor, span, block_ms=0)` | What a result covers. `NEXATOM_RESULT_SPAN_WHOLE_RUN` (0, default): the total since Start, `clear_result()` or a restarting change, republished about once a second. `NEXATOM_RESULT_SPAN_BLOCK` (1): tumbling blocks, each published once at the first batch edge at or after `block_ms`; the next block starts empty. |
+| `set_run_end(processor, kind, value=0)` | When the run ends by itself. `NEXATOM_RUN_END_NONE` (0, default): run until Stop. `NEXATOM_RUN_END_TIME` (1): `value` ms of measurement time. `NEXATOM_RUN_END_COUNT` (2): `value` detected events. |
+| `clear_result(processor)` | Discards what the host has summed; the next result, block and run-end count start from this call. The hardware keeps running. |
+
+Changing the span or the run end restarts the result, as does changing the TIHI channels, bidirectional or first-stop mode. Writing the current value does not.
+
+Every result carries `result_status`:
+
+*   `RUNNING` (0): `WHOLE_RUN` progress update; the run continues.
+*   `BLOCK_COMPLETE` (1): a `BLOCK` result reached its length; the next block has started.
+*   `RUN_COMPLETE` (2): the run-end condition was met and the SDK stopped the processor. Last result of the run.
+*   `STOPPED` (3): final partial result after Stop. Last result of the run.
+
+After Stop, exactly one `STOPPED` result arrives per processor, within 2 s. A Fast TIHI `STOPPED` result can carry a newer `run_id` than the last one seen; compare `run_id` wrap-safely. See [result model fields](5_3_data_structures.md#result-model-fields).
 
 <a id="acquisition-done-status"></a>
 

@@ -62,11 +62,13 @@ Set options with `set_processed_file_config(packet_type, config)`, enable each r
 
 Processed text timestamps use Unix epoch milliseconds. CPS channel values are already rates in Hz. TIHI contains bins and histogram settings; MFCO contains 256 pattern bins and its configuration/quality metadata; CORL/CORM contain lag/value pairs and normalization information. Keep that metadata with the numerical arrays.
 
-**Preview.8 correlation CSV limitation:** CORL and CORM CSV metadata contains unescaped JSON delimiters, so standard strict CSV readers reject those rows. Use the native TAB or HDF5 format for these two packet families in this release. Do not repair a scientific record by silently dropping or splitting metadata. This does not affect the individual time-tag CSV format.
+Processed CSV and TAB files of one packet family carry the same `#` notes, heading row and values; only the delimiter and the schema line (for example `mfco_csv_v2` or `mfco_tab_v2`) differ. Standard CSV readers read them after skipping the `#` lines.
 
-CSV families can have different schemas. Skip leading `#` preamble lines before using a CSV reader; do not parse with `line.split(',')`. Versioned MFCO CSV includes a quoted `metadata_json` field and the declared pattern count. Read its schema marker before interpreting columns. TAB contains tab-delimited fields and can include JSON metadata; parse the outer delimiters before decoding JSON.
+**Files from earlier SDKs:** preview.8 CORL and CORM CSV files contain unescaped JSON delimiters, so strict CSV readers reject those rows. Read them with their TAB or HDF5 counterparts. Do not repair a scientific record by silently dropping or splitting metadata. This never affected the individual time-tag CSV format.
 
-For HDF5, inspect root `schema_version` and each dataset's columns, units and description attributes. Schema version 3 MFCO includes result-quality metadata; an older file without those fields has unknown quality, not zero errors. Specialized Fast TIHI index products require their own capability and schema; a `.csv` extension does not make their layout identical to CPS or TIHI.
+Different packet families have different columns. Skip leading `#` preamble lines before using a CSV reader; do not parse with `line.split(',')`. Versioned MFCO CSV includes a quoted `metadata_json` field and the declared pattern count. Read its schema marker before interpreting columns. TAB contains tab-delimited fields and can include JSON metadata; parse the outer delimiters before decoding JSON.
+
+For HDF5, inspect root `schema_version` and each dataset's columns, units and description attributes. Current files use root schema version 4 (`nexatomtt_pd_hdf5_v4`), one dataset per measurement type with the CSV headings as member names. MFCO from schema version 3 onward includes result-quality metadata; an older file without those fields has unknown quality, not zero errors. Specialized Fast TIHI index products require their own capability and schema; a `.csv` extension does not make their layout identical to CPS or TIHI.
 
 ### [NXTT binary file format](6_1_file_saving_and_data_export.md#nxtt-binary-file-format)
 

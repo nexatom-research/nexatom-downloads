@@ -9,4 +9,4 @@ Please refer to:
 * **[Programming Languages](1_3_programming.md)** for integrating the C ABI or writing your first script in Python.
 * **[Firmware Management](1_4_firmware.md)** for understanding the boot sequence and performing field updates.
 
-For a first measurement, install the package and follow the quick start. Native startup handles an existing runtime or valid image slot; loading firmware is a separate intentional operation. This edition uses SDK **0.1.0-preview.8**.
+For a first measurement, install the package and follow the quick start. Native startup handles an existing runtime or valid image slot; loading firmware is a separate intentional operation. This edition uses SDK **0.1.0-preview.18.2**.

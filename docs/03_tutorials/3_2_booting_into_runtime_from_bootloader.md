@@ -31,11 +31,11 @@ python python/examples/boot_runtime.py --home . --timeout-ms 20000
 python python/examples/boot_runtime.py --home . --boot-slot 1 --timeout-ms 20000
 ```
 
-**Illustrative output** (device names/serials vary):
+**Illustrative output** (device names and ports vary; on Linux the `connection_id` looks like `usb:2-1.3`):
 
 ```text
 Discovering NexatomTT devices.
-Selected device: name=UTT810, serial=NTT-00000001, connection=FTDI:1.
+Selected device: name=UTT810, connection_id=usb:PCIROOT(0)#PCI(0801)#PCI(0004)#USBROOT(0)#USB(4), FT601 serial=000000000001 (information only).
 Runtime firmware is ready.
 ```
 

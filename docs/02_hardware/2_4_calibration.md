@@ -24,7 +24,7 @@ device.trigger_calibration()
 
 ### Auto-calibration configuration
 
-Images with the established automatic-recalibration register contract can trigger it from elapsed time or temperature drift. The detailed settings below apply to those images. In preview.8 the resolved `UTT_16_8_V1` application contract rejects `configure_auto_calibration`, `enable_auto_calibration` and `set_calibration_settings` without issuing incompatible register writes. This restriction must not be generalized to every bootloader-based Zynq or Kintex image. A startup-calibration feature alone does not imply automatic recalibration support.
+Images with the established automatic-recalibration register contract can trigger it from elapsed time or temperature drift. The detailed settings below apply to those images. In this SDK the resolved `UTT_16_8_V1` application contract rejects `configure_auto_calibration`, `enable_auto_calibration` and `set_calibration_settings` without issuing incompatible register writes. This restriction must not be generalized to every bootloader-based Zynq or Kintex image. A startup-calibration feature alone does not imply automatic recalibration support.
 
 #### Trigger conditions
 
@@ -107,7 +107,7 @@ On a legacy image, this warning can indicate that a new calibration should be co
 
 ### Calibration data structure
 
-The public SDK retains the following calibration record (`NexatomCalibrationData` in Python). Preview.8 does not expose a public callback/getter that fills it after `trigger_calibration()`. An application must not allocate this record and treat its default values as a calibration result; use supported telemetry/status evidence instead.
+The public SDK retains the following calibration record (`NexatomCalibrationData` in Python). The SDK does not expose a public callback/getter that fills it after `trigger_calibration()`. An application must not allocate this record and treat its default values as a calibration result; use supported telemetry/status evidence instead.
 
 #### `nexatom_calibration_data_t`
 

@@ -32,4 +32,4 @@ includes_0_and_1 = contains_channels_count(bins, [0, 1])
 # The inclusive result also counts patterns with channel 2, 3, etc. present.
 ```
 
-Both helpers require exactly 256 nonnegative integer counts. Channel IDs must be integers in 0–7. `order_counts` excludes the empty pattern and groups the remaining bins by the number of set bits. These helpers neither validate completion/quality nor divide by acquisition live time. Inspect those result fields before interpreting a rate, and do not add overlapping ACCUMULATE snapshots together.
+Both helpers require exactly 256 nonnegative integer counts. Channel IDs must be integers in 0–7. `order_counts` excludes the empty pattern and groups the remaining bins by the number of set bits. These helpers neither validate completion/quality nor divide by acquisition live time. Inspect those result fields before interpreting a rate, and do not add successive `WHOLE_RUN` results together.

@@ -1,6 +1,6 @@
 # C API Function Reference
 
-This chapter explains the public C API in the package's `include/nexatomtt_c_api.h`. That shipped header is authoritative for exact declarations and record layouts. These pages cover preview.8 with unchanged preview.7 API behaviour, while retaining the earlier manual's reference structure.
+This chapter explains the public C API in the package's `include/nexatomtt_c_api.h`. That shipped header is authoritative for exact declarations and record layouts. These pages cover 0.1.0-preview.18.2, while retaining the earlier manual's reference structure.
 
 While Chapter 5 focuses on the object-oriented Python abstractions, this chapter documents the raw hardware control endpoints, memory management rules, and pointer semantics required when integrating the SDK into C, C++, Rust, LabVIEW, or other Foreign Function Interface (FFI) environments.
 
@@ -25,7 +25,7 @@ The reference is grouped by function. For complete processed/raw applications us
 | [Channel configuration](7_7_channel_config.md) | Threshold, edge, delay, hysteresis and test pulses |
 | [Callbacks](7_8_callback_registration.md) | Data, telemetry/configuration views and callback lifetime |
 | [TIHI](7_9_tihi.md) | Normal/Fast TIHI and fitting |
-| [MFCO](7_10_mfco.md) | Patterns, aggregation and result quality |
+| [MFCO](7_10_mfco.md) | Patterns, result span and result quality |
 | [CORL/CORM](7_11_correlation.md) | Intensity correlation and normalization |
 | [DLS](7_12_dls.md) | Host light-scattering analysis controls |
 | [FCS](7_13_fcs.md) | Host fluorescence-correlation analysis controls |

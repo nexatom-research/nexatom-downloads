@@ -22,7 +22,7 @@ The data connection carries all traffic between the host and device:
 
 ### Device discovery and enumeration
 
-Before connecting to a UTT810, discover available FTDI devices. Discovery scans the USB bus through D3XX and returns `nexatom_tt_info_t` transport descriptors. Enumeration identifies a USB attachment; it does not itself prove runtime readiness or populate a complete hardware capability profile.
+Before connecting to a UTT810, discover available FTDI devices. Discovery scans the USB bus through D3XX and returns `nexatom_tt_info_t` transport descriptors. Discovery never opens, resets or reads a board, so it is safe to call while boards are in use: it lists every attached board, including one that this or another process has open. Enumeration identifies a USB attachment; it does not itself prove runtime readiness or populate a complete hardware capability profile.
 
 #### C API
 
@@ -33,8 +33,9 @@ size_t count = 0;
 nexatom_error_code_t rc = nexatom_tt_discover_devices(devices, 8, &count);
 if (rc == NEXATOM_SUCCESS && count > 0) {
     printf("Found %zu device(s)\n", count);
-    printf("  Serial: %s\n", devices[0].serial_number);
+    printf("  Port:   %s\n", devices[0].connection_id);   /* the board's identity */
     printf("  Device: %s\n", devices[0].device_name);
+    printf("  FT601 serial (information only): %s\n", devices[0].serial_number);
 }
 ```
 
@@ -46,9 +47,13 @@ from nexatomtt import NexatomLibrary
 lib = NexatomLibrary(home=".")  # The extracted SDK root
 devices = lib.discover_devices(max_devices=8)
 
+def text(field: bytes) -> str:  # ctypes returns the C strings as bytes
+    return field.decode("utf-8", errors="replace")
+
 for d in devices:
-    print(f"Serial: {d.serial_number}")
-    print(f"Device: {d.device_name}")
+    print(f"Port:   {text(d.connection_id)}")   # the board's identity
+    print(f"Device: {text(d.device_name)}")
+    print(f"FT601 serial (information only): {text(d.serial_number)}")
 ```
 
 #### Device info struct (`nexatom_tt_info_t`)
@@ -57,35 +62,61 @@ Each discovered device is described by a `nexatom_tt_info_t` struct containing s
 
 | Field | Description | Example |
 |---|---|---|
-| `serial_number` | USB bridge serial string; retain it for instrument identification | (device-specific) |
+| `serial_number` | FT601 USB serial, for service information only. Several boards can carry the same factory serial, so it never selects or verifies a board | `000000000001` |
 | `firmware_version` | Descriptor's firmware text; use the connected profile for decoded runtime identity | (may be unavailable at enumeration) |
 | `hardware_version` | Descriptor's hardware text | (may be unavailable at enumeration) |
 | `device_name` | Transport/device description; do not select a protocol from this text | (device-specific) |
 | `connection_type` | Transport type | `FTDI` |
-| `connection_id` | FTDI device path / USB location | (system-dependent) |
+| `connection_id` | `usb:` followed by the USB port path. This is the board's identity: it selects the board at connect | `usb:PCIROOT(0)#PCI(0801)#PCI(0004)#USBROOT(0)#USB(4)` (Windows), `usb:2-1.3` (Linux) |
+
+#### Board identity: `connection_id`
+
+A board is identified by the USB port it is plugged into, never by its FT601 serial.
+
+- `connection_id` is `usb:` followed by the port path. On Windows the path is the PnP location path of the FT601's USB device node, for example `usb:PCIROOT(0)#PCI(0801)#PCI(0004)#USBROOT(0)#USB(4)`. On Linux it is the sysfs USB device name, for example `usb:2-1.3`. Treat the text as opaque: compare it exactly and pass the discovered record back to `create`.
+- The id stays the same while the board stays in that port, across replugging and reboots. **Moving a board to another USB port changes its `connection_id`.**
+- `serial_number` is the FT601 USB serial and is information only. Boards can share the factory serial, so the SDK never selects, gates or verifies a board by it.
+- Connect opens exactly the board at the handle's `connection_id`, or fails. It never falls back to another board. The error text names the cause:
+  - `Device not found: no FT601 at USB port …` when no board is in that port;
+  - `… already open …` when the board is in use by this or another process. The discovery record has no busy flag; this error is how you find out.
+- A handle created with an empty `connection_id` connects to the first free board and is bound to that board's port from then on.
+- Several boards can be open at the same time, one handle each, even when they share an FT601 serial.
 
 #### Selecting an attached instrument
 
-Discovery may list several attached devices. The normal SDK workflow operates one selected instrument at a time. `max_devices` limits enumeration results (default: 8, defined by `NEXATOM_MAX_DEVICES_DEFAULT`); it is not a promise of coordinated multi-instrument acquisition. For an ordinary example, require one candidate. A controlled test application may select a known descriptor before opening that one instrument.
+Discovery may list several attached boards. `max_devices` limits enumeration results (default: 8, defined by `NEXATOM_MAX_DEVICES_DEFAULT`). The examples accept a `connection_id`; without one they proceed only when exactly one board is present, and otherwise list the ids and stop rather than guess:
 
 ```python
+wanted = ""  # for example "usb:2-1.3"; empty = the only attached board
 devices = lib.discover_devices(max_devices=8)
-if len(devices) != 1:
-    raise RuntimeError(f"Expected one selected instrument; found {len(devices)}")
-device_info = devices[0]
+if wanted:
+    matches = [d for d in devices if text(d.connection_id) == wanted]
+    if not matches:
+        raise RuntimeError(f"No board at {wanted}")
+    device_info = matches[0]
+elif len(devices) == 1:
+    device_info = devices[0]
+else:
+    ids = ", ".join(text(d.connection_id) for d in devices)
+    raise RuntimeError(f"Found {len(devices)} boards; choose one by connection_id: {ids}")
 ```
+
+To run two boards together, create one handle per discovered record and connect each. Each handle has its own callbacks, savers and settings.
 
 #### Identity-based reconnection
 
 Runtime startup may involve a firmware transition while the FTDI bridge remains enumerated. A USB disconnect/re-enumeration is not a required success condition. `connect_runtime()` and the `open_runtime_device()` convenience context delegate discovery, boot and readiness to the native library on the selected handle.
 
-Keep three kinds of identity separate:
+Keep four kinds of identity separate:
 
-1. The USB serial identifies the physical instrument/bridge.
+1. `connection_id` identifies the board by its USB port and selects it.
 2. `product_model_id` identifies the model and its supported API contract.
 3. `application_image_id` identifies the running image; it is not a per-board serial stamp.
+4. The instrument serial in telemetry (`device_serial`) is the runtime's own serial. Auto-reconnect compares it; it is unrelated to the FT601 USB serial.
 
 The native API resolves these internally. An application does not need a model selector, telemetry-version setting, bootloader-presence switch or replacement handle after a successful native boot.
+
+**Automatic reconnection** is off by default. `set_auto_reconnect(True)` makes the library retry in the background after a working link drops (a cable pull). It never opens the first connection, and an explicit `disconnect()` turns it off until the next successful connect. A reconnect goes only to the same `connection_id`. When the board there reports its identity, the SDK compares product model, hardware revision and instrument serial with the instrument that the explicit connect saw. If a different instrument now sits in that port, the SDK refuses it with an error beginning `Auto-reconnect refused:` that names both instruments, disconnects the handle and stops retrying. Readiness after a reconnect is reported through the connection status callback.
 
 ### Connection management and state machine
 
@@ -159,7 +190,7 @@ typedef void (*nexatom_connection_status_callback)(
 );
 ```
 
-Register the callback before calling `connect()` to receive the initial connection event:
+Registering the callback only observes the connection; it does not open one. Register it before connecting to receive the initial connection event:
 
 ```python
 device.set_connection_status_callback(
@@ -168,7 +199,7 @@ device.set_connection_status_callback(
 device.connect_runtime(timeout_ms=20000)
 ```
 
-The callback separates transport connection from native readiness. A received byte, boot acknowledgement or `connected == 1` alone is not permission to configure measurement hardware. `connect_runtime()` waits for decoded runtime identity and authorized controls before returning success; the resolved profile is available to the application. Keep this callback short and avoid making blocking device calls from it.
+The callback separates transport connection from native readiness. A received byte, boot acknowledgement or `connected == 1` alone is not permission to configure measurement hardware. `connect()` and `connect_runtime()` return success only when the device can be controlled, so the callback is not a prerequisite for the first control call (a device in bootloader mode is the exception: `connect()` returns once the transport is open). The callback is where readiness is reported after an automatic reconnect. Keep this callback short and avoid making blocking device calls from it.
 
 #### Device capabilities
 

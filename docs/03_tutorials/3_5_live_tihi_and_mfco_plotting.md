@@ -11,14 +11,15 @@ This tutorial demonstrates how to configure the Time Interval Histogram (TIHI) a
 2.  **Configure TIHI (Time Interval Histogram):**
     *   **Routing:** `device.set_time_histogram_channels(start, stop)` assigns the physical channels acting as the START and STOP triggers.
     *   **Time Axis:** `device.set_time_histogram_bin_width(ps)` and `device.set_time_histogram_num_bins(count)` define bin width and span. Bin width is a histogram setting, not an analog timing-accuracy specification; validate the bin count against the native profile/capabilities.
-    *   **Completion:** `device.set_time_histogram_stop_conditions(count, duration_ms, use_duration)` selects an event/count or duration completion condition. Do not infer automatic periodic rearming solely from setting a duration.
+    *   **Result span:** `device.set_result_span(NEXATOM_RESULT_PROCESSOR_TIME_HISTOGRAM, NEXATOM_RESULT_SPAN_WHOLE_RUN)` makes each result the running total since Start, republished about once a second, so the plot updates regularly. `set_run_end()` can end the run after a time or a count; the plotter runs until its duration expires and then stops.
     *   **Enable:** `device.enable_time_histogram(True)` powers the submodule logic.
 3.  **Configure MFCO (Multi-Fold Coincidence):**
     *   **Timing:** `device.set_multifold_coincidence_window(ps)` establishes the maximum allowable temporal drift between events to be considered coincident.
+    *   **Result span:** the same `WHOLE_RUN` span is set for `NEXATOM_RESULT_PROCESSOR_MULTIFOLD_COINCIDENCE`.
     *   **Patterns:** Current eight-input MFCO returns 256 pattern bins. The plotter's `--mfco-analysis-channels` selects a software analysis filter; it does not suppress other physical events in the FPGA.
     *   **Enable:** `device.enable_multifold_coincidence(True)` powers the submodule logic.
 4.  **Start the Engines:** With the data path already enabled and CPS observed, explicitly start the configured histogram engines with `device.start_time_histogram()` and `device.start_multifold_coincidence()`. Enabling a module and starting its measurement are distinct operations.
-5.  **Live Plotting:** As the hardware triggers its stop/emit conditions, it pushes payload packets over USB. The registered Python callbacks receive `NexatomTihiData` and `NexatomMfcoData` objects in the background. The main Python thread consumes these cached snapshots and continuously renders a live Matplotlib visualization until the duration expires.
+5.  **Live Plotting:** The hardware measures in 1 s batches and the SDK publishes a result at each batch edge. The registered Python callbacks receive `NexatomTihiData` and `NexatomMfcoData` objects in the background. The main Python thread consumes these cached snapshots and continuously renders a live Matplotlib visualization until the duration expires.
 
 ### Execution
 
@@ -35,7 +36,7 @@ python python/examples/tihi_mfco_matplotlib.py --home . --duration-sec 10 --save
 
 ```text
 Discovering NexatomTT devices.
-Selected device: name=UTT810, serial=NTT-00000001, connection=FTDI:1.
+Selected device: connection_id='usb:PCIROOT(0)#PCI(0801)#PCI(0004)#USBROOT(0)#USB(4)' (FT601 serial '000000000001', information only).
 Runtime firmware ready; checking required channel rates.
 ...
 Configuring TIHI while acquisition is stopped.
@@ -52,4 +53,4 @@ Saved plot captures to captures/tihi_histogram.png and captures/mfco_patterns.pn
 
 Use `--no-test-pulses` with external START/STOP signals. The plotter's cycle defaults use the connected profile's pulse clock, so calculate period as `period_cycles / test_pulse_clock_hz`. To survey roughly 10 us-separated signals, use a histogram span that covers the interval before narrowing it. The first-stop mode and relative input delay affect which peak appears.
 
-`--no-live-window --save-plots --save-csv` produces a headless plot and final snapshot CSVs. It does not continuously record every processed packet. For that use the [processed acquisition template](../01_getting_started/1_2_quick_start.md#configure-channels-and-record-processed-results), whose native sinks remain open throughout the measurement. Keep aggregation and completion metadata with the plotted data; a nonzero bar alone does not establish a completed, valid measurement.
+`--no-live-window --save-plots --save-csv` produces a headless plot and final snapshot CSVs. It does not continuously record every processed packet. For that use the [processed acquisition template](../01_getting_started/1_2_quick_start.md#configure-channels-and-record-processed-results), whose native sinks remain open throughout the measurement. Keep the result span, result status and live time with the plotted data; a nonzero bar alone does not establish a completed, valid measurement.

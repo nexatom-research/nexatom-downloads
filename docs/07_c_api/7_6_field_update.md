@@ -1,6 +1,6 @@
 # Field Update / Bootloader
 
-These endpoints inspect existing firmware slots, load a compatible image and perform service/runtime transitions. They do not provide arbitrary flash partitioning. Preview.8 supplies tools but no firmware image.
+These endpoints inspect existing firmware slots, load a compatible image and perform service/runtime transitions. They do not provide arbitrary flash partitioning. The SDK supplies tools but no firmware image; images come from the [firmware catalogue](../01_getting_started/1_4_firmware.md#firmware-catalogues).
 
 For a complete guarded workflow use the [Python field-update tutorial](../03_tutorials/3_7_end_to_end_firmware_field_update.md). Custom C/C++ updaters must preserve the same preflight, overwrite and completion checks.
 

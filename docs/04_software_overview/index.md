@@ -56,11 +56,11 @@ Most C data callbacks receive a fixed record by value. A C caller must copy that
 
 ### [Native DLL and runtime dependencies](index.md#native-dll-and-runtime-dependencies)
 
-The Windows x64 SDK packages the native library and its runtime dependencies together in the extracted SDK root. Keep these files together:
+The Windows x64 SDK packages the native library and the FTDI runtime together in the extracted SDK root. Keep these files together:
 
 *   `nexatomTT.dll`: The core NexatomTT library.
 *   `FTD3XXWU.dll`: The proprietary FTDI D3XX runtime driver.
-*   `libgcc_s_seh-1.dll`, `libstdc++-6.dll`, `libwinpthread-1.dll`: MinGW compiler runtimes.
+*   The compiler runtime and HDF5 are linked into `nexatomTT.dll`; no separate runtime DLLs are shipped.
 
 The Linux x64 package supplies matching shared libraries and the FTDI runtime. Keep `libnexatomTT.so`, `libnexatomTT.so.1` and `libftd3xx.so` together in the supplied layout. Follow the package's Linux setup instructions for USB permissions; an x64 package does not run on an ARM host.
 
@@ -93,4 +93,4 @@ Device instances are managed using opaque pointers to prevent the host applicati
 *   `nexatom_tt_handle`: Represents an active session with a physical device. Must be explicitly freed via `nexatom_tt_destroy()`.
 *   `nexatom_tt_time_tag_reader_t*`: Represents an offline binary file parser. Must be closed via `nexatom_tt_close_time_tag_reader()`.
 
-`disconnect()` closes the transport session but does not free a device handle. `close()`/native destruction releases its ownership. Ordinary applications select one instrument and establish native runtime readiness before configuring it. The native profile supplies model, image, available channel masks, features and control limits; clients do not decode firmware identity packets or ask users to select a telemetry protocol.
+`disconnect()` closes the transport session but does not free a device handle. `close()`/native destruction releases its ownership. Ordinary applications select each instrument by its `connection_id` (one handle per board) and establish native runtime readiness before configuring it. The native profile supplies model, image, available channel masks, features and control limits; clients do not decode firmware identity packets or ask users to select a telemetry protocol.

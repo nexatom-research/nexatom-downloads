@@ -1,10 +1,10 @@
 # Hardware
 
-This chapter explains the UTT810 hardware interface as exposed through SDK preview.8: how to connect an instrument, configure its inputs, choose an output path, and interpret hardware status. The native library owns the FTDI transport, protocol selection and hardware commands. Examples use physical units and the resolved device profile rather than raw register writes.
+This chapter explains the UTT810 hardware interface as exposed through SDK 0.1.0-preview.18.2: how to connect an instrument, configure its inputs, choose an output path, and interpret hardware status. The native library owns the FTDI transport, protocol selection and hardware commands. Examples use physical units and the resolved device profile rather than raw register writes.
 
 | Property | Value |
 |---|---|
-| Supported workflow | One selected instrument per application workflow |
+| Supported workflow | One handle per board; several boards can be open at once, each selected by its USB port |
 | Hardware families | Original Zynq runtime, bootloader-equipped Zynq, and bootloader-equipped Kintex through one native API |
 | Public input channels | Up to 8 (0–7), restricted by the effective public channel mask |
 | Transport | FTDI FT60x USB 3.0 |

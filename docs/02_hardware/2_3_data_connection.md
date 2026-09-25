@@ -45,7 +45,7 @@ current_mode = device.get_output_type()
 
 ### Performance monitoring
 
-`set_performance_monitoring` is retained for compatibility in preview.8. It accepts a flag and may emit a diagnostic log, but it does **not** activate host throughput statistics or change acquisition, communication or telemetry behavior.
+`set_performance_monitoring` is retained for compatibility. It accepts a flag and may emit a diagnostic log, but it does **not** activate host throughput statistics or change acquisition, communication or telemetry behavior.
 
 #### Enabling monitoring
 
@@ -61,7 +61,7 @@ device.set_performance_monitoring(True)
 
 #### Acquisition status structure
 
-The public headers retain `nexatom_acquisition_status_t` and Python exposes the matching `NexatomAcquisitionStatus` record. There is no public getter/callback that supplies populated host statistics in preview.8. The fields below explain the retained record layout, not measurements made available by enabling this flag:
+The public headers retain `nexatom_acquisition_status_t` and Python exposes the matching `NexatomAcquisitionStatus` record. There is no public getter/callback that supplies populated host statistics. To prove that a capture reached its file, use the [file-saving statistics](../07_c_api/7_17_file_saving.md#file-saving-statistics). The fields below explain the retained record layout, not measurements made available by enabling this flag:
 
 | Metric category | Fields | Description |
 |---|---|---|

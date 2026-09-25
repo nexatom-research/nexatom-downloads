@@ -4,6 +4,8 @@ Bootloader-equipped NexatomTT hardware can start in firmware service (`BOOTLOADE
 
 The native API owns discovery, service/image boot transitions, initialization and profile resolution. The client selects an instrument and an intended measurement; ordinary startup requires no manual protocol or hardware-profile selection.
 
+> **UTT810 units without a bootloader.** Early UTT810 units were delivered without the bootloader. They still connect directly to their runtime and measure as before. To use firmware slots and field updates, such a unit needs a one-time bootloader installation by Nexatom service; contact Nexatom to arrange it. After that, firmware updates run through the SDK and the app like on any other unit.
+
 <a id="context-manager"></a>
 
 ### [`open_runtime_device()` context manager](6_6_bootloader_first_device_startup.md#context-manager)
@@ -28,7 +30,8 @@ from nexatomtt import NexatomLibrary, open_runtime_device, RuntimeBootOptions
 library = NexatomLibrary(home="/path/to/extracted-sdk")
 devices = library.discover_devices()
 if len(devices) != 1:
-    raise RuntimeError("Select one intended instrument before starting")
+    # With several boards, pick one by its connection_id (its USB port).
+    raise RuntimeError("Select one intended board before starting")
 
 options = RuntimeBootOptions(timeout_ms=20000)
 with open_runtime_device(library, devices[0], options=options) as device:
@@ -53,7 +56,7 @@ An explicit `preferred_slot` is useful for deliberate firmware-service work. If 
 
 Boot changes the device's protocol and runtime state; it must not be treated as proof of measurement readiness merely because the boot command was acknowledged. Native waits for the required runtime evidence and handles the transition on the existing device handle. A physical USB re-enumeration is not a mandatory client-visible step on every model.
 
-Keep the selected device's complete discovery record. The USB bridge serial identifies the physical unit independently of the model/image identity resolved by native. The `DeviceIdentity` helper remains available for describing selection records; normal applications do not implement a second discovery/reconnect loop around native runtime entry. Ordinary SDK use owns one selected instrument, even if discovery lists more than one.
+Keep the selected device's complete discovery record. Its `connection_id` (`usb:` plus the USB port path) identifies the board and stays the same through the boot while the board stays in that port; the FT601 USB serial is information only and never identifies a board. The `DeviceIdentity` helper remains available for describing selection records; normal applications do not implement a second discovery/reconnect loop around native runtime entry. Each handle owns one board; to run several boards, open one handle per board.
 
 Advanced firmware examples can deliberately close and reopen a device to prove that a later independent session works. That additional validation is distinct from the boot operation's same-handle readiness contract.
 

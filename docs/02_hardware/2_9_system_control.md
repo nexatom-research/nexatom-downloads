@@ -54,7 +54,7 @@ device.reset_peripherals(True)
 device.reset_peripherals(False)
 ```
 
-In preview.8, successful reset release also selects `REALTIME_DATA` in the native implementation. Explicitly select the output required by the next operation after a deliberate reset; do not assume a previous raw/quiet output mode survived it. A peripheral reset is not the service-entry operation used for firmware updates.
+Successful reset release also selects `REALTIME_DATA` in the native implementation. Explicitly select the output required by the next operation after a deliberate reset; do not assume a previous raw/quiet output mode survived it. A peripheral reset is not the service-entry operation used for firmware updates.
 
 ### Global acquisition stop
 

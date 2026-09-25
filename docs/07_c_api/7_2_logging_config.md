@@ -65,6 +65,6 @@ int main() {
 
 ### Versioned logging controls
 
-Preview.7 also exposes `nexatom_tt_get_logging_capabilities`, `nexatom_tt_get_logging_configuration`, `nexatom_tt_configure_logging` and `nexatom_tt_get_logging_statistics`. Initialize their record `struct_size` and `version` as specified in the shipped header. Query available modules/levels/categories rather than assuming every build includes DEBUG output.
+The header also declares `nexatom_tt_get_logging_capabilities`, `nexatom_tt_get_logging_configuration`, `nexatom_tt_configure_logging` and `nexatom_tt_get_logging_statistics`. Initialize their record `struct_size` and `version` as specified in the shipped header. Query available modules/levels/categories rather than assuming every build includes DEBUG output.
 
 `nexatom_tt_unregister_log_callback(timeout_ms)` waits for quiescence. Logging is process-global and separate from device callback clearing. Retain handler resources on failure; do not unregister from a native callback. Its bounded queue can drop diagnostic records when a consumer is slow; see [logging behaviour](../06_in_depth_guides/6_3_logging_system.md).

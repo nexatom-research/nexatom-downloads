@@ -2,7 +2,7 @@
 
 While the tutorials in Chapter 3 demonstrate the baseline code required to operate the UTT810, advanced integration often requires a deeper understanding of the underlying SDK mechanics and mathematical models.
 
-This chapter explores the theoretical and architectural concepts driving the NexatomTT SDK. It explains the binary file layout, the native host curve-fitting models and the lifecycle rules for firmware/runtime transitions. The original guide structure is retained while the API details describe preview.8.
+This chapter explores the theoretical and architectural concepts driving the NexatomTT SDK. It explains the binary file layout, the native host curve-fitting models and the lifecycle rules for firmware/runtime transitions. The original guide structure is retained while the API details describe 0.1.0-preview.18.2.
 
 ## Chapter contents
 

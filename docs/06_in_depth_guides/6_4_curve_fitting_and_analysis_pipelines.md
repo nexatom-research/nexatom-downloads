@@ -71,7 +71,7 @@ The underlying analysis includes models for several physical phenomena:
 
 Outputs include absolute concentration, particles per volume, and characteristic diffusion times.
 
-The public preview.8 C/Python interface exposes enable, fit-range, confocal-volume, experimental-condition and fitting-control methods. It does not expose a public selector for every internal FCS model listed above. Do not infer that a two-component, anomalous or flow fit was selected merely because the result structure reserves fields for it. Inspect the returned model/technique and validity.
+The public C/Python interface exposes enable, fit-range, confocal-volume, experimental-condition and fitting-control methods. It does not expose a public selector for every internal FCS model listed above. Do not infer that a two-component, anomalous or flow fit was selected merely because the result structure reserves fields for it. Inspect the returned model/technique and validity.
 
 `set_fcs_confocal_volume(omega_xy_um, omega_z_um)` takes micrometres, not nm. `set_fcs_experimental_conditions` takes Celsius, mPa·s, wavelength in nm and a calibration diffusion coefficient in µm²/s. Incorrect units can produce plausible-looking but physically incorrect derived results.
 

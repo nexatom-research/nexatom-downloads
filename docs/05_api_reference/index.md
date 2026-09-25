@@ -2,7 +2,7 @@
 
 This chapter serves as the definitive reference for the high-level Python application programming interface and its underlying data structures. While Chapter 7 provides an exhaustive, low-level dictionary of every C ABI function, this chapter maps those functions into object-oriented Python classes and details the exact memory layouts of the data payloads returned by the hardware.
 
-Use this chapter to reference constants, error codes, Python class methods, and the specific fields available in data callbacks (such as TIHI fit parameters or MFCO pattern counts). This edition describes SDK preview.8. Use the matching packaged Python module rather than recreating ctypes layouts from the tables: field alignment, fixed-array capacities and reserved fields are part of the ABI.
+Use this chapter to reference constants, error codes, Python class methods, and the specific fields available in data callbacks (such as TIHI fit parameters or MFCO pattern counts). This edition describes SDK 0.1.0-preview.18.2. Use the matching packaged Python module rather than recreating ctypes layouts from the tables: field alignment, fixed-array capacities and reserved fields are part of the ABI.
 
 ## Chapter contents
 

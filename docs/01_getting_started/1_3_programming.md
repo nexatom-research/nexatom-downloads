@@ -31,7 +31,7 @@ cmake -S examples/sdk -B build-examples -DNEXATOMTT_SDK_ROOT=/absolute/path/to/s
 cmake --build build-examples
 ```
 
-Use an absolute Windows path with the MSYS2 UCRT64 toolchain on Windows; use GCC or Clang on Linux. This project builds `hardware_c` and `hardware_cpp`. It copies Windows runtime DLLs beside the executables and sets the Linux runtime search path to the selected SDK.
+Use an absolute Windows path with the MSYS2 UCRT64 toolchain on Windows; use GCC or Clang on Linux. This project builds `hardware_c` and `hardware_cpp`. It copies `nexatomTT.dll` and `FTD3XXWU.dll` beside the executables and sets the Linux runtime search path to the selected SDK.
 
 **Windows compiler choice:**
 
@@ -62,15 +62,14 @@ printf("Version: %s\n", get_version());
 
 #### DLL co-location
 
-All five DLL files must reside in the same directory as the executable, or the SDK root must be on the `PATH` environment variable:
+Both DLL files must reside in the same directory as the executable, or the SDK root must be on the `PATH` environment variable:
 
 | DLL | Purpose |
 |---|---|
 | `nexatomTT.dll` | Core library |
 | `FTD3XXWU.dll` | FTDI D3XX USB transport |
-| `libgcc_s_seh-1.dll` | GCC exception handling |
-| `libstdc++-6.dll` | C++ standard library |
-| `libwinpthread-1.dll` | POSIX threads |
+
+The GCC runtime and HDF5 are linked into `nexatomTT.dll`; no other runtime DLLs are needed.
 
 #### Error handling convention
 
@@ -249,13 +248,14 @@ Key method groups:
 
 | Group | Methods |
 |---|---|
-| Connection | `connect_runtime()`, `get_device_profile()`, `get_capabilities()`, `connect()`, `disconnect()`, `destroy()`, `close()`, `is_connected()`, `state()`, `hardware_protocol_mode()` |
+| Connection | `connect_runtime()`, `get_device_profile()`, `get_capabilities()`, `connect()`, `disconnect()`, `set_auto_reconnect()`, `destroy()`, `close()`, `is_connected()`, `state()`, `hardware_protocol_mode()` |
 | System | `enable_system()`, `reset_peripherals()`, `set_output_type()`, `get_output_type()`, `set_cps_period_selector()`, `request_global_stop_all_modes()` |
 | Channels | `set_channel_threshold()`, `set_channel_edge_type()`, `set_channel_input_delay()`, `set_channel_hysteresis()`, `enable_channel_test_pulse()`, `set_channel_test_pulse_params()` |
-| TIHI | `enable_time_histogram()`, `set_time_histogram_channels()`, `set_time_histogram_bin_width()`, `set_time_histogram_num_bins()`, `set_time_histogram_stop_conditions()`, `set_time_histogram_aggregation_mode()`, `start_time_histogram()`, `stop_time_histogram()` |
-| MFCO | `enable_multifold_coincidence()`, `set_multifold_coincidence_channels()`, `set_multifold_coincidence_window()`, `set_multifold_coincidence_stop_conditions()`, `set_multifold_coincidence_aggregation_mode()`, `start_multifold_coincidence()`, `stop_multifold_coincidence()` |
+| TIHI | `enable_time_histogram()`, `set_time_histogram_channels()`, `set_time_histogram_bin_width()`, `set_time_histogram_num_bins()`, `start_time_histogram()`, `stop_time_histogram()` |
+| Results | `set_result_span()`, `set_run_end()`, `clear_result()` for TIHI, MFCO, the correlators and Fast TIHI |
+| MFCO | `enable_multifold_coincidence()`, `set_multifold_coincidence_channels()`, `set_multifold_coincidence_window()`, `start_multifold_coincidence()`, `stop_multifold_coincidence()` |
 | Telemetry | `enable_telemetry()`, `set_telemetry_mode()`, `request_telemetry()`, `get_telemetry()` |
-| File saving | Raw `set_time_tag_file_config()`, `enable_time_tag_file_saving()`, `disable_time_tag_file_saving()`; processed `set_processed_file_config()`, `enable_processed_file_saving()`, `disable_processed_file_saving()` |
+| File saving | Raw `set_time_tag_file_config()`, `enable_time_tag_file_saving()`, `disable_time_tag_file_saving()`; processed `set_processed_file_config()`, `enable_processed_file_saving()`, `disable_processed_file_saving()`; `get_file_saving_statistics()` |
 | Callbacks | `set_connection_status_callback()`, `set_count_rate_callback()`, `set_telemetry_callback()`, `set_time_histogram_callback()`, `set_multifold_coincidence_callback()`, `clear_callbacks()` |
 | Field update | `request_field_upgrade_service_entry()`, `clear_field_upgrade_service_entry_request()`, `refresh_field_update_status()`, `load_field_update_image()`, `set_field_update_default_slot()`, `set_field_update_default_slot_with_status()`, `boot_field_update_slot()` |
 
@@ -341,7 +341,7 @@ The public namespace includes the groups below. Inspect `nexatomtt.__all__` for 
 
 | Category | Examples |
 |---|---|
-| Integer constants | `NEXATOM_STATE_*`, `NEXATOM_OUTPUT_*`, `NEXATOM_AGGREGATION_*`, `NEXATOM_TT_FEATURE_*`, file-format and completion constants |
+| Integer constants | `NEXATOM_STATE_*`, `NEXATOM_OUTPUT_*`, `NEXATOM_RESULT_PROCESSOR_*`, `NEXATOM_RESULT_SPAN_*`, `NEXATOM_RESULT_STATUS_*`, `NEXATOM_RUN_END_*`, `NEXATOM_TT_FEATURE_*`, file-format and completion constants |
 | Structures | `NexatomDeviceInfo`, device profiles, capabilities, CPS/TIHI/MFCO/correlation records, telemetry, time tags and field-update progress |
 | Wrapper classes | `NexatomLibrary`, `NexatomDevice`, `NexatomTimeTagReader` |
 | Exceptions | `NexatomError`, `RuntimeBootError`, `NexatomDtcApplyRejected` |

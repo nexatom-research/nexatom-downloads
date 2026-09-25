@@ -29,8 +29,13 @@ python python/examples/ftdi_realtime_smoke.py --home . --timeout-ms 20000 --dura
 **Illustrative output:** callback counts and telemetry cadence depend on the image and requests; zero CPS values are legitimate without input events.
 
 ```text
-Discovering NexatomTT devices.
-Selected device: name=UTT810, serial=NTT-00000001, connection=FTDI:1.
+Using first discovered NexatomTT device:
+  serial_number:    000000000001
+  firmware_version: X.X.X
+  hardware_version: X.X
+  device_name:      UTT810
+  connection_type:  FTDI
+  connection_id:    usb:PCIROOT(0)#PCI(0801)#PCI(0004)#USBROOT(0)#USB(4)
 Runtime firmware ready; enabling realtime output.
 Telemetry seq=1 uptime_s=33 temp_c=42.10 mode=0x00 status=0x00
 CPS period_ms=1000 total=0 channels=8 counts=[0, 0, 0, 0, 0, 0, 0, 0]

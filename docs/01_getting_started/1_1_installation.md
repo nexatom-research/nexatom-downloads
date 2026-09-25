@@ -37,7 +37,7 @@ Select the **Windows** driver package for your architecture (x64).
 
 #### Linux device access
 
-The Linux SDK includes the D3XX user-space library, `libftd3xx.so`. Keep it beside `libnexatomTT.so` and `libnexatomTT.so.1`. A Windows driver installer is not used on Linux.
+The Linux SDK includes the FTDI D3XX 1.1.8 user-space library, `libftd3xx.so`. Keep it beside `libnexatomTT.so` and `libnexatomTT.so.1`. A Windows driver installer is not used on Linux.
 
 An administrator can install the supplied USB-access rule from the extracted SDK:
 
@@ -60,7 +60,6 @@ Extract the SDK archive. The resulting directory contains the following files:
 |---|---|---|
 | `nexatomTT.dll` | Windows | Core native library, exporting the public C ABI |
 | `FTD3XXWU.dll` | Windows | FTDI D3XX user-mode runtime |
-| `libgcc_s_seh-1.dll`, `libstdc++-6.dll`, `libwinpthread-1.dll` | Windows | Bundled compiler runtime dependencies |
 | `libnexatomTT.so`, `libnexatomTT.so.1` | Linux | Core shared library and its versioned name |
 | `libftd3xx.so` | Linux | FTDI D3XX user-space runtime |
 | `manifest.json` | Both | Package version, native identity and file checksums |
@@ -77,17 +76,14 @@ Extract the SDK archive. The resulting directory contains the following files:
 | `licenses/` | Included dependency notices |
 | `docs/` | Packaged C API developer guide |
 
-Firmware images are supplied separately for the intended hardware. Preview.8 does not require a firmware download for ordinary acquisition when the instrument already has a usable runtime. See [Firmware Management](1_4_firmware.md) for intentional image updates.
+Firmware images are supplied separately for the intended hardware. This SDK does not require a firmware download for ordinary acquisition when the instrument already has a usable runtime. See [Firmware Management](1_4_firmware.md) for intentional image updates.
 
-**DLL co-location rule.** All five DLL files must reside in the same directory. The Python wrapper loads `nexatomTT.dll` by absolute path from the SDK root and calls `os.add_dll_directory()` so that Windows can resolve the dependent MinGW and FTDI runtime DLLs at load time. Moving individual DLLs to a separate directory will cause `OSError` on import.
+**DLL co-location rule.** Both DLL files must reside in the same directory. The compiler runtime and HDF5 are linked into `nexatomTT.dll`, so no other runtime DLLs are needed. The Python wrapper loads `nexatomTT.dll` by absolute path from the SDK root and calls `os.add_dll_directory()` so that Windows can resolve the FTDI runtime DLL at load time. Moving one DLL to a separate directory will cause `OSError` on import.
 
 ```
 nexatomtt-sdk-windows-x64/
 ├── nexatomTT.dll            ← loaded by ctypes.CDLL()
-├── FTD3XXWU.dll             ← resolved via os.add_dll_directory()
-├── libgcc_s_seh-1.dll       ← resolved via os.add_dll_directory()
-├── libstdc++-6.dll          ← resolved via os.add_dll_directory()
-└── libwinpthread-1.dll      ← resolved via os.add_dll_directory()
+└── FTD3XXWU.dll             ← resolved via os.add_dll_directory()
 ```
 
 For C/C++ consumers, ensure the SDK root is on the DLL search path (e.g., place the executable in the SDK root, or add the SDK root to the `PATH` environment variable).

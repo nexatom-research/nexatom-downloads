@@ -110,6 +110,8 @@ Fields absent from a frame are zero with their validity bit clear. Thus zero tem
 
 For example, a valid complete status view can distinguish “all TDC calibration ready” from a TDC calibration error using the documented `NEXATOM_TT_TELEMETRY_VIEW_SYSTEM_*` and `NEXATOM_TT_TELEMETRY_VIEW_ERROR_*` masks. The complete reference, including DTC fields, is in [Telemetry C API](../07_c_api/7_15_telemetry.md).
 
+The same word carries the sticky [transport-stop record](../07_c_api/7_15_telemetry.md#transport-stop-record): if the instrument's on-board buffer fills or its data transport fails, the instrument stops the measurement and counts the stop there until the next peripheral reset. The SDK reports it and does not restart the measurement.
+
 ### Configuration register dump
 
 For deep diagnostic tracing, the host can request the device to dump the contents of all its active configuration registers.

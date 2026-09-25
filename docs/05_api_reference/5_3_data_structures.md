@@ -9,11 +9,11 @@ These structures are populated during USB discovery and device initialization.
 #### `NexatomDeviceInfo`
 | Field | Type | Description |
 | :--- | :--- | :--- |
-| `serial_number` | byte string | USB bridge serial identifier. Decode text with UTF-8; preserve the complete value. |
+| `serial_number` | byte string | FT601 USB serial, for service information only. Several boards can share it; never select a board by it. Decode text with UTF-8. |
 | `firmware_version` | byte string | Descriptive firmware string; not authoritative model/image evidence. |
 | `hardware_version` | byte string | Descriptive hardware version. |
 | `device_name` | byte string | Human-readable discovery name. |
-| `connection_type`, `connection_id` | byte strings | Transport description and device-selection identifier. |
+| `connection_type`, `connection_id` | byte strings | Transport description and the board's identity. `connection_id` is `usb:` plus the USB port path, for example `usb:PCIROOT(0)#PCI(0801)#PCI(0004)#USBROOT(0)#USB(4)` on Windows or `usb:2-1.3` on Linux. It selects the board at connect; moving the board to another port changes it. |
 
 #### `NexatomCapabilities`
 | Field | Type | Description |
@@ -97,7 +97,7 @@ Dispatched by `set_time_histogram_callback`. Contains TCSPC measurement data and
 #### `NexatomTihiData`
 | Field | Type | Description |
 | :--- | :--- | :--- |
-| `bins` | uint32 array[1024] | Histogram storage; only the first `num_bins` entries are valid. |
+| `bins` | uint64 array[1024] | Histogram storage; only the first `num_bins` entries are valid. |
 | `num_bins` | `int` | Number of active bins in the histogram. |
 | `bin_width_ps` | `int` | Temporal width of each bin. |
 | `total_counts` | `int` | Sum of all events successfully binned. |
@@ -106,7 +106,8 @@ Dispatched by `set_time_histogram_callback`. Contains TCSPC measurement data and
 | `roi` | `NexatomTihiRoiData` | Data regarding the user-defined Region of Interest bounds. |
 | `fitting` | `NexatomTihiFittingData`| Nested struct containing Levenberg-Marquardt solver results. |
 | `acquisition_done_status` | `int` | Terminal reason code; inspect for overflow or unexpected stop. |
-| `packets_accumulated` | `int` | Number of packets represented by this result. |
+| `packets_accumulated` | `int` | Hardware batches in this result. |
+| `result_status`, `result_span`, `block_index`, `live_time_ms`, `live_time_exact` | integers/float | Result-model fields; see [result model fields](#result-model-fields). |
 | `background_subtracted`, `bg_method`, `background_level_per_bin` | flag/integer/float | Background processing applied to this result. |
 
 #### `NexatomTihiFittingData`
@@ -132,13 +133,14 @@ Dispatched by `set_multifold_coincidence_callback`.
 #### `NexatomMfcoData`
 | Field | Type | Description |
 | :--- | :--- | :--- |
-| `pattern_bins` | uint32 array[256] | Index represents the eight-bit channel combination. |
+| `pattern_bins` | uint64 array[256] | Index represents the eight-bit channel combination. |
 | `coincidence_window_ps` | `int` | The active coincidence grouping window, in ps. |
-| `singles` | uint32 array[8] | Single-channel pattern counts. |
+| `singles` | uint64 array[8] | Single-channel pattern counts. |
 | `num_doubles` | `int` | Total count of 2-fold coincidences. |
 | `num_triples` | `int` | Total count of 3-fold coincidences. |
 | `top_patterns` | `NexatomMfcoTopPattern[10]` | Pattern/count records for the most frequent patterns. |
-| `aggregation_mode`, `packets_accumulated` | `int` | How consecutive packets are represented. Do not sum overlapping accumulated snapshots again. |
+| `result_span`, `packets_accumulated` | `int` | What the result covers and how many hardware batches it holds. A `WHOLE_RUN` result is a running total; do not add successive results together. |
+| `result_status`, `block_index`, `live_time_ms`, `live_time_exact` | integers/float | Result-model fields; see [result model fields](#result-model-fields). |
 | `acquisition_done_status` | `int` | Decoded terminal reason code. |
 | `result_metadata_version` | `int` | Version qualifying the following metadata; `result_metadata_available` exposes the check. |
 | `done_status_error_flags_raw`, `host_quality_flags` | `int` | Device status/error byte and host saturation/quality flags. |
@@ -160,7 +162,8 @@ Dispatched by `set_multifold_coincidence_callback`.
 | `sampling_period_ns`, `channel_a`, `channel_b` | integers | Sampling period and channel selection. |
 | `normalization_valid` | flag | Whether `g2_values` can be interpreted as normalized g². |
 | `sum_a_counts`, `sum_b_counts`, `sample_count`, `mean_intensity_a`, `mean_intensity_b` | integers/floats | Counts and intensity statistics used for normalization. |
-| `aggregation_mode`, `status`, `packets_accumulated`, `measurement_duration_ms` | integers | Aggregation and acquisition context. |
+| `result_span`, `status`, `packets_accumulated`, `measurement_duration_ms` | integers | What the result covers, why the latest hardware batch ended, the batches pooled and host duration. |
+| `result_status`, `block_index`, `live_time_ms`, `live_time_exact` | integers/float | Result-model fields; see [result model fields](#result-model-fields). |
 
 ---
 
@@ -180,7 +183,28 @@ Dispatched by `set_multifold_coincidence_callback`.
 | `analysis_result.analysis_type` | `int` | Which nested result is exported: NONE, DLS, FCS or DCS. |
 | `analysis_result.dls`, `.fcs`, `.dcs` | structures | Technique-specific values; use only the selected result. |
 | `normalization_valid`, `sum_a_counts`, `sum_b_counts`, `sample_count` | flag/integers | Normalization evidence, as for CORL. |
-| `base_sampling_period_ns`, `tau_groups`, `packets_accumulated`, `measurement_duration_ms` | values/arrays | Lag grouping and accumulation context. |
+| `base_sampling_period_ns`, `tau_groups`, `packets_accumulated`, `measurement_duration_ms` | values/arrays | Lag grouping, batches pooled and host duration. |
+| `result_status`, `result_span`, `block_index`, `live_time_ms`, `live_time_exact` | integers/float | Result-model fields; see [result model fields](#result-model-fields). |
+
+<a id="result-model-fields"></a>
+
+### [Result model fields](5_3_data_structures.md#result-model-fields)
+
+TIHI, MFCO, CORL, CORM and Fast TIHI results carry the same result-model fields. The hardware measures in batches that the SDK programs (1 s for TIHI, MFCO and Fast TIHI; `num_bins × T` for the correlators); a result never contains part of a batch.
+
+| Field | Values | Meaning |
+| :--- | :--- | :--- |
+| `result_status` | `NEXATOM_RESULT_STATUS_RUNNING` (0) | `WHOLE_RUN` progress update; the run continues. |
+| | `NEXATOM_RESULT_STATUS_BLOCK_COMPLETE` (1) | A `BLOCK` result reached its length; the next block has started. |
+| | `NEXATOM_RESULT_STATUS_RUN_COMPLETE` (2) | The run-end condition set with `set_run_end()` was met; the SDK stopped the processor. Last result of the run. |
+| | `NEXATOM_RESULT_STATUS_STOPPED` (3) | Final partial result after Stop. Last result of the run. |
+| `result_span` | `NEXATOM_RESULT_SPAN_WHOLE_RUN` (0) | Total since Start, `clear_result()` or a restarting change, republished about once a second (default). |
+| | `NEXATOM_RESULT_SPAN_BLOCK` (1) | One tumbling block; the next block starts empty. |
+| `block_index` | integer | Zero-based block number in `BLOCK`; 0 in `WHOLE_RUN`. |
+| `live_time_ms` | float | Measurement time in the result, excluding the dead time between batches. Correlators: Σ N × T. |
+| `live_time_exact` | 0/1 | 1 when every batch had a known length; 0 when Stop ended a batch (its length is host time). |
+
+**After Stop**, exactly one `STOPPED` result arrives per processor, within 2 s. Wait for it before disabling file saving, or the saved files end before the last partial block. For Fast TIHI, the `STOPPED` result reports the window that Stop ended, so its `run_id` can be newer than the last one you saw. `run_id` is a 32-bit hardware counter: compare it wrap-safely (for example `((new - old) & 0xFFFFFFFF) < 0x80000000`) and never match on an exact value.
 
 Use the main `fit_result` quality fields. Reserved quality fields in nested analysis records can remain zero; uncomputed derived quantities can be NaN or zero. Enabling an analysis does not prove a valid scientific fit. See [analysis interpretation](../06_in_depth_guides/6_4_curve_fitting_and_analysis_pipelines.md).
 
@@ -237,8 +261,8 @@ Dispatched by `request_config_dump()` for deep hardware debugging.
 | `copied_register_count` | `int` | Valid prefix copied into fixed storage (maximum 128). |
 | `registers` | `NexatomConfigRegisterValue[128]` | Address/value pairs; each entry has `address` and `value`. |
 
-`NexatomConfigDumpViewV1` carries `configuration_version`, `reported_record_count`, `record_count`, `record_stride` and `records` with identity/value pairs. Python callbacks own a deep copy; C callbacks receive a borrowed view valid only during invocation.
+`NexatomConfigDumpViewV1` carries `configuration_version`, `reported_record_count`, `record_count`, `record_stride` and `records` with identity/value pairs. Python callbacks own a deep copy; C callbacks receive a borrowed view valid only during invocation. This view is the one callback argument passed by pointer; every other callback record is passed by value.
 
 ### Fast TIHI and DTC records
 
-`NexatomFastTihiConfigV1`/`V2` configure supported fast-histogram contexts; `NexatomFastTihiHistogramV1` reports their results. `NexatomDtcOutputConfigV1`, `NexatomDtcApplyResultV1` and `NexatomDtcStatusV1` describe DTC configuration, the hardware apply decision and current status. A class being present in the package does not establish that the connected model supports it. Check profile features before using these controls.
+`NexatomFastTihiConfig` (with four `NexatomFastTihiContext` entries) configures the fast-histogram contexts for `start_fast_tihi()`; `NexatomFastTihiResult` reports one context's result, with `uint64` bins, `run_id`, `lost_windows` and the [result model fields](#result-model-fields). The native callback passes the record by value, bins included. `NexatomDtcOutputConfigV1`, `NexatomDtcApplyResultV1` and `NexatomDtcStatusV1` describe DTC configuration, the hardware apply decision and current status. A class being present in the package does not establish that the connected model supports it. Check profile features before using these controls.

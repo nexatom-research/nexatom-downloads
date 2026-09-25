@@ -18,7 +18,7 @@ Prepare acquisition controls while output is quiet, check the native profile, th
 | `enable_tihi_fitting` | `enable: bool` | `None` | Activates the Levenberg-Marquardt non-linear least squares solver on the active histogram. |
 | `set_tihi_fitting_model` | `model: int` | `None` | Selects `NEXATOM_FIT_AUTO`, `NEXATOM_FIT_EXPONENTIAL`, `NEXATOM_FIT_BI_EXPONENTIAL`, `NEXATOM_FIT_GAUSSIAN`, `NEXATOM_FIT_LORENTZIAN` or `NEXATOM_FIT_STRETCHED_EXP`. |
 
-Configure normal TIHI with `set_time_histogram_channels(start_channel, stop_channel)`, `set_time_histogram_bin_width(bin_width_ps)`, `set_time_histogram_num_bins(num_bins)` and stop/aggregation controls. Fast TIHI is a separate capability and versioned configuration (`start_fast_tihi`, `stop_fast_tihi`), not an alternative selected solely from the device name.
+Configure normal TIHI with `set_time_histogram_channels(start_channel, stop_channel)`, `set_time_histogram_bin_width(bin_width_ps)`, `set_time_histogram_num_bins(num_bins)`, and choose what results cover and when the run ends with `set_result_span()` and `set_run_end()` (see [result model](5_1_nexatomtt_library.md#result-model)). Fast TIHI is a separate capability (`start_fast_tihi`, `stop_fast_tihi`, `set_fast_tihi_result_callback`), gated by the profile's feature bits, not an alternative selected from the device name. It uses the same result model with `NEXATOM_RESULT_PROCESSOR_FAST_TIME_HISTOGRAM`.
 
 <a id="multi-fold-coincidence-config"></a>
 
@@ -44,7 +44,7 @@ The acquisition channel setter accepts channel IDs for MFCO slots (`[0, 1]`, for
 | `set_intensity_correlation_bin_width` | `bin_width_in_8ns_units: int` | `None` | Public unit remains 8 ns. For example, 125 selects 1000 ns; native translates for the active hardware profile. |
 | `set_intensity_correlation_num_bins` | `num_bins: int` | `None` | Selects integration sample depth, not the 80 returned lag points. |
 
-Set integration stop conditions and linear/multi-tau aggregation before enabling and starting correlators. `normalization_valid` qualifies the returned g² values; a nonempty array is not sufficient.
+Choose the result span and run end with `set_result_span(NEXATOM_RESULT_PROCESSOR_CORRELATION, ...)` and `set_run_end(...)` before enabling and starting the correlators; the setting covers CORL and CORM together. Where g² is undefined the values are `NaN`. `normalization_valid` qualifies the returned g² values; a nonempty array is not sufficient.
 
 <a id="dynamic-light-scattering-analysis"></a>
 
