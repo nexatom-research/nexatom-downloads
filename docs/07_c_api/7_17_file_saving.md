@@ -10,7 +10,7 @@ The C++ background thread handles high-speed disk I/O, utilizing asynchronous bu
 | :--- | :--- | :--- | :--- |
 | `nexatom_tt_enable_time_tag_file_saving` | `[In] nexatom_tt_handle device`<br>`[In] const char* filename`<br>`[In] nexatom_time_tag_file_format_t format` | `nexatom_error_code_t` | Enables native time-tag saving; NXTT uses packed decoded records, not aligned 16-byte C structs. |
 | `nexatom_tt_disable_time_tag_file_saving`| `[In] nexatom_tt_handle device` | `nexatom_error_code_t` | Finalizes the native time-tag sink and closes its file; check the result. This is not a power-loss durability guarantee. |
-| `nexatom_tt_get_file_saving_statistics` | `[In] nexatom_tt_handle device`<br>`[In,Out] nexatom_tt_file_saving_statistics_v1_t* statistics` | `nexatom_error_code_t` | Reads the file-saving stage counters, so you can prove a capture is complete. Synchronous and cache-only: it never touches the device. Returns `NEXATOM_ERROR_INVALID_PARAMETER` for a null or wrongly sized record and `NEXATOM_ERROR_NOT_CONNECTED` before connect. |
+| `nexatom_tt_get_file_saving_statistics` | `[In] nexatom_tt_handle device`<br>`[In,Out] nexatom_tt_file_saving_statistics_t* statistics` | `nexatom_error_code_t` | Reads the file-saving stage counters, so you can prove a capture is complete. Synchronous and cache-only: it never touches the device. Returns `NEXATOM_ERROR_INVALID_PARAMETER` for a null or wrongly sized record and `NEXATOM_ERROR_NOT_CONNECTED` before connect. |
 | `nexatom_tt_set_time_tag_file_config` | `[In] nexatom_tt_handle device`<br>`[In] const nexatom_time_tag_file_config_t* config` | `nexatom_error_code_t` | Configures file rotation limits and naming suffix rules for raw binary files. |
 | `nexatom_tt_enable_processed_file_saving`| `[In] nexatom_tt_handle device`<br>`[In] nexatom_processed_packet_type_t packet_type`<br>`[In] const char* filename`<br>`[In] nexatom_processed_file_format_t format` | `nexatom_error_code_t` | Arms the background thread to save one processed packet family (CPS, TIHI, MFCO, CORL, CORM, telemetry, Fast TIHI index). Files hold each packet received from the instrument, before host summing, background subtraction, fitting or pattern filtering; the summed result reaches only the callbacks. |
 | `nexatom_tt_disable_processed_file_saving`| `[In] nexatom_tt_handle device`<br>`[In] nexatom_processed_packet_type_t packet_type` | `nexatom_error_code_t` | Flushes and closes the target processed stream file. |
@@ -75,7 +75,7 @@ A run of successful return codes does not prove that every time tag reached the 
 | Field | Type | Meaning |
 | :--- | :--- | :--- |
 | `struct_size` | `uint32_t` | In: `sizeof` your record. Out: bytes written. |
-| `struct_version` | `uint32_t` | In/out: `NEXATOM_TT_FILE_SAVING_STATISTICS_V1_VERSION` (1). |
+| `struct_version` | `uint32_t` | In/out: `NEXATOM_TT_FILE_SAVING_STATISTICS_VERSION` (1). |
 | `buffers_received` | `uint64_t` | Buffers that reached the file stage. |
 | `buffers_processed` | `uint64_t` | Buffers the file stage finished handling. |
 | `buffers_dropped` | `uint64_t` | Buffers discarded unwritten: the input queue was full, or they were still queued at a `NO_OUTPUT` barrier or at disable. |
@@ -89,18 +89,18 @@ A run of successful return codes does not prove that every time tag reached the 
 | `file_saving_enabled` | `uint32_t` | 1 while saving is enabled, else 0. |
 | `reserved[3]` | `uint32_t` | Zero. |
 
-The record is 104 bytes (`NEXATOM_TT_FILE_SAVING_STATISTICS_V1_SIZE`). The counters are cumulative for the handle and never reset, so take a snapshot before enabling saving and compare differences. After `nexatom_tt_disable_time_tag_file_saving()` returns, the file stage kept everything it was given when `raw_tags_received == raw_tags_written`, `buffers_dropped == 0` and `write_errors == 0`.
+The record is 104 bytes (`NEXATOM_TT_FILE_SAVING_STATISTICS_SIZE`). The counters are cumulative for the handle and never reset, so take a snapshot before enabling saving and compare differences. After `nexatom_tt_disable_time_tag_file_saving()` returns, the file stage kept everything it was given when `raw_tags_received == raw_tags_written`, `buffers_dropped == 0` and `write_errors == 0`.
 
 ```c
 // Fragment: my_device is connected; the capture runs as in the example above.
-nexatom_tt_file_saving_statistics_v1_t before = {0};
+nexatom_tt_file_saving_statistics_t before = {0};
 before.struct_size = sizeof(before);
-before.struct_version = NEXATOM_TT_FILE_SAVING_STATISTICS_V1_VERSION;
+before.struct_version = NEXATOM_TT_FILE_SAVING_STATISTICS_VERSION;
 nexatom_tt_get_file_saving_statistics(my_device, &before);
 
 /* ... enable saving, capture, NO_OUTPUT, disable saving ... */
 
-nexatom_tt_file_saving_statistics_v1_t after = before;  // keeps size and version
+nexatom_tt_file_saving_statistics_t after = before;  // keeps size and version
 nexatom_tt_get_file_saving_statistics(my_device, &after);
 uint64_t received = after.raw_tags_received - before.raw_tags_received;
 uint64_t written  = after.raw_tags_written  - before.raw_tags_written;
