@@ -101,4 +101,4 @@ The binding copies a `NexatomLogRecord` for Python ownership. Keep the handler s
 
 On unregister timeout/BUSY/failure, retain the callback's resources and handle the error. Do not unregister or wait for logging quiescence from the log callback itself. `device.clear_callbacks()` only clears device registrations and does not unregister the process-global logger.
 
-`set_performance_monitoring()` is a retained compatibility control: it stores a flag and logs the setting. It does not add host CPU/throughput statistics to public telemetry. Logging statistics describe the logger itself, not acquisition performance monitoring.
+`set_performance_monitoring()` is a retained compatibility control, and in this SDK still only that: it stores a flag and logs the setting. It does not add host CPU/throughput statistics to public telemetry. Logging statistics describe the logger itself, not acquisition performance monitoring.

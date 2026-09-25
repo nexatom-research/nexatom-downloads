@@ -81,6 +81,7 @@ A board is identified by the USB port it is plugged into, never by its FT601 ser
   - `… already open …` when the board is in use by this or another process. The discovery record has no busy flag; this error is how you find out.
 - A handle created with an empty `connection_id` connects to the first free board and is bound to that board's port from then on.
 - Several boards can be open at the same time, one handle each, even when they share an FT601 serial.
+- Their acquisitions are independent. The SDK does not coordinate or time-synchronise several boards: each handle is configured, started and stopped on its own, and each board's time tags use its own time base. `max_devices` limits enumeration results; it is not a promise of coordinated multi-instrument acquisition.
 
 #### Selecting an attached instrument
 

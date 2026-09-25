@@ -45,7 +45,7 @@ current_mode = device.get_output_type()
 
 ### Performance monitoring
 
-`set_performance_monitoring` is retained for compatibility. It accepts a flag and may emit a diagnostic log, but it does **not** activate host throughput statistics or change acquisition, communication or telemetry behavior.
+`set_performance_monitoring` is retained for compatibility and still has no effect in this SDK. It accepts a flag and may emit a diagnostic log, but it does **not** activate host throughput statistics or change acquisition, communication or telemetry behavior.
 
 #### Enabling monitoring
 

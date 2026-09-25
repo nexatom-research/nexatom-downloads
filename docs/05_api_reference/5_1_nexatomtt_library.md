@@ -68,6 +68,10 @@ Each call takes a processor: `NEXATOM_RESULT_PROCESSOR_TIME_HISTOGRAM` (0), `NEX
 
 Changing the span or the run end restarts the result, as does changing the TIHI channels, bidirectional or first-stop mode. Writing the current value does not.
 
+**Moving from the old modes.** `ACCUMULATE` is now `NEXATOM_RESULT_SPAN_WHOLE_RUN` (the default): each result is the running total. `REPLACE` is now `NEXATOM_RESULT_SPAN_BLOCK` with `block_ms` equal to the batch length (1000 ms for TIHI and MFCO), so each result holds one batch and the next starts empty. `AVERAGE` has no mode; compute it as below.
+
+**Mean per batch and rates (replacing `AVERAGE`).** Results are sums; there is no averaging mode. For the mean counts per hardware batch, divide a `WHOLE_RUN` result's counts by its `packets_accumulated` (TIHI, MFCO; `windows_accumulated` for Fast TIHI). For a rate, divide the counts by `live_time_ms / 1000`, the measurement time the result contains. Prefer the rate when `live_time_exact` is 0: a batch was ended by Stop and is shorter than the others, so a per-batch mean would be biased low. Correlator results (CORL, CORM) are normalised g² curves pooled over their batches, not counts; do not divide them.
+
 Every result carries `result_status`:
 
 *   `RUNNING` (0): `WHOLE_RUN` progress update; the run continues.

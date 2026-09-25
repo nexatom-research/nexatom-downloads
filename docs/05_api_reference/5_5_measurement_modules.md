@@ -44,7 +44,7 @@ The acquisition channel setter accepts channel IDs for MFCO slots (`[0, 1]`, for
 | `set_intensity_correlation_bin_width` | `bin_width_in_8ns_units: int` | `None` | Public unit remains 8 ns. For example, 125 selects 1000 ns; native translates for the active hardware profile. |
 | `set_intensity_correlation_num_bins` | `num_bins: int` | `None` | Selects integration sample depth, not the 80 returned lag points. |
 
-Choose the result span and run end with `set_result_span(NEXATOM_RESULT_PROCESSOR_CORRELATION, ...)` and `set_run_end(...)` before enabling and starting the correlators; the setting covers CORL and CORM together. Where g² is undefined the values are `NaN`. `normalization_valid` qualifies the returned g² values; a nonempty array is not sufficient.
+Choose the result span and run end with `set_result_span(NEXATOM_RESULT_PROCESSOR_CORRELATION, ...)` and `set_run_end(...)` before enabling and starting the correlators; the setting covers CORL and CORM together. There is no separate CORL or CORM setting: `NEXATOM_RESULT_PROCESSOR_CORRELATION` is the only correlator processor, so both correlators always use the same span, run end and clear. Where g² is undefined the values are `NaN`. `normalization_valid` qualifies the returned g² values; a nonempty array is not sufficient.
 
 <a id="dynamic-light-scattering-analysis"></a>
 

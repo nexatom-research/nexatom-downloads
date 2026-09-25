@@ -71,7 +71,7 @@ The underlying analysis includes models for several physical phenomena:
 
 Outputs include absolute concentration, particles per volume, and characteristic diffusion times.
 
-The public C/Python interface exposes enable, fit-range, confocal-volume, experimental-condition and fitting-control methods. It does not expose a public selector for every internal FCS model listed above. Do not infer that a two-component, anomalous or flow fit was selected merely because the result structure reserves fields for it. Inspect the returned model/technique and validity.
+The public C/Python FCS interface exposes enable, fit-range, confocal-volume, experimental-condition and fitting-control methods (`nexatom_tt_enable_fcs_analysis`, `nexatom_tt_set_fcs_fit_range`, `nexatom_tt_set_fcs_confocal_volume`, `nexatom_tt_set_fcs_experimental_conditions`, `nexatom_tt_set_fcs_fitting_control`). It has no FCS model selector, so it does not select among the internal FCS models listed above. (TIHI fitting, by contrast, has `nexatom_tt_set_tihi_fitting_model`.) Do not infer that a two-component, anomalous or flow fit was selected merely because the result structure reserves fields for it. Inspect the returned model/technique and validity.
 
 `set_fcs_confocal_volume(omega_xy_um, omega_z_um)` takes micrometres, not nm. `set_fcs_experimental_conditions` takes Celsius, mPa·s, wavelength in nm and a calibration diffusion coefficient in µm²/s. Incorrect units can produce plausible-looking but physically incorrect derived results.
 

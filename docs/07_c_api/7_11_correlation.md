@@ -17,7 +17,7 @@ The Intensity Correlation module provides two simultaneous real-time hardware co
 | `nexatom_tt_set_intensity_correlation_num_bins`| `[In] nexatom_tt_handle device`<br>`[In] uint32_t num_bins` | `nexatom_error_code_t` | Configures integration sample depth, with native profile-specific validation; not the 80 returned lag points. |
 | `nexatom_tt_start_intensity_correlation`| `[In] nexatom_tt_handle device` | `nexatom_error_code_t` | Requests START for enabled correlators; observe measurement results separately. |
 | `nexatom_tt_stop_intensity_correlation`| `[In] nexatom_tt_handle device` | `nexatom_error_code_t` | Requests stopping correlation. The correlators mark no final batch, so the result is final once no batch has arrived for 200 ms; exactly one `STOPPED` result follows within 2 s. |
-| `nexatom_tt_set_result_span`, `nexatom_tt_set_run_end`, `nexatom_tt_clear_result` | `processor = NEXATOM_RESULT_PROCESSOR_CORRELATION` | `nexatom_error_code_t` | One setting covers CORL and CORM. See the [result model](7_9_tihi.md#result-model). A correlator batch is `num_bins × T`. |
+| `nexatom_tt_set_result_span`, `nexatom_tt_set_run_end`, `nexatom_tt_clear_result` | `processor = NEXATOM_RESULT_PROCESSOR_CORRELATION` | `nexatom_error_code_t` | One setting covers CORL and CORM: `NEXATOM_RESULT_PROCESSOR_CORRELATION` is the only correlator processor, so the two cannot have different spans or run ends. See the [result model](7_9_tihi.md#result-model). A correlator batch is `num_bins × T`. |
 
 ### Data Structures: Callback Payloads
 

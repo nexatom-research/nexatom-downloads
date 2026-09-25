@@ -4,13 +4,15 @@ Bootloader-equipped instruments store runtime firmware in flash memory slots man
 
 > **UTT810 units without a bootloader.** Early UTT810 units were delivered without the bootloader. They keep working with this SDK and connect directly to their runtime. To receive firmware updates, such a unit needs a one-time bootloader installation by Nexatom service; contact Nexatom to arrange it. From then on, updates are loaded through the SDK or the app like on any other unit.
 
-Ordinary measurement does not require this workflow: native `connect_runtime` can boot an already-valid image when needed. Use field update when you intend to change firmware. The SDK supplies the service tools; the images are published separately in firmware catalogues (see [Firmware catalogues](#firmware-catalogues)).
+Ordinary measurement does not require this workflow: native `connect_runtime` can boot an already-valid image when needed. Use field update when you intend to change firmware. The SDK supplies the service tools and bundles the current firmware catalogue; catalogues are also published on their own (see [Firmware catalogues](#firmware-catalogues)).
 
 <a id="firmware-catalogues"></a>
 
 ### [Firmware catalogues](1_4_firmware.md#firmware-catalogues)
 
 Nexatom publishes firmware as numbered catalogues. Each catalogue is a GitHub release named `firmware-catalog-N` in the [nexatom-downloads repository](https://github.com/nexatom-research/nexatom-downloads/releases). A release holds the images, their `firmware_manifest.json`, a `SHA256SUMS.txt` file and a zip bundle of all of them. The pointer `https://downloads.nexatom.in/firmware/latest.json` names the current catalogue; the Nexatom app follows that pointer, reads the manifest and offers the images that match the connected instrument.
+
+The SDK package carries the current catalogue in its `firmware/` folder (`firmware_manifest.json` plus the images it lists; catalogue 3 in this SDK: `Z080_004.bin` and `K168_004.bin`). A catalogue published after the SDK can carry newer images; the app finds them through `latest.json`, and an SDK user can download the `firmware-catalog-N` release directly.
 
 The current catalogue is **catalogue 3**:
 
@@ -49,7 +51,7 @@ Firmware images that do not match this convention are rejected with `ValueError`
 
 ### [Firmware manifest](1_4_firmware.md#firmware-manifest)
 
-Each firmware catalogue carries a `firmware_manifest.json` with `schemaVersion` (currently 2), `catalogVersion` and an `images` array. The fields below explain that format. The SDK archives contain no firmware image; take the image, its size and its checksum from the same catalogue.
+Each firmware catalogue carries a `firmware_manifest.json` with `schemaVersion` (currently 2), `catalogVersion` and an `images` array. The fields below explain that format. The SDK archives carry one catalogue in `firmware/firmware_manifest.json` beside its images; take an image, its size and its checksum from the same catalogue, whether that is the bundled one or a published `firmware-catalog-N` release.
 
 | Field | Type | Description |
 |---|---|---|
@@ -180,7 +182,7 @@ python python/examples/field_update_e2e.py `
     --boot-after-load
 ```
 
-This command illustrates the syntax; substitute the catalogue image for your instrument (`Z080_nnn.bin` for a UTT810, `K168_nnn.bin` for a UTT160810) and a slot reported by your device. No image is bundled with the SDK. Do not select slot 1 merely because it appears in the example.
+This command illustrates the syntax; substitute the catalogue image for your instrument (`Z080_nnn.bin` for a UTT810, `K168_nnn.bin` for a UTT160810) and a slot reported by your device. The current images are in the SDK's `firmware/` folder, for example `firmware/Z080_004.bin`. Do not select slot 1 merely because it appears in the example.
 
 | Flag | Default | Description |
 |---|---|---|
