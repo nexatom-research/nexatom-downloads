@@ -69,6 +69,9 @@ The Linux x64 package supplies matching shared libraries and the FTDI runtime. K
 The official Python wrapper provides object-oriented abstractions over the C API without introducing external dependencies. It relies purely on the Python standard library (`ctypes`).
 
 *   `nexatomtt._native`: Raw, low-level `ctypes` bindings mappings.
+*   `nexatomtt._extended`: further device controls (input on/off, clocks, pulse generators, MFCO counting rule); they are methods of `NexatomDevice` and `NexatomLibrary`.
+*   `nexatomtt._records`, `nexatomtt._constants`: further record structures and constants, available from the `nexatomtt` package itself.
+*   `nexatomtt._identity`: checks the Python modules and the native library against the SDK package's `manifest.json`, so that parts from different packages are not mixed.
 *   `nexatomtt.analysis`: Helpers for Multi-Fold Coincidence (MFCO) pattern decoding.
 *   `nexatomtt.runtime_boot`: A context-manager helper (`open_runtime_device()`) that delegates normal measurement startup to native `connect_runtime()` on one handle.
 
@@ -92,5 +95,9 @@ To ensure deterministic error checking across all languages, the SDK avoids C++ 
 Device instances are managed using opaque pointers to prevent the host application from tampering with internal state structures:
 *   `nexatom_tt_handle`: Represents an active session with a physical device. Must be explicitly freed via `nexatom_tt_destroy()`.
 *   `nexatom_tt_time_tag_reader_t*`: Represents an offline binary file parser. Must be closed via `nexatom_tt_close_time_tag_reader()`.
+*   `nexatom_tt_fast_tihi_index_reader_t*`: Represents an offline Fast TIHI index file or series reader. Must be closed via `nexatom_tt_close_fast_tihi_index_reader()`.
+*   `nexatom_tt_export_job_handle`: Represents a background export of a time-tag or Fast TIHI recording. Must be ended via `nexatom_tt_finish_time_tags_export()` or `nexatom_tt_finish_fast_tihi_index_export()`.
+
+The full list of handles with their create and close calls is in [Programming](../01_getting_started/1_3_programming.md).
 
 `disconnect()` closes the transport session but does not free a device handle. `close()`/native destruction releases its ownership. Ordinary applications select each instrument by its `connection_id` (one handle per board) and establish native runtime readiness before configuring it. The native profile supplies model, image, available channel masks, features and control limits; clients do not decode firmware identity packets or ask users to select a telemetry protocol.

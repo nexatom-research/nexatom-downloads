@@ -13,6 +13,11 @@ Instead of parsing raw bytes manually, this decoder provides an iterator-like in
 | `nexatom_tt_get_time_tag_header` | `[In] nexatom_tt_time_tag_reader_t* reader`<br>`[Out] nexatom_time_tag_file_header_t* header` | `nexatom_error_code_t` | Extracts metadata (like creation date) embedded at the top of the `.nxtt` binary. |
 | `nexatom_tt_read_time_tag_batch` | `[In] nexatom_tt_time_tag_reader_t* reader`<br>`[Out] nexatom_time_tag_t* out_tags`<br>`[In] size_t max_tags`<br>`[Out] size_t* out_count` | `nexatom_error_code_t` | Fills the caller's batch. EOF is `NEXATOM_SUCCESS` with zero count; a nonzero error must be preserved. |
 | `nexatom_tt_close_time_tag_reader` | `[In] nexatom_tt_time_tag_reader_t* reader` | `void` | Closes the file handles and frees the iterator memory. Must be called to prevent memory leaks. |
+| `nexatom_tt_export_time_tags` | `[In] const nexatom_tt_time_tag_export_options_t* options`<br>`[Out] nexatom_tt_time_tag_export_result_t* out_result` | `nexatom_error_code_t` | Writes every event of a file or series as one CSV or TAB file. Needs no reader and no device; see [Time-tag export](#time-tag-export). |
+| `nexatom_tt_start_time_tags_export` | `[In] const nexatom_tt_time_tag_export_options_t* options`<br>`[Out] nexatom_tt_export_job_handle* out_job` | `nexatom_error_code_t` | Runs the same export as a job on an SDK thread. |
+| `nexatom_tt_get_time_tags_export_progress` | `[In] nexatom_tt_export_job_handle job`<br>`[Out] nexatom_tt_time_tag_export_progress_t* out_progress` | `nexatom_error_code_t` | Phase and progress of a job; never waits. |
+| `nexatom_tt_cancel_time_tags_export` | `[In] nexatom_tt_export_job_handle job` | `nexatom_error_code_t` | Asks a job to stop; returns at once, from any thread. |
+| `nexatom_tt_finish_time_tags_export` | `[In] nexatom_tt_export_job_handle job`<br>`[In] uint32_t timeout_ms`<br>`[Out] nexatom_tt_time_tag_export_job_result_t* out_result` | `nexatom_error_code_t` | Waits for a job and returns its result; `NEXATOM_ERROR_TIMEOUT` while it still runs. Every job must be finished. |
 
 ### Data Structures
 
@@ -33,8 +38,10 @@ Parsed from the top of the binary file. Note the FFI alignment padding fields.
 | `magic` | `char[5]` | File format identifier: `"NXTT\0"` (null-terminated). |
 | `_padding0` | `uint8_t[3]` | FFI alignment padding after magic. |
 | `created_timestamp_us` | `uint64_t` | POSIX Unix epoch timestamp (in microseconds) of when the file was created. |
-| `output_data_type` | `uint32_t` | Echoes the active mode from `nexatom_output_data_type_t` when the file was recorded. |
-| `_padding1` | `uint8_t[4]` | FFI alignment padding at end of header. |
+| `output_data_type` | `uint32_t` | Echoes the active mode from `nexatom_output_data_type_t` when the file was recorded (`2` raw tags, `1` encoded tags). |
+| `format_version` | `uint32_t` | File format version, 1 or 2. Occupies the place of the earlier `_padding1[4]`, so the record keeps its size. |
+
+The SDK writes format 2: the same tag blocks as format 1, and a closed file ends with an end record that says how the recording ended (see the [NXTT layout](../06_in_depth_guides/6_1_file_saving_and_data_export.md#nxtt-binary-file-format)). The reader returns the tags of a closed file and stops at its end record; a closed file whose blocks do not run exactly to the end record returns `NEXATOM_ERROR_FILE_IO` with the file name and byte position in the last error message. A file without its end record was not closed (a crash, a power loss, or a file still being written) and reads every whole tag up to its torn end. A reader from an SDK that predates format 2 refuses a format 2 file at open with `NEXATOM_ERROR_NOT_SUPPORTED`.
 
 ### C Example: Decoding a Run Offline
 
@@ -97,3 +104,49 @@ if (err == 0) {
     nexatom_tt_close_time_tag_reader(reader);
 }
 ```
+
+<a id="time-tag-export"></a>
+
+### Time-tag export
+
+`nexatom_tt_export_time_tags()` turns one `.nxtt` file or a whole series into one CSV or TAB file. It reads files only and never touches a board: it does not switch the output mode, and it runs during a recording, during raw output and with several boards connected. The input is read in batches and never held in memory.
+
+Zero-initialize the options and the result and set `abi_version = NEXATOM_TT_TIME_TAG_EXPORT_ABI_VERSION` and `struct_size` in both. The input is one file (`input_path`; `series_directory` and `series_key` NULL, `seq_start` and `seq_end` 0) or a series (`input_path` NULL; `series_directory`, `series_key`, `seq_start >= 1` and `seq_end` as for `nexatom_tt_open_time_tag_series_reader()`). `format` is `NEXATOM_TT_TIME_TAG_EXPORT_FORMAT_CSV` or `_TAB`; `flags` is 0 or `NEXATOM_TT_TIME_TAG_EXPORT_NO_HEADER` (rows only). Reserved fields stay zero. The strings are read only during the call.
+
+```c
+// Fragment: export a rotated series into one CSV file.
+nexatom_tt_time_tag_export_options_t options = {0};
+options.abi_version = NEXATOM_TT_TIME_TAG_EXPORT_ABI_VERSION;
+options.struct_size = sizeof(options);
+options.format = NEXATOM_TT_TIME_TAG_EXPORT_FORMAT_CSV;
+options.series_directory = "/data/raw-1";
+options.series_key = "my_experiment_TAGS";
+options.seq_start = 1;
+options.seq_end = 0;                       // all remaining contiguous files
+options.output_path = "/data/my_experiment.csv";
+
+nexatom_tt_time_tag_export_result_t result = {0};
+result.abi_version = NEXATOM_TT_TIME_TAG_EXPORT_ABI_VERSION;
+result.struct_size = sizeof(result);
+nexatom_error_code_t err = nexatom_tt_export_time_tags(&options, &result);
+if (err == NEXATOM_SUCCESS) {
+    printf("%u files, %llu tags\n", result.files_read,
+           (unsigned long long)result.tags_written);
+} else {
+    fprintf(stderr, "Export failed: %s\n", nexatom_tt_get_last_error_message());
+}
+```
+
+The output has three `#` lines (what the file is with the input's creation time and files; what the columns mean; the tag count with the inputs and how the saving ended), the heading row `Event time (ps),Input` and one row per event in recorded order. `Input` counts from 1 (Input N is channel N-1); the reader and the `.nxtt` file keep the 0-based channel. The result gives `files_read`, `tags_written`, and from the first input file `output_data_type` and `created_timestamp_us`.
+
+- The directory of `output_path` must exist; an existing file is replaced. On failure `out_result` is zeroed and the output file of the call is removed.
+- `NEXATOM_ERROR_FILE_IN_USE`: an input file is still being written by this process's live time-tag saving (for a series, any of its files). Export it after the saving has closed it.
+- `NEXATOM_ERROR_INVALID_PARAMETER` also covers unknown flag bits and an output path that is a file of the input.
+
+**As a job.** `nexatom_tt_start_time_tags_export()` takes the same options and writes the same file on an SDK thread; the options and the input are checked before it returns. The job writes into `<output_path>.partial`, created new, and renames it to `output_path` only when complete. It never replaces a file: an existing `output_path` or `.partial` is refused with `NEXATOM_ERROR_INVALID_PARAMETER`, and a failed or cancelled job leaves no file under `output_path`. `nexatom_tt_get_time_tags_export_progress()` reports the phase (`CHECKING`, `WRITING`, `FINISHING`, then `DONE`, `CANCELLED` or `FAILED`), `file_index` / `file_count`, `bytes_done` / `bytes_total` (the progress bar) and `tags_written` / `tags_total` (0 until the first pass ends). `nexatom_tt_cancel_time_tags_export()` returns at once. `nexatom_tt_finish_time_tags_export()` must be called for every job; it returns `NEXATOM_ERROR_TIMEOUT` while the job still runs and, once it has ended, the result with `check_text` (the check line) and `flags` (`NEXATOM_TT_FAST_TIHI_INDEX_EXPORT_INTEGRITY_FOUND` when every input file has its end record; `_COMPLETE` and `_SAVING_CONFIRMED` when the check says confirmed; 0 for a format 1 input), or `NEXATOM_ERROR_CANCELLED` after a cancel.
+
+The [offline decoder guide](../06_in_depth_guides/6_2_offline_time_tag_binary_decoder.md#time-tag-export) describes the check line and the Python calls.
+
+### Fast TIHI click files (`.nxti`)
+
+On the UTT160810, the click records of a Fast TIHI run are saved as `.nxti` files. `nexatom_tt_open_fast_tihi_index_file_reader()` and `nexatom_tt_open_fast_tihi_index_series_reader()` open a `nexatom_tt_fast_tihi_index_reader_t`; `nexatom_tt_get_fast_tihi_index_header()`, `nexatom_tt_read_fast_tihi_index_batch()`, `nexatom_tt_get_fast_tihi_index_reader_status()`, `nexatom_tt_get_fast_tihi_index_file_facts()`, `nexatom_tt_get_fast_tihi_index_input_switch()` and `nexatom_tt_get_fast_tihi_index_input_setting()` read it, and `nexatom_tt_close_fast_tihi_index_reader()` closes it. `nexatom_tt_export_fast_tihi_index()` writes the readable click table, and `nexatom_tt_start_fast_tihi_index_export()` with `nexatom_tt_get_fast_tihi_index_export_progress()`, `nexatom_tt_cancel_fast_tihi_index_export()` and `nexatom_tt_finish_fast_tihi_index_export()` runs it as a job. See [Fast TIHI click files](../06_in_depth_guides/6_2_offline_time_tag_binary_decoder.md#fast-tihi-index-files).

@@ -19,6 +19,7 @@ Rather than recording a START-to-STOP histogram like TIHI, MFCO reports an eight
 | `nexatom_tt_set_mfco_background_method`| `[In] nexatom_tt_handle device`<br>`[In] nexatom_mfco_background_method_t method` | `nexatom_error_code_t` | Configures background subtraction for accidental dark count coincidence rejection (`NEXATOM_MFCO_BG_NONE` = 0, `NEXATOM_MFCO_BG_USER_CONSTANT` = 1, `NEXATOM_MFCO_BG_USER_SELECTED_PATTERN_BIN` = 2). |
 | `nexatom_tt_set_mfco_user_background_value`| `[In] nexatom_tt_handle device`<br>`[In] uint16_t value` | `nexatom_error_code_t` | Manual noise floor subtraction (range 0–65535). Only effective when method is `USER_CONSTANT`. |
 | `nexatom_tt_set_mfco_background_bin`| `[In] nexatom_tt_handle device`<br>`[In] uint8_t pattern_bin` | `nexatom_error_code_t` | Sets a specific logic bin (0–255) to represent the baseline noise level dynamically. Only effective when method is `USER_SELECTED_PATTERN_BIN`. |
+| `nexatom_tt_get_mfco_counting_rule`| `[In] nexatom_tt_handle device`<br>`[Out] nexatom_mfco_counting_rule_t* rule_out` | `nexatom_error_code_t` | How the connected UTT810 counts patterns. `NEXATOM_MFCO_COUNTING_RULE_PER_HIT` (firmware below `0x0103`): every hit opens its own window, so an n-input event writes n-1 overlapping patterns. `_PER_EVENT` (from `0x0103`; `Z080_005`): the first hit opens one window, every input that fires inside it joins, repeats are absorbed, and the event's pattern counts once, so the bins sum to the number of events. `_UNKNOWN`: before the firmware version is known, on the UTT160810 (no MFCO), or for a firmware version this SDK does not know. `NEXATOM_ERROR_NOT_CONNECTED` without a board. Each result also carries `counting_rule`. |
 
 ### Data Structures: `nexatom_mfco_callback_data_t`
 
@@ -36,7 +37,8 @@ MFCO payloads are passed by-value to the callback registered in Section 7.8. The
 | `pattern_filter.forbidden_mask` | `uint8_t` | Channels that must not be present. |
 | `pattern_filter.patterns_after_filter` | `uint32_t` | Number of retained patterns, which can include zero-count bins. |
 | `pattern_bins` | `uint64_t[256]` | **The absolute counts for each pattern.** Index `0x05` contains the counts where exactly Ch0 and Ch2 fired together. |
-| `singles` | `uint64_t[8]` | Convenience array tracking counts where *only* that specific channel fired. |
+| `singles` | `uint64_t[8]` | Convenience array of the single-bit pattern bins (`singles[i] = pattern_bins[1 << i]`). Under `PER_EVENT` a single means that input fired alone within the window; under `PER_HIT` it means the same input fired again within the window of its own earlier hit. |
+| `counting_rule` | `uint8_t` | The `nexatom_mfco_counting_rule_t` counting rule of the result's batches; `UNKNOWN` also when they differ. |
 | `total_counts` | `uint64_t` | Sum of retained corrected bins, including pattern zero and exact singles. |
 | `num_doubles` | `uint64_t` | Count of events with exactly 2 channels firing simultaneously. |
 | `num_triples` | `uint64_t` | Count of events with exactly 3 channels firing simultaneously. |

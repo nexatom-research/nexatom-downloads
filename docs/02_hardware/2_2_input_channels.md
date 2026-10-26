@@ -80,6 +80,8 @@ device.set_channel_edge_type(channel=0, edge_type=0)  # Rising edge
 
 An actual polarity change can fence incoming events and trigger hardware recalibration before resuming prior acquisition intent. A no-op setting does not need that recalibration. Successful command admission is not proof of completed recalibration, so make the change between measurements and check the available telemetry before relying on the next timing result.
 
+A change of edge recalibrates all inputs on both boards: the UTT810 inputs go dark for about 0.58 s, the UTT160810 holds its data for about 1.16 s. While a file save of any kind runs, a write that would change the edge returns `NEXATOM_ERROR_DEVICE_BUSY` and writes nothing; writing the edge the input already has is accepted. An edge the SDK has not written or read back in this session counts as a change. Each change is logged as `LIVE EDGE_CHANGED` followed by `LIVE CALIBRATION_STARTED cause=edge` (log category `LIVE_CHANGE`).
+
 ### Input hysteresis
 
 To prevent multi-triggering or ringing on noisy input signals, a hysteresis voltage can be applied to the discriminator comparator.
@@ -124,6 +126,30 @@ nexatom_error_code_t nexatom_tt_set_channel_routing(
 # Explicitly restore the normal channel-0-to-channel-0 mapping.
 device.set_channel_routing(source_channel=0, target_channel=0)
 ```
+
+<a id="switching-inputs-on-and-off"></a>
+
+### Switching inputs on and off
+
+Each input can be switched off and on again without stopping acquisition. An input that is off is gated at the board's input: it produces no time tags, no counts and no processed data. Nothing else is reset.
+
+```python
+mask = device.get_input_enable_mask()       # bit k = input k, 1 = on
+device.set_input_enable_mask(mask & ~(1 << 3))   # switch input 3 off
+device.set_input_enable_mask(mask)               # all back on
+```
+
+```c
+uint32_t mask = 0;
+nexatom_tt_get_input_enable_mask(device, &mask);
+nexatom_tt_set_input_enable_mask(device, mask & ~(1u << 3));
+```
+
+- One call writes the whole mask, so a change of several inputs takes effect together.
+- Every set bit must name a public input (the profile's `effective_public_tdc_mask`); another bit returns `NEXATOM_ERROR_INVALID_PARAMETER` and nothing is written.
+- Every input is on after connect, and disconnect switches every input back on.
+- `get_input_enable_mask()` returns what this session wrote and sends nothing. The board reports the mask it uses in the telemetry view (`input_enable_mask`, valid with `NEXATOM_TT_TELEMETRY_VIEW_HAS_INPUT_ENABLE`).
+- The calls need `NEXATOM_TT_FEATURE_INPUT_ENABLE` in the profile; otherwise they return `NEXATOM_ERROR_NOT_SUPPORTED`.
 
 ### Applying a channel configuration together
 

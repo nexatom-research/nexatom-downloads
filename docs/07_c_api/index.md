@@ -1,6 +1,6 @@
 # C API Function Reference
 
-This chapter explains the public C API in the package's `include/nexatomtt_c_api.h`. That shipped header is authoritative for exact declarations and record layouts. These pages cover 0.1.0-preview.18.2, while retaining the earlier manual's reference structure.
+This chapter explains the public C API in the package's `include/nexatomtt_c_api.h`. That shipped header is authoritative for exact declarations and record layouts. These pages cover 0.1.0-preview.22.53, while retaining the earlier manual's reference structure.
 
 While Chapter 5 focuses on the object-oriented Python abstractions, this chapter documents the raw hardware control endpoints, memory management rules, and pointer semantics required when integrating the SDK into C, C++, Rust, LabVIEW, or other Foreign Function Interface (FFI) environments.
 
@@ -19,9 +19,9 @@ The reference is grouped by function. For complete processed/raw applications us
 | [Library version and errors](7_1_library_version.md) | Native identity and diagnostics |
 | [Logging](7_2_logging_config.md) | Structured logs, configuration, statistics and quiescent unregister |
 | [Discovery and lifecycle](7_3_device_discovery.md) | Device selection and handle ownership |
-| [Connection and profile](7_4_device_connection.md) | Runtime readiness, authority and capabilities |
+| [Connection and profile](7_4_device_connection.md) | Runtime readiness, authority and capabilities, automatic reconnection and pulled cables |
 | [System control](7_5_system_control.md) | Enable, reset, clock request and output selection |
-| [Field update](7_6_field_update.md) | Existing image slots, guarded loading and same-handle boot |
+| [Field update](7_6_field_update.md) | Existing image slots, guarded loading, same-handle boot and boot read-back |
 | [Channel configuration](7_7_channel_config.md) | Threshold, edge, delay, hysteresis and test pulses |
 | [Callbacks](7_8_callback_registration.md) | Data, telemetry/configuration views and callback lifetime |
 | [TIHI](7_9_tihi.md) | Normal/Fast TIHI and fitting |
@@ -30,7 +30,7 @@ The reference is grouped by function. For complete processed/raw applications us
 | [DLS](7_12_dls.md) | Host light-scattering analysis controls |
 | [FCS](7_13_fcs.md) | Host fluorescence-correlation analysis controls |
 | [DCS](7_14_dcs.md) | Host diffuse-correlation analysis controls |
-| [Telemetry and configuration](7_15_telemetry.md) | Requests, available views and DTC status/apply controls |
+| [Telemetry and configuration](7_15_telemetry.md) | Requests, available views, measurement abort, the latest configuration dump and DTC status/apply controls |
 | [Calibration](7_16_calibration.md) | Supported requests and automatic triggers |
-| [File saving](7_17_file_saving.md) | Native raw/processed file sinks |
-| [Binary reader](7_18_binary_decoder.md) | Offline NXTT batches and series |
+| [File saving](7_17_file_saving.md) | Native raw/processed file sinks, save end, saving result and keeping up with the data |
+| [Binary reader](7_18_binary_decoder.md) | Offline NXTT batches and series, time-tag export and Fast TIHI click files |

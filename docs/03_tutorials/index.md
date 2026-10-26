@@ -16,6 +16,17 @@ The following tutorials provide step-by-step walkthroughs of these reference scr
 | [Runtime ↔ Bootloader Handoff Validation](3_6_runtime_bootloader_handoff_validation.md) | `runtime_bootloader_handoff.py` |
 | [End-to-End Firmware Field Update](3_7_end_to_end_firmware_field_update.md) | `field_update_e2e.py` |
 
+More scripts in `python/examples` that have no tutorial page of their own:
+
+| Script | What it shows | See |
+|---|---|---|
+| `processed_acquisition.py` | Processed CPS, TIHI and MFCO recording to CSV (template) | [Quick start](../01_getting_started/1_2_quick_start.md) |
+| `channel_setup.py` | Editable per-input settings and board selection by `connection_id`, shared by the templates | [Input channels](../02_hardware/2_2_input_channels.md) |
+| `export_time_tags.py` | A saved `.nxtt` file or series turned into one CSV or TAB file; no board needed | [Time-tag export](../06_in_depth_guides/6_2_offline_time_tag_binary_decoder.md#time-tag-export) |
+| `fast_tihi_click_table.py` | A Fast TIHI run recorded to `.nxti` click files and exported in all three table layouts (UTT160810) | [Fast TIHI click files](../06_in_depth_guides/6_2_offline_time_tag_binary_decoder.md#fast-tihi-index-files) |
+| `utt_16_8_fast_dtc.py` | Profile-gated Fast TIHI and pulse-output example (UTT160810); diagnostic only unless its explicit write flag is given | [Pulse outputs](../02_hardware/2_13_dtc_pulse_outputs.md) |
+| `saved_data_review.py` | Short recordings in every saved-file format for a readability review, or `--inspect-only` to recheck saved files without hardware | [File saving](../06_in_depth_guides/6_1_file_saving_and_data_export.md) |
+
 ## Processed and raw template anatomy
 
 Start with `python/examples/processed_acquisition.py` for CPS/TIHI/MFCO CSV, or `file_save_and_offline_decode.py` for NXTT recording and CSV export. The [quick start](../01_getting_started/1_2_quick_start.md#configure-channels-and-record-processed-results) explains the settings and resulting files.

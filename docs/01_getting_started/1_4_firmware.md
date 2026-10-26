@@ -12,14 +12,18 @@ Ordinary measurement does not require this workflow: native `connect_runtime` ca
 
 Nexatom publishes firmware as numbered catalogues. Each catalogue is a GitHub release named `firmware-catalog-N` in the [nexatom-downloads repository](https://github.com/nexatom-research/nexatom-downloads/releases). A release holds the images, their `firmware_manifest.json`, a `SHA256SUMS.txt` file and a zip bundle of all of them. The pointer `https://downloads.nexatom.in/firmware/latest.json` names the current catalogue; the Nexatom app follows that pointer, reads the manifest and offers the images that match the connected instrument.
 
-The SDK package carries the current catalogue in its `firmware/` folder (`firmware_manifest.json` plus the images it lists; catalogue 3 in this SDK: `Z080_004.bin` and `K168_004.bin`). A catalogue published after the SDK can carry newer images; the app finds them through `latest.json`, and an SDK user can download the `firmware-catalog-N` release directly.
+The SDK package carries the current catalogue in its `firmware/` folder (`firmware_manifest.json` plus the images it lists; catalogue 4 in this SDK: `Z080_005.bin`, `Z080_004.bin`, `K168_005.bin` and `K168_004.bin`). A catalogue published after the SDK can carry newer images; the app finds them through `latest.json`, and an SDK user can download the `firmware-catalog-N` release directly.
 
-The current catalogue is **catalogue 3**:
+The current catalogue is **catalogue 4**:
 
-| Image | Instrument | Notes |
-|---|---|---|
-| `Z080_004.bin` | UTT810 (Zynq, 8 inputs) | Current UTT810 runtime, device protocol ABI 1.1 |
-| `K168_004.bin` | UTT160810 (Kintex, 16 inputs, 8 outputs) | Current UTT160810 runtime, device protocol ABI 1.1 |
+| Image | Instrument | Status | Firmware version | Notes |
+|---|---|---|---|---|
+| `Z080_005.bin` | UTT810 (Zynq, 8 inputs) | current | `0x0104` | Current UTT810 runtime, device protocol ABI 1.1. Requires SDK 0.1.0-preview.22.43 or later. |
+| `Z080_004.bin` | UTT810 (Zynq, 8 inputs) | superseded | `0x0102` | Earlier UTT810 runtime, device protocol ABI 1.1, kept for reference. |
+| `K168_005.bin` | UTT160810 (Kintex, 16 inputs, 8 outputs) | current | `0x0005` | Current UTT160810 runtime, device protocol ABI 1.1, with Fast TIHI on the 125 MHz trigger and pulse outputs with a fixed output latency (see [Pulse outputs](../02_hardware/2_13_dtc_pulse_outputs.md)). Requires SDK 0.1.0-preview.22.43 or later. |
+| `K168_004.bin` | UTT160810 (Kintex, 16 inputs, 8 outputs) | superseded | `0x0001` | Earlier UTT160810 runtime, device protocol ABI 1.1, kept for reference. |
+
+Install the `current` image for your instrument. A superseded image stays in the catalogue so that its bytes and checksum remain available.
 
 Image names follow the product: `Z080_nnn` for the UTT810 and `K168_nnn` for the UTT160810, where `nnn` is the build count. A higher number is a later build. A file name always means the same bytes in every catalogue; new bytes get a new number. The earlier `BOOT_001.bin` name is retired.
 
@@ -34,10 +38,10 @@ Firmware images use a strict filename convention:
 | Component | Format | Constraints | Example |
 |---|---|---|---|
 | `<NAME>` | ASCII alphanumeric | Exactly 4 characters, `isalnum()` | `Z080` |
-| `<VERSION>` | Decimal unsigned integer | 0–4294967295 (`uint32`) | `004` |
+| `<VERSION>` | Decimal unsigned integer | 0–4294967295 (`uint32`) | `005` |
 | Extension | `.bin` | Required | `.bin` |
 
-**Valid example:** `Z080_004.bin` — name `Z080`, version `4`.
+**Valid example:** `Z080_005.bin` — name `Z080`, version `5`.
 
 The image loader validates this convention before loading a file. The example's `image_metadata_from_filename()` function extracts and validates the name and version from the filename stem by splitting on the last underscore:
 
@@ -62,6 +66,7 @@ Each firmware catalogue carries a `firmware_manifest.json` with `schemaVersion` 
 | `channel` | string | Firmware channel (`runtime`) |
 | `status` | string | `current` for the image to install; `superseded` for an earlier build kept for reference |
 | `requires` | object | `abi` (device protocol ABI the image reports) and `minSdk` (oldest SDK that supports it) |
+| `fwVersion` | string | Firmware version the running image reports, as hex (for example `0x0104`) |
 | `sizeBytes` | integer | Image size in bytes |
 | `sha256` | string | SHA-256 hex digest for integrity verification |
 
@@ -76,7 +81,7 @@ from pathlib import Path
 
 directory = Path("firmware")
 catalogue = json.loads((directory / "firmware_manifest.json").read_text())
-entry = next(item for item in catalogue["images"] if item["fileName"] == "Z080_004.bin")
+entry = next(item for item in catalogue["images"] if item["fileName"] == "Z080_005.bin")
 image = directory / entry["fileName"]  # Replace the illustrative name with your supplied image.
 if image.stat().st_size != entry["sizeBytes"]:
     raise ValueError("Image size differs from its manifest")
@@ -176,13 +181,13 @@ typedef void (*nexatom_field_update_progress_callback_t)(
 ```powershell
 python python/examples/field_update_e2e.py `
     --home . `
-    --image firmware/Z080_004.bin `
+    --image firmware/Z080_005.bin `
     --slot 1 `
     --i-understand-this-writes-firmware `
     --boot-after-load
 ```
 
-This command illustrates the syntax; substitute the catalogue image for your instrument (`Z080_nnn.bin` for a UTT810, `K168_nnn.bin` for a UTT160810) and a slot reported by your device. The current images are in the SDK's `firmware/` folder, for example `firmware/Z080_004.bin`. Do not select slot 1 merely because it appears in the example.
+This command illustrates the syntax; substitute the catalogue image for your instrument (`Z080_nnn.bin` for a UTT810, `K168_nnn.bin` for a UTT160810) and a slot reported by your device. The current images are in the SDK's `firmware/` folder, for example `firmware/Z080_005.bin`. Do not select slot 1 merely because it appears in the example.
 
 | Flag | Default | Description |
 |---|---|---|
@@ -232,9 +237,41 @@ typedef struct nexatom_field_update_request_t {
     uint8_t     boot_after_load;             /* 1 = boot slot after write */
     uint8_t     _padding0[2];               /* Alignment padding */
     uint32_t    request_flags;               /* Bitmask (see below) */
-    uint8_t     reserved[12];               /* Reserved for future use */
+    uint32_t    expected_firmware_version;   /* Boot expectation, by request_flags */
+    uint32_t    expected_device_abi;         /* Boot expectation, by request_flags */
+    uint8_t     reserved[4];                /* Reserved for future use */
 } nexatom_field_update_request_t;
 ```
+
+`request_flags` bits:
+
+| Bit | Constant | Meaning |
+|---|---|---|
+| `0x1` | `NEXATOM_FIELD_UPDATE_REQUEST_HAS_STARTUP_ACK_CODE` | Deprecated; ignored on the load path |
+| `0x2` | `NEXATOM_FIELD_UPDATE_REQUEST_HAS_EXPECTED_FIRMWARE_VERSION` | `expected_firmware_version` is given |
+| `0x4` | `NEXATOM_FIELD_UPDATE_REQUEST_HAS_EXPECTED_DEVICE_ABI` | `expected_device_abi` is given |
+
+Any other bit returns `NEXATOM_ERROR_INVALID_PARAMETER` before anything is written to the board.
+
+<a id="boot-expectation-and-read-back"></a>
+
+#### Boot expectation and read-back
+
+When the load also boots the slot (`boot_after_load = 1`), you can state the firmware version and device ABI you expect the booted runtime to report. After the runtime is ready, the SDK compares each given value exactly with what the board reports in its first telemetry. If one does not match, the call returns `NEXATOM_ERROR_CONFIGURATION_FAILED`; the board stays connected and usable as booted, so you can decide what to do next. An expectation without `boot_after_load` returns `NEXATOM_ERROR_INVALID_PARAMETER` before any write.
+
+Pass an optional `nexatom_field_update_boot_read_back_t` (Python: `NexatomFieldUpdateBootReadBack`) to see what the booted runtime reported. Set its `struct_size` first. It is filled on every return path, including refusals. Its `flags` say which fields are meaningful:
+
+| Flag | Value | Meaning |
+|---|---|---|
+| `NEXATOM_FIELD_UPDATE_BOOT_READ_BACK_TELM_READ` | `0x01` | A telemetry frame arrived from the booted runtime. Clear after a boot: no runtime answered. |
+| `..._DECODED` | `0x02` | The SDK decoded the telemetry; otherwise only `telemetry_version`, `sequence` and `raw_words` are given |
+| `..._FIRMWARE_VERSION_MISMATCH` | `0x04` | `firmware_version` differs from the expectation |
+| `..._DEVICE_ABI_MISMATCH` | `0x08` | `device_abi` differs from the expectation |
+| `..._FIRMWARE_VERSION_VALID` | `0x10` | `firmware_version` holds a value |
+| `..._DEVICE_ABI_VALID` | `0x20` | `device_abi` holds a value |
+| `..._PRODUCT_MODEL_ID_VALID` | `0x40` | `product_model_id` holds a value |
+
+Branch on these flags, not on the error message text. A field without its `VALID` bit never matches an expectation.
 
 #### Python example
 
@@ -243,14 +280,30 @@ def progress(p):
     print(f"Phase={p.phase} {p.percent}% {p.bytes_sent}/{p.total_bytes} bytes")
 
 device.load_field_update_image(
-    image_path="firmware/Z080_004.bin",
+    image_path="firmware/Z080_005.bin",
     slot_index=1,
     set_default_after_load=False,
     boot_after_load=False,
     request_flags=0,
     progress_callback=progress,
 )
+
+# Load, boot and check that the board now runs firmware 0x0104 (Z080_005):
+from nexatomtt import NexatomFieldUpdateBootReadBack
+
+read_back = NexatomFieldUpdateBootReadBack()
+device.load_field_update_image(
+    image_path="firmware/Z080_005.bin",
+    slot_index=1,
+    boot_after_load=True,
+    expected_firmware_version=0x0104,
+    expected_device_abi=0x00010001,
+    read_back=read_back,
+    progress_callback=progress,
+)
 ```
+
+In Python the expectation arguments set the matching `request_flags` bits for you.
 
 #### C example
 
@@ -265,12 +318,12 @@ void on_progress(nexatom_field_update_progress_t p, void* ctx) {
 nexatom_field_update_request_t req = {0};
 req.struct_size = sizeof(req);
 req.slot_index = 1;
-req.image_path = "firmware\\Z080_004.bin";
+req.image_path = "firmware\\Z080_005.bin";
 req.set_default_after_load = 0;
 req.boot_after_load = 0;
 
 nexatom_error_code_t rc = nexatom_tt_load_field_update_image(
-    device, &req, on_progress, NULL);
+    device, &req, on_progress, NULL, NULL);   /* last argument: optional read-back */
 ```
 
 > **Note.** `nexatom_tt_load_field_update_image()` is **synchronous**. It blocks until the entire load/program/verify sequence completes or fails. The progress callback executes on the calling thread. Ensure the calling thread is not a UI or event loop thread.
@@ -351,12 +404,27 @@ The valid default slot has priority during automatic native runtime entry. Setti
 #### Booting a slot
 
 ```c
-nexatom_tt_boot_field_update_slot(device, slot_index);
+nexatom_field_update_boot_request_t boot = {0};
+boot.struct_size = sizeof(boot);
+boot.slot_index = slot_index;
+/* Optional expectation: */
+boot.request_flags = NEXATOM_FIELD_UPDATE_REQUEST_HAS_EXPECTED_FIRMWARE_VERSION;
+boot.expected_firmware_version = 0x0104;
+
+nexatom_field_update_boot_read_back_t read_back = {0};
+read_back.struct_size = sizeof(read_back);
+
+nexatom_error_code_t rc = nexatom_tt_boot_field_update_slot(device, &boot, &read_back);
 ```
 
 ```python
 device.boot_field_update_slot(slot_index)
+# or, with an expectation and read-back:
+device.boot_field_update_slot(slot_index, expected_firmware_version=0x0104,
+                              read_back=read_back)
 ```
+
+The boot request accepts only the two expectation bits (`0x6`) in `request_flags`; any other bit, `HAS_STARTUP_ACK_CODE` included, returns `NEXATOM_ERROR_INVALID_PARAMETER` before any write. Expectations and the read-back work as described for the load call above. The call returns `NEXATOM_ERROR_DEVICE_BUSY` when made from an SDK callback.
 
 The native boot operation retains the same handle and waits for runtime readiness. Applications do not need to wait for a USB disappearance, rediscover the board or create a replacement handle. A successful boot acknowledgement alone is insufficient; check the boot call's result and the resulting native profile before using measurement controls.
 
@@ -406,7 +474,7 @@ The `field_update_e2e.py` script enforces three levels of protection:
 **Image source.** Load only firmware images supplied by Nexatom or explicitly approved for your hardware model. The `firmware_manifest.json` provides SHA-256 checksums for verification. Verify the checksum before loading:
 
 ```powershell
-certutil -hashfile firmware\Z080_004.bin SHA256
+certutil -hashfile firmware\Z080_005.bin SHA256
 ```
 
 Compare the output with the `sha256` field in `firmware_manifest.json`.

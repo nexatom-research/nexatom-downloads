@@ -42,7 +42,7 @@ The acquisition channel setter accepts channel IDs for MFCO slots (`[0, 1]`, for
 | `enable_multi_tau_correlator` | `enable: bool` | `None` | Activates the quasi-logarithmic (CORM) correlation engine. |
 | `set_intensity_correlation_channel_a` | `channel: int` | `None` | Selects the first input; use `_channel_b(channel)` for the second. Equal channel IDs request autocorrelation. |
 | `set_intensity_correlation_bin_width` | `bin_width_in_8ns_units: int` | `None` | Public unit remains 8 ns. For example, 125 selects 1000 ns; native translates for the active hardware profile. |
-| `set_intensity_correlation_num_bins` | `num_bins: int` | `None` | Selects integration sample depth, not the 80 returned lag points. |
+| `set_intensity_correlation_num_bins` | `num_bins: int` | `None` | Selects integration sample depth (N samples per batch), not the 80 returned lag points. `0` (the default at connect) lets the SDK choose N for each run. |
 
 Choose the result span and run end with `set_result_span(NEXATOM_RESULT_PROCESSOR_CORRELATION, ...)` and `set_run_end(...)` before enabling and starting the correlators; the setting covers CORL and CORM together. There is no separate CORL or CORM setting: `NEXATOM_RESULT_PROCESSOR_CORRELATION` is the only correlator processor, so both correlators always use the same span, run end and clear. Where g² is undefined the values are `NaN`. `normalization_valid` qualifies the returned g² values; a nonempty array is not sufficient.
 
@@ -92,3 +92,5 @@ DLS/FCS/DCS results are embedded in the CORM callback's `analysis_result`. Only 
 ### DTC output controls
 
 For a profile authorizing DTC, call `apply_dtc_output(configuration, timeout_ms=1000)`, inspect the returned hardware apply result, then use `set_dtc_global_enable(enable)` as intended. `get_dtc_status()` inspects current state; `clear_dtc_status()` clears the supported status condition. A rejected apply raises `NexatomDtcApplyRejected` with the diagnostic result. Do not treat a proposed configuration as applied.
+
+The output follows its input after a fixed latency (`dtc_output_latency_ps` in the profile, 180000 ps on `K168_005`), and pulses that come too close to each other are merged by a fixed rule. [Pulse outputs](../02_hardware/2_13_dtc_pulse_outputs.md) describes the latency, the limits (`get_dtc_output_limits()`), the merge rule, the pulse generators and what the SDK applies again by itself.

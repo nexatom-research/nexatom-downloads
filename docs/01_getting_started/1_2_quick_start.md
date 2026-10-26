@@ -271,12 +271,14 @@ python python/examples/file_save_and_offline_decode.py --home . --output-dir cap
 4. enable_time_tag_file_saving(prefix, BINARY)    ← prepare sink before events
 5. set_output_type(RAW_TAGS), enable_system(True)
 6. enable optional test pulses; observe for duration_sec
-7. disable pulses; stop system/output
-8. disable_time_tag_file_saving()                ← finalize before offline reading
-9. disconnect()                                 ← check close result
+7. disable pulses
+8. disable_time_tag_file_saving()                ← user stop, while RAW_TAGS is still on
+9. get_file_saving_statistics()                  ← were all received tags written?
+10. set_output_type(NO_OUTPUT), enable_system(False)
+11. disconnect()                                 ← check close result
 ```
 
-> **Shutdown ordering.** Stop producers and quiet output before finalizing saving. Keep the device and file pipeline alive until those steps complete. Finalization must succeed before opening the captured file with an offline reader.
+> **Shutdown ordering.** Stop the test pulses, then end the recording with `disable_time_tag_file_saving()` while the raw output is still selected. The file then closes as a normal user stop ("confirmed; ended: stopped by user"). Switching to `NO_OUTPUT` first also ends the recording normally, but at the switch, with the end reason "the measurement type changed". Read the file-saving statistics after finalizing and before disconnecting. Keep the device and file pipeline alive until these steps complete. Finalization must succeed before opening the captured file with an offline reader.
 
 #### File saving configuration
 
@@ -297,7 +299,7 @@ When any rotation limit is reached, the native library closes the current file a
 
 #### Offline CSV decode
 
-With `--decode-csv`, the script opens every `.nxtt` file from the new run, including rotations, using the native binary reader and exports each individual tag as a `timestamp_ps,channel` CSV row:
+With `--decode-csv`, the script opens every `.nxtt` file from the new run, including rotations, using the native binary reader and exports each file to CSV through the library's time-tag export:
 
 ```python
 with library.open_time_tag_file_reader(nxtt_path) as reader:
@@ -305,14 +307,16 @@ with library.open_time_tag_file_reader(nxtt_path) as reader:
 print(f"Exported {row_count} tags to {csv_path}")
 ```
 
-Each row in the output CSV represents one decoded `nexatom_time_tag_t`:
+`export_csv()` always writes the whole file, however far the reader has been read, and leaves the reader where it is. The CSV file starts with three lines that begin with `#`: what the file is, with the recording time and the source file; what each column means; and the check, which gives the tag count with the inputs that recorded them and how the saving ended (for example `confirmed; ended: stopped by user`). Then come the heading row `Event time (ps),Input` and one row per tag in recorded order. Skip lines that start with `#` when you read it. Each row represents one decoded `nexatom_time_tag_t`:
 
 | Column | Type | Description |
 |---|---|---|
-| `timestamp_ps` | `uint64` | Instrument event timestamp in picoseconds; not Unix wall-clock time |
-| `channel` | `uint8` | Input channel index (0–7) |
+| `Event time (ps)` | integer | Instrument event timestamp in exact whole picoseconds; not Unix wall-clock time |
+| `Input` | integer | Input number counted from 1 (`Input 1` is channel 0) |
 
-The script also writes `raw_summary.json` with per-channel event counts and inter-arrival statistics. Subtract timestamps as integers before converting the difference to seconds. The Python summary excludes intervals across file boundaries and starts a new segment on a backwards timestamp; it records those boundaries rather than assuming clock continuity.
+The tags the reader returns in Python and C keep the 0-based `channel`. To export a whole series of rotated files into one CSV or TAB file, see `python/examples/export_time_tags.py` and [Time-tag export](../06_in_depth_guides/6_2_offline_time_tag_binary_decoder.md#time-tag-export).
+
+The script also writes `raw_summary.json` with per-channel event counts, inter-arrival statistics and the file-saving statistics read after finalizing. Subtract timestamps as integers before converting the difference to seconds. The Python summary excludes intervals across file boundaries and starts a new segment on a backwards timestamp; it records those boundaries rather than assuming clock continuity.
 
 ---
 

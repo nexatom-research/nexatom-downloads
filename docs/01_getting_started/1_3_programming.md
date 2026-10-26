@@ -88,11 +88,22 @@ if (rc != NEXATOM_SUCCESS) {
 | 0 | `NEXATOM_SUCCESS` | Operation completed |
 | -1 | `NEXATOM_ERROR_INVALID_PARAMETER` | Invalid argument |
 | -2 | `NEXATOM_ERROR_NOT_CONNECTED` | Device not connected |
+| -3 | `NEXATOM_ERROR_ALREADY_CONNECTED` | The handle is already connected |
 | -4 | `NEXATOM_ERROR_CONNECTION_FAILED` | USB connection failed |
 | -5 | `NEXATOM_ERROR_TIMEOUT` | Operation timed out |
+| -6 | `NEXATOM_ERROR_DEVICE_BUSY` | The device or SDK cannot take this call now (for example an input delay change during a file save, or a connect call from inside a callback) |
 | -7 | `NEXATOM_ERROR_ACQUISITION_RUNNING` | Stop acquisition first |
+| -8 | `NEXATOM_ERROR_NO_ACQUISITION` | No acquisition is running |
+| -9 | `NEXATOM_ERROR_CONFIGURATION_FAILED` | The device refused or did not confirm a configuration |
+| -10 | `NEXATOM_ERROR_MEMORY_ALLOCATION` | Memory allocation failed |
 | -11 | `NEXATOM_ERROR_FILE_IO` | File I/O failure |
 | -12 | `NEXATOM_ERROR_NOT_SUPPORTED` | Operation unsupported by the active device contract |
+| -13 | `NEXATOM_ERROR_CALIBRATION_FAILED` | Calibration failed |
+| -14 | `NEXATOM_ERROR_MODE_RESTORE_FAILED` | A mode could not be restored |
+| -15 | `NEXATOM_ERROR_INSUFFICIENT_DATA` | Too little data for the request (for example a curve fit with too few counts) |
+| -16 | `NEXATOM_ERROR_FILE_IN_USE` | The file is still being written by live saving, or the previous recording is still closing |
+| -17 | `NEXATOM_ERROR_CANCELLED` | The operation was cancelled (an export job, or a pending save start ended by a stop) |
+| -18 | `NEXATOM_ERROR_NOT_AVAILABLE` | The value is not available yet (see `nexatom_tt_get_board_time_upper_bound()`) |
 | -99 | `NEXATOM_ERROR_INTERNAL` | Internal library error |
 
 `nexatom_tt_get_error_message(code)` returns a static description. `nexatom_tt_get_last_error_message()` returns more detailed diagnostic text. Copy that text promptly into application-owned storage if it must outlive subsequent API calls; pair it with the return code from the operation that failed.
@@ -203,6 +214,10 @@ The `nexatomtt` Python package wraps the C ABI via `ctypes`. No compiled extensi
 python/nexatomtt/
 ├── __init__.py        Package namespace — re-exports all public symbols
 ├── _native.py         ctypes bindings, structs, callbacks, wrapper classes
+├── _extended.py       Further device controls (inputs, clocks, pulse generators, MFCO rule)
+├── _records.py        Further record structures
+├── _constants.py      Further constants
+├── _identity.py       SDK package identity check against manifest.json
 ├── analysis.py        MFCO pattern histogram analysis helpers
 └── runtime_boot.py    Context manager around native runtime entry
 ```
@@ -248,14 +263,17 @@ Key method groups:
 
 | Group | Methods |
 |---|---|
-| Connection | `connect_runtime()`, `get_device_profile()`, `get_capabilities()`, `connect()`, `disconnect()`, `set_auto_reconnect()`, `destroy()`, `close()`, `is_connected()`, `state()`, `hardware_protocol_mode()` |
+| Connection | `connect_runtime()`, `get_device_profile()`, `get_capabilities()`, `connect()`, `disconnect()`, `set_auto_reconnect()`, `auto_reconnect_state()`, `destroy()`, `close()`, `is_connected()`, `state()`, `hardware_protocol_mode()` |
 | System | `enable_system()`, `reset_peripherals()`, `set_output_type()`, `get_output_type()`, `set_cps_period_selector()`, `request_global_stop_all_modes()` |
-| Channels | `set_channel_threshold()`, `set_channel_edge_type()`, `set_channel_input_delay()`, `set_channel_hysteresis()`, `enable_channel_test_pulse()`, `set_channel_test_pulse_params()` |
+| Channels | `set_channel_threshold()`, `set_channel_edge_type()`, `set_channel_input_delay()`, `get_channel_input_delay()`, `set_channel_hysteresis()`, `enable_channel_test_pulse()`, `set_channel_test_pulse_params()`, `set_input_enable_mask()`, `get_input_enable_mask()` |
+| Clocks | `request_sync_clock()`, `set_reference_auto_relock()`, `get_reference_clock_status()`, `enable_reference_clock_output()` |
 | TIHI | `enable_time_histogram()`, `set_time_histogram_channels()`, `set_time_histogram_bin_width()`, `set_time_histogram_num_bins()`, `start_time_histogram()`, `stop_time_histogram()` |
 | Results | `set_result_span()`, `set_run_end()`, `clear_result()` for TIHI, MFCO, the correlators and Fast TIHI |
-| MFCO | `enable_multifold_coincidence()`, `set_multifold_coincidence_channels()`, `set_multifold_coincidence_window()`, `start_multifold_coincidence()`, `stop_multifold_coincidence()` |
+| MFCO | `enable_multifold_coincidence()`, `set_multifold_coincidence_channels()`, `set_multifold_coincidence_window()`, `start_multifold_coincidence()`, `stop_multifold_coincidence()`, `get_mfco_counting_rule()` |
+| Pulse outputs (UTT160810) | `apply_dtc_output()`, `get_dtc_output_limits()`, `set_dtc_global_enable()`, `get_dtc_status()`, `get_dtc_reapply_status()`, `restart_dtc_calibration()`, `set_dtc_pulse_generator_period()`, `set_dtc_pulse_generator_enable_mask()` and their getters |
 | Telemetry | `enable_telemetry()`, `set_telemetry_mode()`, `request_telemetry()`, `get_telemetry()` |
-| File saving | Raw `set_time_tag_file_config()`, `enable_time_tag_file_saving()`, `disable_time_tag_file_saving()`; processed `set_processed_file_config()`, `enable_processed_file_saving()`, `disable_processed_file_saving()`; `get_file_saving_statistics()` |
+| File saving | Raw `set_time_tag_file_config()`, `enable_time_tag_file_saving()`, `disable_time_tag_file_saving()`; processed `set_processed_file_config()`, `enable_processed_file_saving()`, `disable_processed_file_saving()`; `get_file_saving_statistics()`, `set_save_end()`, `get_saving_result()`, `check_start_rate()`, `get_data_flow_status()`, `get_board_loss()`, `get_last_incident()`, `get_board_time_upper_bound()` |
+| Board state | `get_calibration_hold_state()`, `get_measurement_abort()`, `get_latest_config_dump()` |
 | Callbacks | `set_connection_status_callback()`, `set_count_rate_callback()`, `set_telemetry_callback()`, `set_time_histogram_callback()`, `set_multifold_coincidence_callback()`, `clear_callbacks()` |
 | Field update | `request_field_upgrade_service_entry()`, `clear_field_upgrade_service_entry_request()`, `refresh_field_update_status()`, `load_field_update_image()`, `set_field_update_default_slot()`, `set_field_update_default_slot_with_status()`, `boot_field_update_slot()` |
 
@@ -267,10 +285,18 @@ with lib.open_time_tag_file_reader("capture.nxtt") as reader:
     for tag in reader.iter_tags():     # generator, batch_size=4096
         print(tag.timestamp_ps, tag.channel)
 
-# Or bulk export:
+# Or bulk export of the whole file (the library writes the CSV):
 with lib.open_time_tag_file_reader("capture.nxtt") as reader:
     rows = reader.export_csv("output.csv")  # → int (row count)
+
+# Or export without a reader, also a whole series into one file:
+result = lib.export_time_tags("output.csv", input_path="capture.nxtt")
+print(result.tags_written)
 ```
+
+`NexatomLibrary` also opens Fast TIHI index files (`open_fast_tihi_index_file_reader()`, `open_fast_tihi_index_series_reader()`) and runs exports as background jobs (`start_time_tags_export()`, `start_fast_tihi_index_export()`). See [Offline time-tag binary decoder](../06_in_depth_guides/6_2_offline_time_tag_binary_decoder.md).
+
+On Windows, `lib.count_boards_not_using_nexatom_driver()` counts attached boards that discovery cannot list because they do not use the Nexatom USB driver.
 
 Series reader for multi-file captures:
 
@@ -343,7 +369,7 @@ The public namespace includes the groups below. Inspect `nexatomtt.__all__` for 
 |---|---|
 | Integer constants | `NEXATOM_STATE_*`, `NEXATOM_OUTPUT_*`, `NEXATOM_RESULT_PROCESSOR_*`, `NEXATOM_RESULT_SPAN_*`, `NEXATOM_RESULT_STATUS_*`, `NEXATOM_RUN_END_*`, `NEXATOM_TT_FEATURE_*`, file-format and completion constants |
 | Structures | `NexatomDeviceInfo`, device profiles, capabilities, CPS/TIHI/MFCO/correlation records, telemetry, time tags and field-update progress |
-| Wrapper classes | `NexatomLibrary`, `NexatomDevice`, `NexatomTimeTagReader` |
+| Wrapper classes | `NexatomLibrary`, `NexatomDevice`, `NexatomTimeTagReader`, `NexatomFastTihiIndexReader`, `NexatomTimeTagExportJob`, `NexatomFastTihiIndexExportJob` |
 | Exceptions | `NexatomError`, `RuntimeBootError`, `NexatomDtcApplyRejected` |
 | Runtime options | `RuntimeBootOptions` |
 | Helpers | `find_default_home`, `open_runtime_device`, MFCO pattern helpers and slot selection |
@@ -442,6 +468,8 @@ Device sessions and file readers are managed through opaque handles — forward-
 ```c
 typedef struct nexatom_tt*                  nexatom_tt_handle;
 typedef struct nexatom_tt_time_tag_reader   nexatom_tt_time_tag_reader_t;
+typedef struct nexatom_tt_fast_tihi_index_reader nexatom_tt_fast_tihi_index_reader_t;
+typedef struct nexatom_tt_export_job*       nexatom_tt_export_job_handle;
 ```
 
 FFI consumers should treat these as `void*` or equivalent opaque pointer types. The handles are created and destroyed through paired API functions:
@@ -450,6 +478,11 @@ FFI consumers should treat these as `void*` or equivalent opaque pointer types. 
 |---|---|
 | `nexatom_tt_create()` → `nexatom_tt_handle` | `nexatom_tt_destroy(handle)` |
 | `nexatom_tt_open_time_tag_file_reader()` → `nexatom_tt_time_tag_reader_t*` | `nexatom_tt_close_time_tag_reader(reader)` |
+| `nexatom_tt_open_fast_tihi_index_file_reader()` / `..._series_reader()` → `nexatom_tt_fast_tihi_index_reader_t*` | `nexatom_tt_close_fast_tihi_index_reader(reader)` |
+| `nexatom_tt_start_time_tags_export()` → `nexatom_tt_export_job_handle` | `nexatom_tt_finish_time_tags_export(job, ...)` |
+| `nexatom_tt_start_fast_tihi_index_export()` → `nexatom_tt_export_job_handle` | `nexatom_tt_finish_fast_tihi_index_export(job, ...)` |
+
+An export job is used only with the calls of the kind that started it.
 
 #### Building a new language binding
 

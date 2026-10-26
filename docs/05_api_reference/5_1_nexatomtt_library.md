@@ -37,6 +37,10 @@ C operations returning `nexatom_error_code_t` use a signed 32-bit integer indica
 *   `-12`: `NEXATOM_ERROR_NOT_SUPPORTED`
 *   `-13`: `NEXATOM_ERROR_CALIBRATION_FAILED`
 *   `-14`: `NEXATOM_ERROR_MODE_RESTORE_FAILED`
+*   `-15`: `NEXATOM_ERROR_INSUFFICIENT_DATA` (too little data for the request, for example a curve fit with too few counts)
+*   `-16`: `NEXATOM_ERROR_FILE_IN_USE` (the file is still being written by live saving, or the previous recording is still closing)
+*   `-17`: `NEXATOM_ERROR_CANCELLED` (an export job was cancelled, or a pending save start was ended by a stop)
+*   `-18`: `NEXATOM_ERROR_NOT_AVAILABLE` (the value is not available yet)
 *   `-99`: `NEXATOM_ERROR_INTERNAL` (Fatal SDK state violation)
 
 <a id="device-states"></a>
