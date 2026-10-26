@@ -20,7 +20,7 @@ More scripts in `python/examples` that have no tutorial page of their own:
 
 | Script | What it shows | See |
 |---|---|---|
-| `processed_acquisition.py` | Processed CPS, TIHI and MFCO recording to CSV (template) | [Quick start](../01_getting_started/1_2_quick_start.md) |
+| `processed_acquisition.py` | Processed CPS, TIHI and MFCO recording to CSV (template; CPS only on the UTT160810) | [Quick start](../01_getting_started/1_2_quick_start.md) |
 | `channel_setup.py` | Editable per-input settings and board selection by `connection_id`, shared by the templates | [Input channels](../02_hardware/2_2_input_channels.md) |
 | `export_time_tags.py` | A saved `.nxtt` file or series turned into one CSV or TAB file; no board needed | [Time-tag export](../06_in_depth_guides/6_2_offline_time_tag_binary_decoder.md#time-tag-export) |
 | `fast_tihi_click_table.py` | A Fast TIHI run recorded to `.nxti` click files and exported in all three table layouts (UTT160810) | [Fast TIHI click files](../06_in_depth_guides/6_2_offline_time_tag_binary_decoder.md#fast-tihi-index-files) |

@@ -128,7 +128,7 @@ printf("%llu of %llu tags written: %s\n", (unsigned long long)written,
        (unsigned long long)received, complete ? "complete" : "INCOMPLETE");
 ```
 
-In Python, `device.get_file_saving_statistics()` returns the same record with a `complete` property (the same fact as `span_complete`). The saving result (`nexatom_tt_get_saving_result()`) then says how the recording ended and lists its files; see [ending a recording and checking it](../06_in_depth_guides/6_1_file_saving_and_data_export.md#ending-a-recording).
+In Python, `device.get_file_saving_statistics()` returns the same record with a `complete` property (the same fact as `span_complete`). The saving result (`nexatom_tt_get_saving_result()`) then says how the recording ended and lists its files. A whole span is not a whole run: when the SDK ends a save early, for example `NEXATOM_TT_SAVE_END_REASON_HOST_STALLED` (the computer could not keep up), the file holds every tag up to its last one and `span_complete` can stay 1, but the rest of the run is not saved, so check `end_reason` too; see [ending a recording and checking it](../06_in_depth_guides/6_1_file_saving_and_data_export.md#ending-a-recording).
 
 The counters see only the file stage. Switching to `NO_OUTPUT` runs the pipeline barrier, which discards what the decoder and processing stages still hold; those tags never reach the counters. That backlog is whatever the host had not yet processed at the `NO_OUTPUT` moment, so it grows when the data rate exceeds what the host decodes and saves. Stop the recording with `nexatom_tt_disable_time_tag_file_saving()` (or `nexatom_tt_enable_system(false)` during a raw recording) before switching to `NO_OUTPUT`: a Stop saves the backlog it holds.
 

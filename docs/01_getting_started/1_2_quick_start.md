@@ -200,7 +200,7 @@ The script only requires telemetry when the native profile advertises it. Curren
 
 **Script:** `python/examples/processed_acquisition.py`
 
-This is the complete editable acquisition template. It configures threshold, edge, input delay and hysteresis, records native CPS/TIHI/MFCO CSV files, and calculates a small summary. For a first run without external signals:
+This is the complete editable acquisition template. It configures threshold, edge, input delay and hysteresis, records native CPS/TIHI/MFCO CSV files, and calculates a small summary. It runs the processors the device profile offers: CPS on every board, TIHI and MFCO where the board has them (the UTT160810 has CPS only). For a first run without external signals:
 
 ```sh
 python python/examples/processed_acquisition.py --home . --channels 0,1 --threshold-mv 500 --edge rising --delay-ps 0 --hysteresis-mv 10 --internal-test --duration-sec 5 --tihi-bin-width-ps 64000 --tihi-bins 256 --mfco-window-ps 12000000

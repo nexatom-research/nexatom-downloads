@@ -146,4 +146,4 @@ Disconnect forgets every remembered setting and switches every pulse generator o
 
 `get_dtc_status(timeout_ms=1000)` (C: `nexatom_tt_get_dtc_status_v1()`) reads one fresh status snapshot of the outputs, including the outputs whose setting is still waiting (`apply_pending_mask`) and the result of the last output calibration. It needs the processed output type. `restart_dtc_calibration()` restarts the output calibration; it returns once the request is sent, and the remembered settings are applied again afterwards as described above. It needs `NEXATOM_TT_FEATURE_DTC_CALIBRATION_RESTART` in the profile; completion is not returned, so watch `get_dtc_status()`.
 
-The complete example `python/examples/utt_16_8_fast_dtc.py` applies an output, switches the outputs on and reads the status.
+The complete example `python/examples/utt_16_8_fast_dtc.py`, given its write flag, selects the processed output type itself, applies an output, switches the outputs on and reads the status.
