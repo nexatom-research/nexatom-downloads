@@ -1,6 +1,6 @@
 # C API Function Reference
 
-This chapter explains the public C API in the package's `include/nexatomtt_c_api.h`. That shipped header is authoritative for exact declarations and record layouts. These pages cover 0.1.0-preview.22.55, while retaining the earlier manual's reference structure.
+This chapter explains the public C API in the package's `include/nexatomtt_c_api.h`. That shipped header is authoritative for exact declarations and record layouts. These pages cover 0.1.0-preview.22.57, while retaining the earlier manual's reference structure.
 
 While Chapter 5 focuses on the object-oriented Python abstractions, this chapter documents the raw hardware control endpoints, memory management rules, and pointer semantics required when integrating the SDK into C, C++, Rust, LabVIEW, or other Foreign Function Interface (FFI) environments.
 

@@ -1,6 +1,6 @@
 # Hardware
 
-This chapter explains the UTT810 hardware interface as exposed through SDK 0.1.0-preview.22.55: how to connect an instrument, configure its inputs, choose an output path, and interpret hardware status. The native library owns the FTDI transport, protocol selection and hardware commands. Examples use physical units and the resolved device profile rather than raw register writes.
+This chapter explains the UTT810 hardware interface as exposed through SDK 0.1.0-preview.22.57: how to connect an instrument, configure its inputs, choose an output path, and interpret hardware status. The native library owns the FTDI transport, protocol selection and hardware commands. Examples use physical units and the resolved device profile rather than raw register writes.
 
 | Property | Value |
 |---|---|
