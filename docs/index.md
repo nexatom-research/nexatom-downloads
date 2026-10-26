@@ -41,7 +41,7 @@ loading firmware. Original Zynq without a bootloader connects directly to runtim
 
 ## Version scope and migration
 
-This edition describes **SDK 0.1.0-preview.22.57**. Keep the complete extracted package,
+This edition describes **SDK 0.1.0-preview.22.59**. Keep the complete extracted package,
 including its native library, Python modules, header, dependencies and notices.
 The native library's version string and the SDK archive version are separate
 identifiers; use the package manifest to identify the installed SDK.
