@@ -1,15 +1,15 @@
 {
-  "catalogVersion": 3,
+  "catalogVersion": 4,
   "schemaVersion": 2,
-  "releaseTag": "firmware-catalog-3",
-  "releaseUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/tag/firmware-catalog-3",
-  "manifestUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/download/firmware-catalog-3/firmware_manifest.json",
-  "manifestSha256": "b89797d03f272a8c47209bc2042c52e84c6433c61d0d9931a940af24a891bfb4",
-  "bundleUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/download/firmware-catalog-3/nexatomtt-firmware-catalog-3.zip",
-  "bundleSizeBytes": 4142246,
-  "bundleSha256": "32b7cf2470db43ed938a38a8c4aaaa55c60554f6a3b03594a91635a1df7e8fd2",
-  "sha256SumsUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/download/firmware-catalog-3/SHA256SUMS.txt",
-  "imageBaseUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/download/firmware-catalog-3/",
-  "nativeGitCommit": "d21ba52ba40b32907a06d32ffcdd16ea7e0ce023",
-  "publishedAt": "2026-09-25"
+  "releaseTag": "firmware-catalog-4",
+  "releaseUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/tag/firmware-catalog-4",
+  "manifestUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/download/firmware-catalog-4/firmware_manifest.json",
+  "manifestSha256": "632177c1395204a29f47cf375235d0844f5e83d697972503ee9ed3f0821785d9",
+  "bundleUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/download/firmware-catalog-4/nexatomtt-firmware-catalog-4.zip",
+  "bundleSizeBytes": 8467520,
+  "bundleSha256": "fbbf09f39241cf739e289325ce24e61c35f16b9e673cbc89707ee5d78324cb74",
+  "sha256SumsUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/download/firmware-catalog-4/SHA256SUMS.txt",
+  "imageBaseUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/download/firmware-catalog-4/",
+  "nativeGitCommit": "ce1ad73e6adc0356b7f9fdcae34f7c3546b931f4",
+  "publishedAt": "2026-10-27"
 }
