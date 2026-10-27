@@ -138,7 +138,7 @@ The counters see only the file stage. Switching to `NO_OUTPUT` runs the pipeline
 
 **Processed results after Stop.** For processed saving, each processor publishes exactly one `STOPPED` result within 2 s of its Stop call. Wait for it before disabling processed saving, or the files end before the last partial block.
 
-Use the complete raw template for drain/finalization and checked disconnect. Enabling raw saving disables processed saving and vice versa; active processed CSV/TAB cannot be mixed with HDF5. Formats, CSV metadata parsing, sequence naming and rotation are described in [file saving and export](../06_in_depth_guides/6_1_file_saving_and_data_export.md).
+Use the complete raw template for drain/finalization and checked disconnect. Enabling raw saving disables processed saving and vice versa; active processed CSV/TAB cannot be mixed with HDF5; a Fast TIHI index saved in binary (`.nxti`) runs beside HDF5 results, enabled in either order (since preview.22.62). Formats, CSV metadata parsing, sequence naming and rotation are described in [file saving and export](../06_in_depth_guides/6_1_file_saving_and_data_export.md).
 
 ### Choosing a readable format
 
