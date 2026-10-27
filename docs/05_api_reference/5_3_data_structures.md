@@ -40,6 +40,9 @@ The profile carries the authority used by native to admit controls. These are se
 | `feature_flags` | `int` property | Combined 64-bit feature mask from `feature_flags_low/high`. |
 | `supported_output_mode_mask` | `int` | Authorized output modes. |
 | `max_channel_input_delay_ps` | `int` | Maximum delay for this profile, in ps. |
+| `usb_link_speed` | `int` | USB generation the board enumerated at: `NEXATOM_TT_USB_LINK_SPEED_SUPER` (3, USB 3), `_HIGH` (2, USB 2), `_UNKNOWN` (0). |
+| `fast_tihi_max_input_rate_hz` | uint32 array[4] | Most trigger plus detector events per second each Fast TIHI context can take without dropping pairs; 0 for a context the board does not have. |
+| `dtc_output_latency_ps` | `int` | Fixed latency from input to pulse output (UTT160810); 0 when the image has no supported pulse outputs. See [Pulse outputs](../02_hardware/2_13_dtc_pulse_outputs.md). |
 | `test_pulse_clock_hz`, `test_pulse_min_period_cycles`, `test_pulse_max_period_cycles` | `int` | Clock and period bounds for the internal test pulse. |
 
 Versioned records include size/version fields. High-level getters initialize and validate these; C callers must follow the corresponding declaration.
@@ -53,14 +56,14 @@ Structures utilized for raw event streaming and offline `.nxtt` binary decoding.
 #### `NexatomTimeTag`
 | Field | Type | Description |
 | :--- | :--- | :--- |
-| `timestamp_ps` | `int` (uint64) | Decoded hardware timestamp in picoseconds. It is not Unix wall-clock time; do not assume every host start creates a new zero origin. |
+| `timestamp_ps` | `int` (uint64) | Decoded hardware timestamp in picoseconds. It is not Unix wall-clock time; do not assume every host start creates a new zero origin. In raw mode the SDK extends the board's 59-bit wire time; on the UTT160810 it runs on through the board counter wrap and across output-type changes within a runtime session. |
 | `channel` | `int` (uint8) | Decoded event channel identifier; interpret it using the active image/profile's mapping. |
 
 #### `NexatomTimeTagFileConfig`
 | Field | Type | Description |
 | :--- | :--- | :--- |
 | `format` | `int` | Enum specifying export format (`BINARY`, `CSV`, `TAB`). |
-| `max_file_size_mb` | `int` | File rotation threshold. `0` disables rotation by size. |
+| `max_file_size_mb` | `int` | File rotation threshold in MiB, header included; no file exceeds it. `0` disables rotation by size. |
 | `max_duration_minutes` | `int` | File rotation threshold. `0` disables rotation by time. |
 | `max_event_count` | `int` | File rotation threshold. `0` disables rotation by count. |
 | `rotate_on_acquisition_boundary` | `bool` | Requests supported acquisition-boundary rotation. |
@@ -68,7 +71,7 @@ Structures utilized for raw event streaming and offline `.nxtt` binary decoding.
 | `flush_immediately` | `bool` | Requests file-manager flushing; not a durable-storage guarantee. |
 | `custom_suffix` | byte string | Optional filename suffix (fixed 64-byte field). |
 
-`NexatomProcessedFileConfig` has the same option fields but uses `NEXATOM_PD_FILE_*` formats. Time-tag formats use `NEXATOM_TT_FILE_*`; their integer values are not interchangeable. The aligned host `NexatomTimeTagFileHeader` exposes `magic`, `created_timestamp_us` and `output_data_type`; it is not the serialized disk layout.
+`NexatomProcessedFileConfig` has the same option fields but uses `NEXATOM_PD_FILE_*` formats. Time-tag formats use `NEXATOM_TT_FILE_*`; their integer values are not interchangeable. The aligned host `NexatomTimeTagFileHeader` exposes `magic`, `created_timestamp_us`, `output_data_type` and `format_version` (1 or 2); it is not the serialized disk layout.
 
 ---
 
@@ -85,6 +88,7 @@ Dispatched by `set_count_rate_callback`. Provides high-frequency throughput metr
 | `measurement_period_ms`| `int` | The integration time slice for this packet. |
 | `num_channels` | `int` | Valid channel prefix in the fixed array. |
 | `counts` | uint32 array[8] | Per-channel rates, already in Hz. Do not divide by `measurement_period_ms` again. |
+| `gap_flags`, `gap_ms` | `int` | UTT160810: marks a window in which counting paused (calibration, input-delay change). See [Gaps in a CPS window](../02_hardware/2_10_cps_configuration.md). |
 
 ---
 
@@ -135,7 +139,8 @@ Dispatched by `set_multifold_coincidence_callback`.
 | :--- | :--- | :--- |
 | `pattern_bins` | uint64 array[256] | Index represents the eight-bit channel combination. |
 | `coincidence_window_ps` | `int` | The active coincidence grouping window, in ps. |
-| `singles` | uint64 array[8] | Single-channel pattern counts. |
+| `singles` | uint64 array[8] | Single-channel pattern counts (`singles[i] = pattern_bins[1 << i]`); what they count follows `counting_rule`. |
+| `counting_rule` | `int` | `NEXATOM_MFCO_COUNTING_RULE_PER_HIT` (1), `_PER_EVENT` (2) or `_UNKNOWN` (0, also when the batches of a result differ); see `get_mfco_counting_rule()`. |
 | `num_doubles` | `int` | Total count of 2-fold coincidences. |
 | `num_triples` | `int` | Total count of 3-fold coincidences. |
 | `top_patterns` | `NexatomMfcoTopPattern[10]` | Pattern/count records for the most frequent patterns. |
@@ -162,6 +167,8 @@ Dispatched by `set_multifold_coincidence_callback`.
 | `sampling_period_ns`, `channel_a`, `channel_b` | integers | Sampling period and channel selection. |
 | `normalization_valid` | flag | Whether `g2_values` can be interpreted as normalized g². |
 | `sum_a_counts`, `sum_b_counts`, `sample_count`, `mean_intensity_a`, `mean_intensity_b` | integers/floats | Counts and intensity statistics used for normalization. |
+| `decay_1e_index` | `int` | First lag index whose g2 is at or below `baseline_level + contrast / e` (the 1/e point of the decay); 0 when undefined. A lag index: the lag is `decay_1e_index × sampling_period_ns`. For an autocorrelation, lag 0 is left out of this search and of the peak search for `contrast`. |
+| `num_bins`, `num_bins_auto`, `count_rate` | integers | The samples per batch (N) in force for the latest batch (0 = not known yet), whether the SDK chooses N (`num_bins` set to 0, the default), and the count rate against N: `NEXATOM_CORR_COUNT_RATE_OK` (0), `_NUM_BINS_LOWERED` (1, the SDK lowered N to keep batches from overflowing; the result is valid) or `_TOO_HIGH` (2, overflowed batches are left out of the result). |
 | `result_span`, `status`, `packets_accumulated`, `measurement_duration_ms` | integers | What the result covers, why the latest hardware batch ended, the batches pooled and host duration. |
 | `result_status`, `block_index`, `live_time_ms`, `live_time_exact` | integers/float | Result-model fields; see [result model fields](#result-model-fields). |
 
@@ -184,6 +191,7 @@ Dispatched by `set_multifold_coincidence_callback`.
 | `analysis_result.dls`, `.fcs`, `.dcs` | structures | Technique-specific values; use only the selected result. |
 | `normalization_valid`, `sum_a_counts`, `sum_b_counts`, `sample_count` | flag/integers | Normalization evidence, as for CORL. |
 | `base_sampling_period_ns`, `tau_groups`, `packets_accumulated`, `measurement_duration_ms` | values/arrays | Lag grouping, batches pooled and host duration. |
+| `num_bins`, `num_bins_auto`, `count_rate` | integers | As for CORL. |
 | `result_status`, `result_span`, `block_index`, `live_time_ms`, `live_time_exact` | integers/float | Result-model fields; see [result model fields](#result-model-fields). |
 
 <a id="result-model-fields"></a>
@@ -221,6 +229,7 @@ Dispatched by `set_telemetry_callback` for health monitoring.
 | `temperature_celsius` | `float` | Decoded temperature where supplied by this runtime. |
 | `system_status_word`, `mode_status_word`, `histogram_errors_word` | `int` | Runtime status and error words. |
 | `sync_clock_requested`, `sync_clock_active`, `sync_clock_locked` | `bool` | Separate requested, active and locked states. |
+| `sync_clock_lost_latched`, `sync_clock_lock_failed_latched` | `bool` | The board lost REF IN while running on it / gave up locking; both clear when the request is released. |
 | `calibration_metadata`, `temp_status_flags` | `int` | Runtime-specific calibration/temperature status. |
 
 For cross-runtime code prefer `NexatomTelemetryViewV1` from `get_telemetry_view()` or `set_telemetry_view_callback()`. Its availability flags indicate which fields are present; absent telemetry is unknown, not a zero-valued measurement. A request initiates telemetry delivery; do not assume every runtime broadcasts it periodically.
@@ -265,4 +274,21 @@ Dispatched by `request_config_dump()` for deep hardware debugging.
 
 ### Fast TIHI and DTC records
 
-`NexatomFastTihiConfig` (with four `NexatomFastTihiContext` entries) configures the fast-histogram contexts for `start_fast_tihi()`; `NexatomFastTihiResult` reports one context's result, with `uint64` bins, `run_id`, `lost_windows` and the [result model fields](#result-model-fields). The native callback passes the record by value, bins included. `NexatomDtcOutputConfigV1`, `NexatomDtcApplyResultV1` and `NexatomDtcStatusV1` describe DTC configuration, the hardware apply decision and current status. A class being present in the package does not establish that the connected model supports it. Check profile features before using these controls.
+`NexatomFastTihiConfig` (with four `NexatomFastTihiContext` entries) configures the fast-histogram contexts for `start_fast_tihi()`; `NexatomFastTihiResult` reports one context's result, with `uint64` bins, `run_id`, `lost_windows` and the [result model fields](#result-model-fields). The native callback passes the record by value, bins included. A Fast TIHI click record (`NexatomFastTihiIndexClick`, read from `.nxti` files) holds `trigger_index` (the trigger pulse just before the click, 64 bit), `relative_time_ps` (time from that pulse to the click), `run_id` (the 1 s window), `context` (0–3), `detector_channel`, `trigger_channel` and `flags`. `NexatomDtcOutputConfigV1`, `NexatomDtcApplyResultV1` and `NexatomDtcStatusV1` describe DTC configuration, the hardware apply decision and current status; `NexatomDtcOutputLimits` and `NexatomDtcReapplyStatus` give an output's limits and what the SDK applies again by itself (see [Pulse outputs](../02_hardware/2_13_dtc_pulse_outputs.md)).
+
+### File saving and status records
+
+| Record | Size | Returned by | See |
+|---|---|---|---|
+| `NexatomFileSavingStatistics` | 200 B | `get_file_saving_statistics()` | [File-saving statistics](../06_in_depth_guides/6_1_file_saving_and_data_export.md#ending-a-recording) |
+| `NexatomSavingResult` | 264 B | `get_saving_result()` | [Saving result](../06_in_depth_guides/6_1_file_saving_and_data_export.md#ending-a-recording) |
+| `NexatomIncidentInfo` | 168 B | `get_last_incident()` | same |
+| `NexatomBoardLoss` | 48 B | `get_board_loss()` | same |
+| `NexatomDataFlowStatus` | 56 B | `get_data_flow_status()` | [Keeping up with the data](../06_in_depth_guides/6_1_file_saving_and_data_export.md#keeping-up-with-the-data) |
+| `NexatomStartCheck` | 144 B | `check_start_rate()` | same |
+| `NexatomReferenceClockStatus` | 24 B | `get_reference_clock_status()` | [External clock](../02_hardware/2_8_external_clock.md#reference-clock-status) |
+| `NexatomMeasurementAbort` | 32 B | `get_measurement_abort()` | [Telemetry](../02_hardware/2_11_telemetry.md#measurement-abort) |
+| `NexatomCalibrationHoldState` | 64 B | `get_calibration_hold_state()` | [Calibration](../02_hardware/2_4_calibration.md) |
+| `NexatomChannelInputDelay` | — | `get_channel_input_delay()` | [Synthetic input delay](../02_hardware/2_7_synthetic_input_delay.md) |
+
+The Python records add read-only properties for their flags and text: `NexatomFileSavingStatistics.complete`; `NexatomSavingResult.running`, `span_complete`, `board_check_unavailable` and `detail_text`; `NexatomIncidentInfo.block_logged` and `summary_text`; `NexatomBoardLoss.valid`, `from_marker`, `from_telemetry` and `inputs`; `NexatomMeasurementAbort.aborted` and `cleanup_done`; `NexatomReferenceClockStatus.locked` and `fault_code_valid`; `NexatomCalibrationHoldState.recording`, `fault` and `baseline_valid`. A class being present in the package does not establish that the connected model supports it. Check profile features before using these controls.

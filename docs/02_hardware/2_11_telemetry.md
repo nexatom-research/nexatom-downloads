@@ -93,7 +93,7 @@ The retained `nexatom_telemetry_data_t` (C) or `NexatomTelemetryData` (Python) r
 | `active_channels_mask` | `uint8_t` | Public-channel projection; do not use it as a physical enable mask or control authorization |
 | `calibration_metadata` | `uint8_t` | Calibration engine state (see Section 2.4.3) |
 | `temp_status_flags` | `uint8_t` | Contains the `NEXATOM_TELM_TEMP_STATUS_FIXED_WARNING` flag indicating thermal drift |
-| `sync_clock_*` | `bool` | Booleans indicating external clock state (requested, active, locked) |
+| `sync_clock_*` | `bool` | Booleans indicating external clock state (requested, active, locked), and the latches `sync_clock_lost_latched` and `sync_clock_lock_failed_latched` (see [External clock](2_8_external_clock.md#reference-clock-status)) |
 
 #### Versioned view: check validity before reading a group
 
@@ -105,12 +105,38 @@ The retained `nexatom_telemetry_data_t` (C) or `NexatomTelemetryData` (Python) r
 | `NEXATOM_TT_TELEMETRY_VIEW_HAS_COMPLETE_STATUS` | Complete system/error words and physical activity diagnostics |
 | `NEXATOM_TT_TELEMETRY_VIEW_HAS_DTC_STATUS` | Digital timing output status/rejection fields |
 | `NEXATOM_TT_TELEMETRY_VIEW_UNKNOWN_VERSION` | A framed version whose full layout is not known to this SDK |
+| `NEXATOM_TT_TELEMETRY_VIEW_HAS_INPUT_ENABLE` | `input_enable_mask`: the per-input on/off mask the board uses (bit *k* = input *k*, 1 = on); see [Switching inputs on and off](2_2_input_channels.md#switching-inputs-on-and-off) |
+| `NEXATOM_TT_TELEMETRY_VIEW_HAS_COARSE_COUNTER` | `coarse_counter`: the board's coarse time counter at the telemetry snapshot, in 4 ns counts (board time = `coarse_counter` × 4000 ps) |
+
+The view also carries `reference_fault_code` (the external reference fault code, see [External clock](2_8_external_clock.md#reference-clock-status)). The view record is 272 bytes (`NEXATOM_TT_TELEMETRY_VIEW_V1_SIZE`, version 1); a caller still needs only 248 bytes and receives the bytes its `struct_size` covers. The field formerly used for a pulse-output runtime fault mask is reserved and reads zero.
 
 Fields absent from a frame are zero with their validity bit clear. Thus zero temperature, no error flags or an inactive output mask must not be interpreted as measured facts unless the corresponding field group is valid. Similarly, a physical mask or mirrored feature bit is diagnostic information; `device.get_device_profile()` remains the source of runtime control authority.
 
 For example, a valid complete status view can distinguish “all TDC calibration ready” from a TDC calibration error using the documented `NEXATOM_TT_TELEMETRY_VIEW_SYSTEM_*` and `NEXATOM_TT_TELEMETRY_VIEW_ERROR_*` masks. The complete reference, including DTC fields, is in [Telemetry C API](../07_c_api/7_15_telemetry.md).
 
 The same word carries the sticky [transport-stop record](../07_c_api/7_15_telemetry.md#transport-stop-record): if the instrument's on-board buffer fills or its data transport fails, the instrument stops the measurement and counts the stop there until the next peripheral reset. The SDK reports it and does not restart the measurement.
+
+<a id="measurement-abort"></a>
+
+### Measurement abort (UTT160810)
+
+When the UTT160810's on-board buffer fills, or its memory reports a protocol error, the instrument stops the measurement by itself. The SDK detects this from the transport-stop record and then:
+
+- stops the measurement on the host side and disables the active file saving, which closes the files;
+- logs an ERROR whose message starts with `measurement aborted:` and names the reason;
+- publishes one final `STOPPED` result for every run the abort ended;
+- restores the pulse outputs by itself: it applies the remembered settings again, switches the system and the global enable back on if this session had them on, and writes the last pulse generator mask again (see [Pulse outputs](2_13_dtc_pulse_outputs.md#automatic-re-apply)).
+
+Nothing else restarts: configure file saving and the measurement again and start them. `get_measurement_abort()` (C: `nexatom_tt_get_measurement_abort()`, 32-byte record) reports the abort:
+
+| Field | Meaning |
+|---|---|
+| `flags` | `NEXATOM_TT_MEASUREMENT_ABORT_ABORTED` (the measurement was aborted), `_CLEANUP_DONE` (the SDK's cleanup has finished), `_BASELINE_VALID` |
+| `reset_count`, `baseline_count` | The board's stop count that raised the abort, and the count at connect or measurement start |
+| `error_word` | The complete telemetry error word at the abort |
+| `reason` | `NEXATOM_TT_MEASUREMENT_ABORT_REASON_INSTRUMENT_BUFFER_FULL` (0), `_DDR_PROTOCOL_ERROR` (1), or `_BUFFER_FULL_OR_DDR_PROTOCOL_ERROR` (2) when the cause cannot be told apart |
+
+The flags are cleared by the next measurement start.
 
 ### Configuration register dump
 
@@ -144,5 +170,9 @@ def on_config_dump(data):
 device.set_config_dump_callback(on_config_dump)
 device.request_config_dump()
 ```
+
+#### Latest configuration dump (UTT160810)
+
+The SDK keeps the latest configuration dump of the session whether or not a callback is registered. `get_latest_config_dump()` (Python, returns `NexatomConfigDumpViewV1`; C: `nexatom_tt_get_latest_config_dump(device, records, capacity, &count, &config_version)`) copies it without asking the board. In C, call it with `records = NULL` and `capacity = 0` to learn the record count first. Before the first dump of the session arrives the count is 0: call `request_config_dump()` with the processed output type selected and ask again. The UTT810 has no configuration dump; the call returns `NEXATOM_ERROR_NOT_SUPPORTED` there.
 
 At the C boundary, the full configuration-dump view contains a borrowed pointer to register pairs; copy those records before returning if you need them later. Python's `set_config_dump_view_callback()` wrapper supplies an owned copy of the view and its records, which the callback can retain. See [Callback Thread Safety and Data Lifetime](../06_in_depth_guides/6_5_callback_thread_safety_and_data_lifetime.md) for both cases.

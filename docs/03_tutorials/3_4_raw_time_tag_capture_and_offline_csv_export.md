@@ -13,12 +13,13 @@ Raw output records individual timestamped events rather than histograms or rates
 4.  **Start File Writer:** Call `device.enable_time_tag_file_saving(base_prefix, NEXATOM_TT_FILE_BINARY)` before enabling producers. A fresh `raw-<id>` directory prevents older captures from being mistaken for this run's data.
 5.  **Hardware Output Mode:** Select `RAW_TAGS` with `device.set_output_type(NEXATOM_OUTPUT_RAW_TAGS)`. This workflow records events; it does not depend on receiving CPS/TIHI/MFCO processed callbacks during raw output.
 6.  **Enable System:** The FPGA data shuffler is enabled (`device.enable_system(True)`) to commence the raw data flow over the USB interface.
-7.  **Acquisition & Safe Teardown:** The main thread sleeps for the duration of the capture. To prevent file corruption or trailing incomplete packets, the script executes a strict shutdown sequence:
+7.  **Acquisition & Safe Teardown:** The main thread sleeps for the duration of the capture. To prevent file corruption or trailing incomplete packets, the script executes a strict shutdown sequence and attempts every step even after an earlier one failed:
     *   Disable any test pulses enabled by this run.
+    *   Finalize saving with `device.disable_time_tag_file_saving()` while the output is still `RAW_TAGS`. This is the user's stop, and the file records the end as "stopped by user". Switching to `NO_OUTPUT` first is also a normal end, but the saving then ends at the switch and records "the measurement type changed".
+    *   Read `device.get_file_saving_statistics()`. Its `complete` flag says whether every raw tag the file stage received was written, with nothing dropped and no write failure; the script fails the run when it is false.
     *   Quiet output (`device.set_output_type(NEXATOM_OUTPUT_NO_OUTPUT)`) and disable the system.
-    *   Finalize saving with `device.disable_time_tag_file_saving()`.
     *   Check `device.disconnect()`; report cleanup errors even when capture produced data.
-8.  **Offline Decoding:** Once files are finalized, the script opens every new `.nxtt` file with `NexatomTimeTagReader`. It counts events and computes within-channel intervals; `--decode-csv` additionally writes a CSV for each file and checks that its exported row count matches the independent reader count.
+8.  **Offline Decoding:** Once files are finalized, the script opens every new `.nxtt` file with `NexatomTimeTagReader`. It counts events and computes within-channel intervals; `--decode-csv` additionally writes a CSV for each file with `reader.export_csv()` and checks that its exported row count matches the independent reader count. The export always writes the whole file, however far the reader has been read.
 
 ### Execution
 
@@ -36,7 +37,7 @@ Read <event-count> time tags from <file-count> new .nxtt files.
 
 ### Read individual events
 
-Each exported row contains an integer `timestamp_ps` and a `channel`. The timestamp is an instrument clock value, not Unix time. The following fragment reads a finalized file without connecting hardware:
+The exported CSV starts with three lines that begin with `#`: what the file is, with the recording time and the source file; what each column means; and the tag count with the inputs that recorded them and how the saving ended (for example `# 3 tags on Inputs 2, 4, confirmed; ended: stopped by user`). Then come the heading row `Event time (ps),Input` and one row per event in recorded order. `Event time (ps)` is an integer instrument clock value in picoseconds, not Unix time; read it as a 64-bit integer, never as a float. `Input` counts from 1, as the application does: Input N is channel N-1. The reader, the `.nxtt` file and the C API keep the 0-based channel. The following fragment reads a finalized file without connecting hardware:
 
 ```python
 from nexatomtt import NexatomLibrary
@@ -60,7 +61,18 @@ Use an actual finalized filename in place of `capture.nxtt`. The complete exampl
 | Output | Contents |
 |---|---|
 | `.nxtt` | Native binary event recording, including file metadata |
-| `.csv` with `--decode-csv` | One decoded timestamp/channel pair per row |
-| `raw_summary.json` | Requested settings, counts, interval statistics and failure/cleanup details |
+| `.csv` with `--decode-csv` | Three `#` header lines, the heading row `Event time (ps),Input`, then one row per event |
+| `raw_summary.json` | Requested settings, counts, interval statistics, the file-saving statistics and failure/cleanup details |
+
+### Exporting a recording later
+
+`python/examples/export_time_tags.py` turns a saved recording into a CSV or TAB file without a board:
+
+```powershell
+python python/examples/export_time_tags.py --home . captures/raw-1/capture_TAGS_0001.nxtt
+python python/examples/export_time_tags.py --home . captures/raw-1 --series-key capture_TAGS --format tab
+```
+
+The first form exports one file. The second exports a whole series (the rotated files `capture_TAGS_0001.nxtt`, `_0002`, ... of one recording) as one file; `--seq-start` and `--seq-end` pick part of it. `--no-header` writes the rows only, for tools that read plain columns, and `--output` names the output file (its folder must exist). By default the output is written beside the input; an existing file is replaced, and a failed export leaves no file. The library call behind it is `NexatomLibrary.export_time_tags()` (C: `nexatom_tt_export_time_tags()`); see [Time-tag export](../06_in_depth_guides/6_2_offline_time_tag_binary_decoder.md#time-tag-export).
 
 The native live time-tag saver also supports CSV and TAB; binary followed by offline export is the workflow shown here. Processed histograms use the separate processed-file API. See [file saving](../06_in_depth_guides/6_1_file_saving_and_data_export.md) for the format choices.

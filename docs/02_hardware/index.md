@@ -1,6 +1,6 @@
 # Hardware
 
-This chapter explains the UTT810 hardware interface as exposed through SDK 0.1.0-preview.18.2: how to connect an instrument, configure its inputs, choose an output path, and interpret hardware status. The native library owns the FTDI transport, protocol selection and hardware commands. Examples use physical units and the resolved device profile rather than raw register writes.
+This chapter explains the UTT810 hardware interface as exposed through SDK 0.1.0-preview.22.62: how to connect an instrument, configure its inputs, choose an output path, and interpret hardware status. The native library owns the FTDI transport, protocol selection and hardware commands. Examples use physical units and the resolved device profile rather than raw register writes.
 
 | Property | Value |
 |---|---|
@@ -17,15 +17,16 @@ The firmware advertises identity/layout/features, and the API resolves the suppo
 
 | Section                                               | Topic |
 |-------------------------------------------------------|---|
-| [Operating Conditions](2_1_operating_conditions.md)   | USB connection, device discovery, state machine, protocol modes |
-| [Input Channels](2_2_input_channels.md)               | Threshold, edge type, hysteresis, routing, test pulses |
+| [Operating Conditions](2_1_operating_conditions.md)   | USB connection, device discovery, state machine, pulled cable and re-plug, connect and disconnect, protocol modes |
+| [Input Channels](2_2_input_channels.md)               | Threshold, edge type, hysteresis, routing, test pulses, switching inputs on and off |
 | [Data Connection](2_3_data_connection.md)             | Output modes, CPS period, data flow architecture |
 | [Calibration](2_4_calibration.md)                     | Calibration data and workflow |
 | [LEDs](2_5_leds.md)                                   | Channel LEDs and RGB LED control |
 | [Test Signal](2_6_test_signal.md)                     | Internal test pulse generator |
 | [Synthetic Input Delay](2_7_synthetic_input_delay.md) | Per-channel input delay |
-| [External Clock Input](2_8_external_clock.md)         | Capability check, reference request and lock/active verification |
+| [External Clock Input](2_8_external_clock.md)         | Capability check, reference request, reference clock status, automatic relock, 10 MHz reference output |
 | [System Control](2_9_system_control.md)               | System enable, peripheral reset and global stop |
 | [Counts per Second (CPS)](2_10_cps_configuration.md)   | CPS measurement, normalized rates and period selector |
-| [Telemetry](2_11_telemetry.md)                        | Device health, temperature, status validity and configuration dumps |
+| [Telemetry](2_11_telemetry.md)                        | Device health, temperature, status validity, measurement abort and configuration dumps |
 | [Bootloader Handoff](2_12_runtime_handoff.md)          | Native runtime entry and runtime ↔ service transitions |
+| [Pulse Outputs](2_13_dtc_pulse_outputs.md)            | UTT160810 pulse outputs: fixed output latency, merge rule, pulse generators, automatic re-apply |

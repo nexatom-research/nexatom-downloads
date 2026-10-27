@@ -47,11 +47,34 @@ When a log passes the internal filters, it is dispatched to the host via a `nexa
 *   **`timestamp`**: ISO-8601 UTC string.
 *   **`module`**: The `nexatom_log_module_t` enum.
 *   **`level`**: The `nexatom_log_level_t` enum.
-*   **`category`**: A `nexatom_log_category_t` bitmask (`STATE_CHANGE`, `PACKET_SUMMARY`, `REGISTER_WRITE`, `ERROR_CONDITION`, `PERFORMANCE`, `INITIALIZATION`). This allows host applications to filter logs semantically without parsing the raw message string.
+*   **`category`**: A `nexatom_log_category_t` bitmask (`STATE_CHANGE`, `PACKET_SUMMARY`, `REGISTER_WRITE`, `ERROR_CONDITION`, `PERFORMANCE`, `INITIALIZATION`, `LIVE_CHANGE`). This allows host applications to filter logs semantically without parsing the raw message string.
 *   **`sequence_id`**: A monotonically increasing integer.
 *   **`repeat_count`**: Number of times this exact message was suppressed to prevent log flooding.
 *   **`message_length`**: Length of the copied UTF-8 message.
 *   **`message`**: A null-terminated character buffer (up to 1024 bytes).
+
+<a id="live-change-lines"></a>
+
+### Live-change lines
+
+The category `NEXATOM_LOG_CATEGORY_LIVE_CHANGE` (`0x40`) gives one INFO line (module `DEVICE`) for each live change and its effect, so that a session can be traced from its log alone. It is on in the default configuration (supported and default category masks `0x7F`), and its lines are never collapsed by repetition suppression. A configuration that leaves `0x40` out of the enabled category mask, or out of a module's category mask, switches it off.
+
+Every line reads `LIVE <EVENT> board=<model> <serial> <subject> <details> src=sdk|board`. The subject is `input=<n> (id <id>)` with n = id + 1, the application's input number. `src=board` marks what the board itself reported (telemetry); `src=sdk` marks the SDK's own action.
+
+| Event | Logged when |
+|---|---|
+| `DELAY_COMMITTED` | An input-delay write was sent to the board (`old=`, `new=`); a same-value write the SDK skips on the UTT810 reads `skipped (same value)` |
+| `EDGE_CHANGED` | An input edge changed (`old=`, `new=`, `recalibration=started` or `unknown`) |
+| `CALIBRATION_STARTED` | A calibration started: `cause=manual`, `edge`, `time`, `temperature` or `unknown` |
+| `FENCE_START` / `FENCE_END` | The board held / released its data for a calibration or a delay change (`cause=calibration` or `delay`; `FENCE_END` carries `duration_ms`) |
+| `TRANSPORT_LOST` | A pulled USB cable ended the session (`connection_id=`, `after=` the time since connect) |
+| `SESSION_RESTORED` | The same handle has a new session after the re-plug (`after=` the time since the loss) |
+
+<a id="incident-blocks"></a>
+
+### Incident blocks
+
+When something goes wrong that support needs to see (for example a recording that ends through the SDK's or the board's fault, or a calibration that stays active too long), the SDK raises an incident and writes a block of log lines that all start with `INCIDENT <id> `: what happened, the board, the host, the state, the latest telemetry and the last board writes, and for a save end its result and files. Incident lines are ERROR level, ERROR category, and reach the log callback whatever the module, level or category filters say. A rate limit per process and minute keeps a burst of incidents from flooding the log. `get_last_incident()` returns the id and a short summary; the saving result carries the id of the incident that ended a recording. Keep the block with a support request.
 
 ### [Configuration functions](6_3_logging_system.md#configuration-functions)
 

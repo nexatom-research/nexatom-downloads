@@ -18,6 +18,8 @@ The data connection carries all traffic between the host and device:
 
 > **Throughput.** The USB signaling rate is not the sustained time-tag or file-writing rate. A connection negotiated below SuperSpeed provides less bandwidth; it is not a substitute for checking a capture at the intended count rate. For high-bandwidth `RAW_TAGS` use, connect to a dedicated USB 3.0 port.
 
+> **USB link speed.** The SDK reports the USB generation the board enumerated at: `nexatom_tt_info_t.usb_link_speed` from discovery (and from `nexatom_tt_get_device_info()` for the open board) and `usb_link_speed` in the device profile. `NEXATOM_TT_USB_LINK_SPEED_SUPER` (3) is USB 3; `NEXATOM_TT_USB_LINK_SPEED_HIGH` (2) is USB 2, where the rate the board can deliver drops about tenfold; `NEXATOM_TT_USB_LINK_SPEED_UNKNOWN` (0) means no board is open or the transport cannot tell. Show a USB 2 link to the user. `check_start_rate()` uses it to refuse a start that the link can never carry (see [File saving and data export](../06_in_depth_guides/6_1_file_saving_and_data_export.md#keeping-up-with-the-data)).
+
 > **Cable and hub requirements.** Prefer a direct USB 3.0 cable connection between the device and host. A hub adds another shared bandwidth and power dependency. Follow the supplied instrument's power and connector specifications; the SDK's threshold settings do not specify electrical input ratings or how the instrument is powered.
 
 ### Device discovery and enumeration
@@ -58,7 +60,7 @@ for d in devices:
 
 #### Device info struct (`nexatom_tt_info_t`)
 
-Each discovered device is described by a `nexatom_tt_info_t` struct containing six null-terminated string fields, each with a 256-byte capacity including the terminator (`NEXATOM_MAX_STRING_LENGTH`):
+Each discovered device is described by a `nexatom_tt_info_t` struct containing six null-terminated string fields, each with a 256-byte capacity including the terminator (`NEXATOM_MAX_STRING_LENGTH`), followed by the `uint32_t` field `usb_link_speed`:
 
 | Field | Description | Example |
 |---|---|---|
@@ -68,6 +70,9 @@ Each discovered device is described by a `nexatom_tt_info_t` struct containing s
 | `device_name` | Transport/device description; do not select a protocol from this text | (device-specific) |
 | `connection_type` | Transport type | `FTDI` |
 | `connection_id` | `usb:` followed by the USB port path. This is the board's identity: it selects the board at connect | `usb:PCIROOT(0)#PCI(0801)#PCI(0004)#USBROOT(0)#USB(4)` (Windows), `usb:2-1.3` (Linux) |
+| `usb_link_speed` | `NEXATOM_TT_USB_LINK_SPEED_*` the board enumerated at (see above). Ignored by `nexatom_tt_create()` | `3` (USB 3) |
+
+On Windows, a board that does not use the Nexatom USB driver cannot be opened and gets no discovery entry. `nexatom_tt_count_boards_not_using_nexatom_driver(&count)` (Python: `NexatomLibrary.count_boards_not_using_nexatom_driver()`) counts such boards without opening them, so an application can tell the user why a plugged-in board is missing. On Linux it always returns 0.
 
 #### Board identity: `connection_id`
 
@@ -119,6 +124,34 @@ The native API resolves these internally. An application does not need a model s
 
 **Automatic reconnection** is off by default. `set_auto_reconnect(True)` makes the library retry in the background after a working link drops (a cable pull). It never opens the first connection, and an explicit `disconnect()` turns it off until the next successful connect. A reconnect goes only to the same `connection_id`. When the board there reports its identity, the SDK compares product model, hardware revision and instrument serial with the instrument that the explicit connect saw. If a different instrument now sits in that port, the SDK refuses it with an error beginning `Auto-reconnect refused:` that names both instruments, disconnects the handle and stops retrying. Readiness after a reconnect is reported through the connection status callback.
 
+`auto_reconnect_state()` (C: `nexatom_tt_get_auto_reconnect_state()`) tells the application where automatic reconnection stands without reading the last error:
+
+| Value | Constant | Meaning |
+|---|---|---|
+| 0 | `NEXATOM_AUTO_RECONNECT_OFF` | Off: the default, `set_auto_reconnect(False)`, or after an explicit `disconnect()` |
+| 1 | `NEXATOM_AUTO_RECONNECT_ON` | The handle comes back by itself after a lost link |
+| 2 | `NEXATOM_AUTO_RECONNECT_REFUSED_OTHER_INSTRUMENT` | A different instrument was found in the port and refused; automatic reconnection is now off |
+
+<a id="pulled-cable-and-re-plug"></a>
+
+#### Pulled cable and re-plug
+
+A pulled USB cable ends the session in a bounded time. When the link has brought no data for 1 s, or a read fails, the SDK asks the operating system whether a board is still present at the handle's `connection_id`; only a port that is gone on two checks 100 ms apart counts. A quiet, slow or idle board is never taken for a pulled cable. Then:
+
+- the connection status callback reports `connected=0, ready=0`, within about 1.6 s of the operating system removing the device;
+- the session is torn down like `disconnect()`: data still in flight is dropped, and a recording in progress ends with the end reason `DISCONNECTED` (`TRANSPORT_ERROR` if read errors were counted first);
+- the log records `USB link lost: no FT601 is present at usb:<port> any more` and the line `LIVE TRANSPORT_LOST` (log category `LIVE_CHANGE`).
+
+The handle itself stays usable. After the re-plug it gets a new session on the same handle: by itself with automatic reconnection on, or when the application calls `connect()` again. Destroying the handle and creating a new one also works.
+
+- Every callback registered on the handle stays registered. The connection status callback reports `0, 0` at the loss, then `1, 0` and `1, 1` for the new session. No data callback runs in between, and no late packet of the ended session reaches the application.
+- Only the same instrument is taken: the same `connection_id` and, once the board reports its identity, the same model, hardware revision and instrument serial. Another instrument in that port is refused as described above; an explicit `connect()` then takes it knowingly.
+- A board that comes back in its bootloader (for example after a power cut) is not booted by the SDK. Its session is reported `1, 0`, `hardware_protocol_mode()` reads `BOOTLOADER`, and the application boots a slot or leaves the board as it is.
+- Nothing restarts by itself: no run, recording, pulse output, raw stream or setting. The new session starts like a first connect, and the application restores its settings. The ended recording keeps its result (`get_saving_result()`) until the next recording starts.
+- Between the loss and the new `1, 0`, every session call returns `NEXATOM_ERROR_NOT_CONNECTED` at once, without waiting. Only handle-level calls work in that gap: create, destroy, `connect()`, `connect_runtime()`, `disconnect()`, `is_connected()`, the callback setters and `clear_callbacks()`, `set_auto_reconnect()`, `auto_reconnect_state()`, the identity inputs, `get_saving_result()`, `get_device_info()` and `state()`.
+- An explicit `disconnect()` in the gap stops the automatic reconnect.
+- When the new session is ready, the log records `LIVE SESSION_RESTORED`.
+
 ### Connection management and state machine
 
 After discovery, the host creates a device handle, connects, and manages the device through a well-defined state machine.
@@ -143,6 +176,38 @@ if (rc == NEXATOM_SUCCESS) {
     nexatom_tt_destroy(device);  /* Releases the handle; returns void. */
 }
 ```
+
+<a id="what-connect-leaves-on-the-board"></a>
+
+#### What connect leaves on the board
+
+Every connect to a runtime board leaves it idle. Before control is granted, the SDK switches the board's engines off, selects `NEXATOM_OUTPUT_NO_OUTPUT` and drops whatever the board still sends. After connect the system-enable bit is set again with the output off, so the board sends nothing until the application selects an output type.
+
+When the SDK takes over a board that an earlier session left running (for example after the application was killed, or after a re-plug), it also gives it a clean start:
+
+- **UTT810:** stops and disables the time histogram, multi-fold coincidence and intensity engines, turns the test pulses off and resets the data path.
+- **UTT160810:** stops a Fast TIHI run, stops and disables the same engines, turns the test pulses off, switches the pulse generators off (periods back to 1 µs), switches the pulse outputs off globally and switches every input on.
+- On images with automatic calibration, the SDK writes the automatic calibration policy off once per session; send your calibration policy again after every connect (see [Calibration](2_4_calibration.md)).
+
+The input settings (delay, edge, threshold, hysteresis) are kept. All these writes are queued before the session is reported ready, so a setting the application writes afterwards always reaches the board after them.
+
+<a id="disconnect"></a>
+
+#### Disconnect
+
+`disconnect()` is bounded at every wait and drops data still in flight; nothing is drained. Disable file saving and read the file-saving statistics before disconnecting when completeness matters.
+
+Board writes are different: disconnect delivers them. Every setter returns once its write is queued, and the writes reach the board in call order. `disconnect()` sends every write still queued, then a telemetry request, and waits at most 1.5 s for the answer that shows the earlier writes arrived. A teardown such as system off, `NO_OUTPUT` and test pulses off, followed directly by `disconnect()`, leaves the board in that state; no sleep or poll is needed in between.
+
+| Outcome | Return |
+|---|---|
+| The board answered after the writes | `NEXATOM_SUCCESS` (INFO log line) |
+| Every write was sent, but the board did not answer within 1.5 s | `NEXATOM_SUCCESS` (WARN log line) |
+| A write never reached the board (cable pulled, link failure, or the time bound ran out) | `NEXATOM_ERROR_CONFIGURATION_FAILED`; the WARN line names the writes that were dropped, and the last error message starts with "Physical disconnect completed, but" |
+
+In the last case the board is closed all the same, and the next session starts from whatever the board holds; set those values again after connecting.
+
+Disconnect then performs its own cleanup: system off, `NO_OUTPUT`, test pulses off; every analysis engine this session enabled and did not disable is switched off, and a Fast TIHI run this session started is stopped. It also stops the 10 MHz reference clock output, switches automatic reference relock back on, switches every input back on and switches the pulse generators off. A session that ends without a disconnect (the application was killed, the cable was pulled) leaves the board as it was; the next connect gives it the clean start described above.
 
 #### Device state machine (`nexatom_tt_state_t`)
 
@@ -246,6 +311,9 @@ print("Maximum configurable TIHI bins:", caps.max_histogram_bins)
 | `supported_output_mode_mask` | Permitted output modes, indexed by output-mode enum value |
 | `max_channel_input_delay_ps` | Resolved maximum delay accepted for this model/image |
 | `test_pulse_clock_hz`, `test_pulse_min_period_cycles`, `test_pulse_max_period_cycles` | Timing and bounds for the internal test source |
+| `usb_link_speed` | USB generation the open board runs on (`NEXATOM_TT_USB_LINK_SPEED_*`) |
+| `fast_tihi_max_input_rate_hz[4]` | Most trigger plus detector events per second each Fast TIHI context can take without dropping pairs; 0 for a context the board does not have and on boards without Fast TIHI |
+| `dtc_output_latency_ps` | Fixed latency of the pulse outputs, added to every programmed delay; 0 when the image does not pair pulse outputs with this SDK (see [Pulse outputs](2_13_dtc_pulse_outputs.md)) |
 
 In C, initialize `nexatom_tt_device_profile_v1_t.struct_size` and `struct_version` before calling `nexatom_tt_get_device_profile_v1()`. See [Device Connection](../07_c_api/7_4_device_connection.md) for the full record contract.
 

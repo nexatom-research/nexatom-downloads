@@ -37,7 +37,7 @@ The library version above is the host software. The instrument's runtime reports
 | Constant | Value | Runtimes |
 | :--- | :--- | :--- |
 | `NEXATOM_TT_DEVICE_PROTOCOL_ABI_1_0` | `0x00010000` | Earlier UTT160810 images |
-| `NEXATOM_TT_DEVICE_PROTOCOL_ABI_1_1` | `0x00010001` | Current images: `Z080_004` (UTT810) and `K168_004` (UTT160810) |
+| `NEXATOM_TT_DEVICE_PROTOCOL_ABI_1_1` | `0x00010001` | Current images: `Z080_005` (UTT810) and `K168_005` (UTT160810); also the superseded `Z080_004` and `K168_004` |
 
 This SDK recognises runtime ABI 1.0 and 1.1 exactly. A minor revision adds records and registers without changing existing ones, but the SDK never masks off the minor: a revision it does not know is refused rather than assumed compatible. Original UTT810 units without a bootloader report no device protocol ABI and are recognised through their legacy contract.
 

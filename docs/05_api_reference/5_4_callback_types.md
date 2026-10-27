@@ -29,7 +29,7 @@ Event callbacks report state changes or progress rather than histogram data. Reg
 
 | Registration Method | Expected Python Signature | Trigger Condition |
 | :--- | :--- | :--- |
-| `set_connection_status_callback` | `def on_status(connected: bool, ready: bool) -> None:` | Fires when the link drops (`connected=False`) or the device becomes ready (`ready=True`), including after an automatic reconnect. Registering only observes the connection; it does not open one. |
+| `set_connection_status_callback` | `def on_status(connected: bool, ready: bool) -> None:` | Fires when the link drops (`connected=False`) or the device becomes ready (`ready=True`), including after an automatic reconnect. Registering only observes the connection; it does not open one. After a pulled cable it reports `False, False` within about 1.6 s; a re-plug on the same handle then reports `True, False` and `True, True` (see [Pulled cable and re-plug](../02_hardware/2_1_operating_conditions.md#pulled-cable-and-re-plug)). |
 | `set_log_callback` *(Global Library Method)* | `def on_log(record: NexatomLogRecord) -> None:` | Fires whenever an internal SDK module emits a log message that passes the configured severity thresholds. |
 | *(Passed as argument to firmware loader)* | `def on_progress(progress: NexatomFieldUpdateProgress) -> None:` | Fires continuously during a firmware flash to report state machine phases and completion percentages. |
 

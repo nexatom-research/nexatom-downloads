@@ -41,10 +41,45 @@ loading firmware. Original Zynq without a bootloader connects directly to runtim
 
 ## Version scope and migration
 
-This edition describes **SDK 0.1.0-preview.18.2**. Keep the complete extracted package,
+This edition describes **SDK 0.1.0-preview.22.62**. Keep the complete extracted package,
 including its native library, Python modules, header, dependencies and notices.
 The native library's version string and the SDK archive version are separate
 identifiers; use the package manifest to identify the installed SDK.
+
+Changes since the preview.18.2 edition:
+
+- **Firmware catalogue 4.** The package carries `Z080_005.bin` (UTT810) and
+  `K168_005.bin` (UTT160810) as the current images, with `Z080_004.bin` and
+  `K168_004.bin` as superseded images. Both current images require this SDK
+  (0.1.0-preview.22.43 or later).
+- **Connection.** Every connect leaves the board idle: output off, nothing
+  running. A pulled USB cable is detected and the same handle reconnects to
+  the same instrument when it is plugged back in. `disconnect()` delivers
+  queued writes first and has a bounded duration.
+- **Recordings.** Each recording has a saving result with an end reason, a
+  set save end (time or count), a data-flow status, a board-loss record and
+  a start-rate check. File-saving statistics are version 2 (200 bytes).
+- **File formats.** `.nxtt` and `.nxti` files carry an end record and a
+  checksum (format 2). Text files have a three-line header and a closing
+  line. Inputs are counted from 1 in text files.
+- **Time-tag export.** The library converts `.nxtt` files (or a whole
+  series) to CSV/TAB, also as a background job with progress and cancel.
+  Fast TIHI index files have their own reader and export.
+- **Inputs and clocks.** Inputs can be switched on and off one by one. The
+  10 MHz reference output, the external reference status and automatic relock
+  have their own calls.
+- **UTT160810 pulse outputs.** The DTC outputs have a fixed output latency,
+  a merge rule for pulses that come too close, internal pulse generators and
+  automatic re-apply after a restart.
+- **Correlators and MFCO.** The correlator bin count can be chosen
+  automatically; MFCO records state their counting rule.
+- **Field update.** Boot and load requests can name the firmware version and
+  device ABI they expect and return what the booted board reports. In C,
+  `nexatom_tt_load_field_update_image()` takes an optional read-back record as
+  a fifth argument, and `nexatom_tt_boot_field_update_slot()` takes a boot
+  request record and an optional read-back record instead of a slot index.
+- **File-saving statistics.** C callers set `struct_version` 2 and a 200-byte
+  record; whether a recording is whole is its `span_complete` flag.
 
 Changes since the preview.8 edition:
 

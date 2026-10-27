@@ -47,6 +47,20 @@ When a registered `nexatom_count_rate_callback` is invoked, it receives the `nex
 | `measurement_period_ms` | `uint32_t` | The actual measurement window in milliseconds (1000 or 100). |
 | `num_channels` | `uint8_t` | Number of entries in the public CPS record; it is not a grant to configure physical channels. |
 | `counts` | `uint32_t[8]` | Per-channel normalized rates in events/second. Use the packet layout and effective public mask when selecting entries. |
+| `gap_flags` | `uint32_t` | `NEXATOM_TT_CPS_GAP_*` bits; 0 = no gap marked for this window (see below). |
+| `gap_ms` | `uint32_t` | Length of the marked gap in ms. |
+
+#### Gaps in a CPS window (UTT160810)
+
+On the UTT160810, a calibration or an input-delay change makes the board stop counting for a short time. `gap_flags` marks the window that contains such a gap; the rates of a marked window are still per second over `measurement_period_ms` of counting.
+
+| Bit | Constant | Meaning |
+|---|---|---|
+| `1u << 0` | `NEXATOM_TT_CPS_GAP_FENCE_PAUSED` | The board held counting inside this window; `gap_ms` is the time it held, reported by the board |
+| `1u << 1` | `NEXATOM_TT_CPS_GAP_WINDOW_DISCARDED` | Older UTT160810 images discard the window that is open when counting stops; the SDK marks the first window after it, and `gap_ms` is the SDK's estimate of the time no window covers |
+| `1u << 2` | `NEXATOM_TT_CPS_GAP_HELD_SATURATED` | With `FENCE_PAUSED`: the held time reached the board's limit (32767 ms); the real time was at least `gap_ms` |
+
+On the UTT810, a calibration darkens every input while the window keeps counting, so the count rate reads a true 0 for that time and no gap flag is set.
 
 For example, one event in a 100 ms hardware window is delivered as `counts[channel] == 10` CPS. Do not divide this public value by 0.1 again. The `measurement_period_ms` field remains 100, even though `counts` and `total_count` have been converted to rates.
 

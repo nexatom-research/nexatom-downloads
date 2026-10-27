@@ -29,7 +29,7 @@ If aborting a pending request, use `clear_field_upgrade_service_entry_request()`
 
 ### Bootloader-first boot orchestration
 
-Because an instrument may power on in runtime or service, the native `connect_runtime()` operation performs the common measurement startup. It leaves an already usable runtime in its current acquisition/output mode, or boots an existing valid image when needed, and returns success only after decoded runtime identity and control authorization are established. It never loads firmware or changes the stored default slot.
+Because an instrument may power on in runtime or service, the native `connect_runtime()` operation performs the common measurement startup. It attaches to an already usable runtime and leaves it idle, with the output off and nothing running (see [What connect leaves on the board](2_1_operating_conditions.md#what-connect-leaves-on-the-board)), or boots an existing valid image when needed, and returns success only after decoded runtime identity and control authorization are established. It never loads firmware or changes the stored default slot.
 
 #### C API
 
@@ -80,7 +80,7 @@ A requested slot must be `VALID`; a missing/invalid preferred slot is rejected. 
 
 ### Post-boot USB re-enumeration and device identity
 
-The explicit `nexatom_tt_boot_field_update_slot()` / `device.boot_field_update_slot()` operation is synchronous with native runtime startup: success requires usable decoded runtime identity and controls. Retain the same handle and registered callbacks. Do not recreate it, issue another peripheral reset or repeat startup register writes after success.
+The explicit `nexatom_tt_boot_field_update_slot()` / `device.boot_field_update_slot()` operation is synchronous with native runtime startup: success requires usable decoded runtime identity and controls. Retain the same handle and registered callbacks. Do not recreate it, issue another peripheral reset or repeat startup register writes after success. The boot call can also check the firmware version and device ABI the booted runtime reports, and return what it reported (see [Booting a slot](../01_getting_started/1_4_firmware.md#slot-management)).
 
 The FTDI bridge may remain enumerated throughout the firmware transition. The following identity information remains useful to applications, but the normal startup path does not require a Python-owned USB reconnect loop:
 

@@ -24,7 +24,7 @@ When a custom callback is registered, it receives a fully-copied `nexatom_log_re
 | `timestamp` | `char[32]` | Null-terminated ISO-8601 timestamp string (UTC). |
 | `module` | `nexatom_log_module_t` | Enum identifying the source component (e.g., `TRANSPORT` = 1, `DECODER` = 2). |
 | `level` | `nexatom_log_level_t` | Enum severity (`DEBUG` = 1, `INFO` = 2, `WARNING` = 3, `ERROR` = 4). |
-| `category` | `nexatom_log_category_t` | Enum classifying the log event (e.g., `REGISTER_WRITE`, `ERROR_CONDITION`). |
+| `category` | `nexatom_log_category_t` | Enum classifying the log event (e.g., `REGISTER_WRITE`, `ERROR_CONDITION`). `NEXATOM_LOG_CATEGORY_LIVE_CHANGE` (`0x40`, on by default) carries one line per live change and its effect; see [live-change lines](../06_in_depth_guides/6_3_logging_system.md#live-change-lines). Incident blocks (lines starting `INCIDENT <id> `) are ERROR category and reach the callback whatever the filters say; see [incident blocks](../06_in_depth_guides/6_3_logging_system.md#incident-blocks). |
 | `sequence_id` | `uint64_t` | Process-global delivery ordering ID. |
 | `repeat_count` | `uint32_t` | Identifies duplicate messages suppressed by the backend (0 if none). |
 | `message_length` | `uint32_t` | The string length of the message payload (excluding the null terminator). |

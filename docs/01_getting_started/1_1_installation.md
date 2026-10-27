@@ -73,7 +73,7 @@ Extract the SDK archive. The resulting directory contains the following files:
 | `python/nexatomtt/` | Python loader, device controls, structures, analysis helpers and runtime helper |
 | `python/examples/` | Commented measurement, saving, plotting and service examples |
 | `examples/sdk/` | Standalone C/C++ project with shared acquisition code |
-| `firmware/` | Current firmware catalogue: `firmware_manifest.json` (schema 2) and the images it lists, `Z080_004.bin` (UTT810) and `K168_004.bin` (UTT160810) in this SDK |
+| `firmware/` | Current firmware catalogue: `firmware_manifest.json` (schema 2) and the images it lists. In this SDK that is catalogue 4: `Z080_005.bin` (UTT810) and `K168_005.bin` (UTT160810) as the current images, and `Z080_004.bin` and `K168_004.bin` as superseded images |
 | `drivers/linux/` | Linux USB permission rule `51-ftd3xx.rules` (Linux package) |
 | `licenses/` | Dependency licences `HDF5-COPYING`, `FTDI-README.pdf` and `FTDI-ftd3xx.h` (Linux package); the Windows package carries its notices in `THIRD_PARTY_NOTICES.md` |
 | `docs/` | Packaged C API developer guide |
@@ -221,4 +221,5 @@ For your own script, put it beside the `nexatomtt` package in the SDK's `python/
 | Python raises `OSError` when loading the library | The same cause: one of the two DLLs was moved away from the SDK root, or `NEXATOMTT_HOME` names another folder. Keep the extracted package intact. |
 | Windows lists no device | The FTDI D3XX driver is not installed, or the board is not connected to a working USB 3.0 port. Check Device Manager for the FTDI D3XX device. |
 | Linux lists the board but opening it fails | USB permissions. Install `drivers/linux/51-ftd3xx.rules` as shown above, reload the rules and reconnect the board, then run as your ordinary user. |
+| Windows: a board is plugged in but discovery does not list it | The board is not using the Nexatom USB driver, so it cannot be opened and discovery gives it no entry. `NexatomLibrary.count_boards_not_using_nexatom_driver()` (C: `nexatom_tt_count_boards_not_using_nexatom_driver(&count)`) counts such boards without opening them; call it together with discovery to tell the user why a board is missing. Install the Nexatom USB driver, which the application installer provides. On Linux the call always returns 0. |
 | Opening fails with `... already open ...` | Another program or handle owns that board. Close it first; a board can be open in one handle at a time. |
