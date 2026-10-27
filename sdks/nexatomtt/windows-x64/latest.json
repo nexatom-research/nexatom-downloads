@@ -1,23 +1,23 @@
 {
   "schemaVersion": 1,
   "artifactName": "nexatomtt-sdk",
-  "sdkVersion": "0.1.0-preview.18.2",
+  "sdkVersion": "0.1.0-preview.22.62",
   "channel": "preview",
   "platform": "windows-x64",
   "distribution": "public-preview",
   "nativeApiVersion": "1",
-  "nativeGitCommit": "d21ba52ba40b32907a06d32ffcdd16ea7e0ce023",
-  "fileName": "nexatomtt-sdk-v0.1.0-preview.18.2-windows-x64.zip",
-  "sizeBytes": 8778285,
-  "sha256": "ba48a611ee93baf3b43e4cd4d5a808167a70653f4f449e90e8468f5f720514fa",
-  "releaseTag": "nexatomtt-sdk-v0.1.0-preview.18.2",
-  "releaseUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/tag/nexatomtt-sdk-v0.1.0-preview.18.2",
-  "downloadUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/download/nexatomtt-sdk-v0.1.0-preview.18.2/nexatomtt-sdk-v0.1.0-preview.18.2-windows-x64.zip",
+  "nativeGitCommit": "f5610ca9ad4a6af5b43a7648c50eb35b0bd4b5db",
+  "fileName": "nexatomtt-sdk-v0.1.0-preview.22.62-windows-x64.zip",
+  "sizeBytes": 14460297,
+  "sha256": "f289a654870bf688e4419f38410a1de8651ef7c93d3e37030e2a633363f446af",
+  "releaseTag": "nexatomtt-sdk-v0.1.0-preview.22.62",
+  "releaseUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/tag/nexatomtt-sdk-v0.1.0-preview.22.62",
+  "downloadUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/download/nexatomtt-sdk-v0.1.0-preview.22.62/nexatomtt-sdk-v0.1.0-preview.22.62-windows-x64.zip",
   "packageManifestPath": "manifest.json",
   "releaseNotes": [
     "Public preview SDK for NexatomTT on Windows x64.",
-    "Adds the shared result model (one STOPPED result per processor after Stop), callbacks by value, board selection by USB port (connection_id; the FT601 serial is information only), auto-reconnect, nexatom_tt_get_file_saving_statistics, a statically linked runtime and CSV/TAB v2 and HDF5 schema 4 files; examples and manual updated.",
-    "Checked on Windows with Kintex K168_004 and Zynq Z080_004 through the Nexatom application on a library from the same source revision: connect, histogram Start/Stop, raw recording with file-saving statistics (Zynq) and clean disconnect; two boards on USB at once listed, opened and streamed independently.",
-    "Firmware catalogue 3 (Z080_004, K168_004) is included in firmware/. External analog validation and maximum sustained throughput remain pending."
+    "Adds a stated end reason for every recording (nexatom_tt_get_saving_result), measurement-abort handling, Fast TIHI and the pulse outputs (DTC) on the UTT160810, time-tag and Fast TIHI export jobs, bootloader-return and link-loss reporting, per-input on/off, reference-clock status and output; examples and manual updated. Rebuild applications against this release's header.",
+    "Checked on Windows with the UTT160810 (K168_005) and the UTT810 (Z080_005): on the UTT160810, a Fast TIHI save of four 10 MHz inputs for 10 min (180 GB), raw binary saving at 40 M tags/s for 10 min and raw CSV saving at 40 M tags/s for 60 s, all whole and read back; the Nexatom application connects to both boards.",
+    "Firmware catalogue 4 is included in firmware/: Z080_005 (UTT810, FW 0x0104) and K168_005 (UTT160810, FW 0x0005) are current and need this SDK line; Z080_004 and K168_004 are kept as superseded."
   ]
 }

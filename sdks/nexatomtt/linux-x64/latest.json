@@ -1,23 +1,23 @@
 {
   "schemaVersion": 1,
   "artifactName": "nexatomtt-sdk",
-  "sdkVersion": "0.1.0-preview.18.2",
+  "sdkVersion": "0.1.0-preview.22.62",
   "channel": "preview",
   "platform": "linux-x64",
   "distribution": "public-preview",
   "nativeApiVersion": "1",
-  "nativeGitCommit": "d21ba52ba40b32907a06d32ffcdd16ea7e0ce023",
-  "fileName": "nexatomtt-sdk-v0.1.0-preview.18.2-linux-x64.tar.gz",
-  "sizeBytes": 11160822,
-  "sha256": "9b9639dc439a04d468654b7b793c7700782633d010ff26e71109b5ffee4c3bdd",
-  "releaseTag": "nexatomtt-sdk-v0.1.0-preview.18.2",
-  "releaseUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/tag/nexatomtt-sdk-v0.1.0-preview.18.2",
-  "downloadUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/download/nexatomtt-sdk-v0.1.0-preview.18.2/nexatomtt-sdk-v0.1.0-preview.18.2-linux-x64.tar.gz",
+  "nativeGitCommit": "f5610ca9ad4a6af5b43a7648c50eb35b0bd4b5db",
+  "fileName": "nexatomtt-sdk-v0.1.0-preview.22.62-linux-x64.tar.gz",
+  "sizeBytes": 17654773,
+  "sha256": "b7f729ed314e425cd06c40e89c638af8abc28cf261c8bddeff71b1d0a9ace078",
+  "releaseTag": "nexatomtt-sdk-v0.1.0-preview.22.62",
+  "releaseUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/tag/nexatomtt-sdk-v0.1.0-preview.22.62",
+  "downloadUrl": "https://github.com/nexatom-research/nexatom-downloads/releases/download/nexatomtt-sdk-v0.1.0-preview.22.62/nexatomtt-sdk-v0.1.0-preview.22.62-linux-x64.tar.gz",
   "packageManifestPath": "manifest.json",
   "releaseNotes": [
-    "Public preview SDK for NexatomTT on Linux x64, built and verified on Ubuntu 24.04 under WSL2 (standalone C/C++ build and Python load after extraction).",
-    "Adds the shared result model (one STOPPED result per processor after Stop), callbacks by value, board selection by USB port (connection_id; the FT601 serial is information only), auto-reconnect, nexatom_tt_get_file_saving_statistics, a statically linked runtime and CSV/TAB v2 and HDF5 schema 4 files; examples and manual updated.",
-    "Hardware checks for this preview ran on Windows (Kintex K168_004 and Zynq Z080_004); no Linux hardware run is claimed for this preview.",
-    "Follow the included FTDI USB access instructions. Firmware catalogue 3 (Z080_004, K168_004) is included in firmware/. External analog validation and maximum sustained throughput remain pending."
+    "Public preview SDK for NexatomTT on Linux x64, built and verified on Ubuntu 24.04 under WSL2.",
+    "Adds a stated end reason for every recording (nexatom_tt_get_saving_result), measurement-abort handling, Fast TIHI and the pulse outputs (DTC) on the UTT160810, time-tag and Fast TIHI export jobs, bootloader-return and link-loss reporting, per-input on/off, reference-clock status and output; examples and manual updated. Rebuild applications against this release's header.",
+    "Checked on Linux with USB passed through to WSL2 with usbipd: on the UTT160810 (K168_005), binary saving at 40 M tags/s for 60 s, raw CSV at 8 M tags/s for 30 s and a 60 s Fast TIHI save of four 10 MHz inputs; on the UTT810 (Z080_005), binary saving at 83 M tags/s for 30 s; all whole and read back.",
+    "Follow the included FTDI USB access instructions. Firmware catalogue 4 is included in firmware/: Z080_005 (UTT810, FW 0x0104) and K168_005 (UTT160810, FW 0x0005) are current and need this SDK line; Z080_004 and K168_004 are kept as superseded."
   ]
 }
