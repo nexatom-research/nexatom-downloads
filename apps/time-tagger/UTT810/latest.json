@@ -3,13 +3,13 @@
     "productId":  "nexatom-time-tagger-utt810",
     "model":  "UTT810",
     "channel":  "stable",
-    "version":  "1.0.6",
-    "fileName":  "Nexatom_UTT810_Setup_1.0.6.exe",
-    "sizeBytes":  106734950,
-    "sha256":  "f392ada48fc583adddd507c69dbd21a5ed11e77c4672cf6b107964f178b23cea",
-    "installerUrl":  "https://github.com/nexatom-research/nexatom-downloads/releases/download/time-tagger-UTT810-v1.0.6/Nexatom_UTT810_Setup_1.0.6.exe",
+    "version":  "1.0.7",
+    "fileName":  "Nexatom_UTT810_Setup_1.0.7.exe",
+    "sizeBytes":  140502801,
+    "sha256":  "6fe360a7d61c4527becb62f58d592452bbd995f5413c70e50fdae3df4d7a7a8e",
+    "installerUrl":  "https://github.com/nexatom-research/nexatom-downloads/releases/download/time-tagger-UTT810-v1.0.7/Nexatom_UTT810_Setup_1.0.7.exe",
     "mandatory":  false,
     "releaseNotes":  [
-                         "Supports the UTT160810 and several boards on one PC. Native SDK 0.1.0-preview.18.2 and firmware catalogue 3. Stop ends histogram runs promptly; a raw recording no longer shows a telemetry warning."
+                         "Native SDK 0.1.0-preview.22.62 and firmware catalogue 4. Connected boards move to the new firmware by themselves. Fast TIHI clicks and count rates save together in one recording."
                      ]
 }
